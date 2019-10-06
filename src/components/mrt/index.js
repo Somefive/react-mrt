@@ -9,18 +9,17 @@ export default class MRT extends React.Component {
     constructor(props) {
         super(props)
 
-        this.branchWidth = 300
-        this.yearMargin = 40
+        this.branchWidth = 350
+        this.yearMargin = 75
 
         this.strokeWidth = 3
-        this.textWidth = 30
+        this.textWidth = 36
         this.radius = 18
 
         this.fontSize = this.radius - this.strokeWidth
-        this.lineHeight = this.fontSize
+        this.lineHeight = this.fontSize * 1.1
       
         this.nodesMap = {}
-        const pattern = new RegExp(`([^\\n]{1,${this.textWidth}})(\\s|$)`, 'g')
         const extract = (nodeData, parent) => {
             const id = nodeData["paper_id"]
             const year = nodeData["paper_year"]
@@ -35,84 +34,84 @@ export default class MRT extends React.Component {
                 prefix = `${venue}`
             }
             const text = `[${prefix}] ${title}`.replace('\t', ' ').replace('\n', ' ')
-            const textPieces = text.match(pattern)
-            const _data = {parent, id, year, venue, title, citations, text, textPieces, children: nodeData["children"].map(child => child["paper_id"])}
+            const _data = {parent, id, year, venue, title, citations, text, children: nodeData["children"].map(child => child["paper_id"])}
             this.nodesMap[id] = _data
             nodeData["children"].forEach(child => extract(child, id));
         }
         extract(props.data, "")
         this.root = this.nodesMap[props.data["paper_id"]]
-
-        this.branches = []
-        const annotateBranchID = (id, branchID) => {
-            this.nodesMap[id].branchID = branchID
-            while (this.branches.length <= branchID) this.branches.push([])
-            this.branches[branchID].push(id)
-            let maxBranchID = branchID
-            let nextBranchID = maxBranchID
-            for (let i = 0; i < this.nodesMap[id].children.length; i++) {
-                maxBranchID = annotateBranchID(this.nodesMap[id].children[i], nextBranchID)
-                nextBranchID = maxBranchID + 1
-            }
-            return maxBranchID
-        }
-        this.numBranches = annotateBranchID(this.root.id, 0) + 1
-        this.branches[0] = this.branches[0].slice(1)
-        this.root.branchID = (this.numBranches - 1) / 2
-
-        this.colors = chroma.cubehelix().start(200).rotations(-0.35).gamma(0.7).lightness([0.3, 0.7]).scale().correctLightness().colors(this.root.children.length)
-        this.root.color = "black"
-        const annotateColor = (id, color) => {
-            let node = this.nodesMap[id]
-            node.color = color
-            if (node.children.length > 0) annotateColor(node.children[0], color)
-            for (let i = 1; i < node.children.length; i++) annotateColor(node.children[i], chroma(color).brighten(i))
-        }
-        this.root.children.forEach((child, idx) => annotateColor(child, this.colors[idx]))
     }
     
     render() {
-        
-        const annotateHeight = (node) => { node.height = this.radius * 1.5 + this.lineHeight * node.textPieces.length }
-        const annotateX = (node) => { node.x = node.branchID * this.branchWidth + this.radius * 2 }
-        
-        for (let id in this.nodesMap) {
-            annotateHeight(this.nodesMap[id])
-            annotateX(this.nodesMap[id])
+
+        let nodes = []
+        for (let id in this.nodesMap) nodes.push(this.nodesMap[id])
+
+        let branches = this.root.children.map(() => [])
+        const annotateBranchID = (id, branchID, subBranchID) => {
+            let node = this.nodesMap[id]
+            node.branchID = branchID
+            node.subBranchID = subBranchID
+            branches[branchID].push(node)
+            node.children.forEach((child, idx) => annotateBranchID(child, branchID, subBranchID + idx))
         }
+        this.root.branchID = -1
+        this.root.subBranchID = 0
+        this.root.children.forEach((child, idx) => annotateBranchID(child, idx, 0))
+
+        const colors = chroma.cubehelix().start(200).rotations(-0.35).gamma(0.7).lightness([0.3, 0.7]).scale().correctLightness().colors(this.root.children.length)
+        const annotateColor = (node) => { if (node.branchID >= 0) node.color = chroma(colors[node.branchID]).brighten(node.subBranchID) }
+        this.root.color = "black"
+        nodes.forEach(annotateColor)
+
+        const annotateX = (node) => { if (node.branchID >= 0) node.x = (node.branchID + (node.subBranchID > 0) * 0.5) * this.branchWidth + this.radius * 2.5 }
+        this.root.x = (this.root.children.length - 1) / 2 * this.branchWidth + this.radius * 2
+        nodes.forEach(annotateX)
+        
+        const annotateTextPieces = (node, textWidth) => { node.textPieces = node.text.match(new RegExp(`([^\\n]{1,${textWidth}})(\\s|$)`, 'g')) }
+        const annotateHeight = (node) => { node.height = this.radius * 0.5 + Math.max(this.lineHeight * node.textPieces.length, this.radius * 1.75) }
+        
+        annotateTextPieces(this.root, Math.floor(this.textWidth * (this.root.children.length - 1) / 2))
+        annotateHeight(this.root, 1.5)
 
         this.root.y = 2 * this.radius
-
         let yearY = this.root.y + this.root.height + this.yearMargin * 2
         for (let year = this.root.year; year > 1900; year--) {
+            let _branches = branches.map(branch => branch.filter(node => node.year == year))
             let nextYearY = yearY
-            for (let i = 0; i < this.numBranches; i++) {
+            for (let i = 0; i < _branches.length; i++) {
                 let _y = yearY
-                for (let j = 0; j < this.branches[i].length; j++) {
-                    let node = this.nodesMap[this.branches[i][j]]
-                    if (node.year == year) {
-                        if (node.parent.length > 0) {
-                            let parentNode = this.nodesMap[node.parent]
-                            if (parentNode.y + parentNode.height > _y) _y = parentNode.y + parentNode.height
-                        }
-                        node.y = _y
-                        _y += node.height
-                    }
+                let main = _branches[i].filter(node => node.subBranchID == 0)
+                let sub = _branches[i].filter(node => node.subBranchID > 0)
+                let factor = sub.length > 0 ? 0.4 : 1
+                for (let j = 0; j < main.length; j++) {
+                    annotateTextPieces(main[j], Math.floor(this.textWidth * factor))
+                    annotateHeight(main[j])
+                    main[j].y = _y
+                    _y += main[j].height
+                }
+                let __y = yearY
+                for (let j = 0; j < sub.length; j++) {
+                    annotateTextPieces(sub[j], Math.floor(this.textWidth * factor))
+                    annotateHeight(sub[j])
+                    let _parent = this.nodesMap[sub[j].parent]
+                    if (_parent.y + _parent.height > __y) __y = _parent.y + _parent.height
+                    sub[j].y = __y
+                    __y += sub[j].height
                 }
                 if (_y > nextYearY) nextYearY = _y
+                if (__y > nextYearY) nextYearY = __y
             }
             if (nextYearY > yearY) nextYearY += this.yearMargin
             yearY = nextYearY
         }
 
-        let nodes = []
         let baselineY = this.root.y + this.root.height
         let edges = [{x1: this.root.x, y1: baselineY, x2: this.root.x, y2: this.root.y, color: "black"}]
         let leftMostX = 0
         let rightMostX = 0
         for (let id in this.nodesMap) {
             const node = this.nodesMap[id]
-            nodes.push(node)
             if (node.parent.length > 0) {
                 const parentNode = this.nodesMap[node.parent]
                 if (node.parent === this.root.id) {
@@ -128,7 +127,7 @@ export default class MRT extends React.Component {
 
         console.log(nodes, edges)
 
-        const _width = this.branchWidth * this.numBranches
+        const _width = this.branchWidth * this.root.children.length
         const _height = yearY
         return <svg className='mrt' /*width={`${_width}px`} height={`${_height}px`}*/ width="100%" viewBox={`0 0 ${_width} ${_height}`}>
             {edges.map((edge, idx) =>
