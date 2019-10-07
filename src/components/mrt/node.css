@@ -1,0 +1,19 @@
+.cross-identifier {
+    transform: rotate(45deg);
+    transition: all .5s ease;
+    opacity: 0;
+}
+
+.paper-text {
+    background: white;
+}
+
+.paper-text:hover {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.paper-text:hover + .cross-identifier {
+    transform: rotate(0deg);
+    opacity: 1;
+}
