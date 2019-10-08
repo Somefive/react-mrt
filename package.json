@@ -2,6 +2,7 @@
   "name": "react-mrt",
   "version": "0.1.0",
   "private": true,
+  "homepage": "./",
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.11.2",
     "chroma-js": "^2.0.6",
