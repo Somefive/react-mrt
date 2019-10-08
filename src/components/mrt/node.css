@@ -6,14 +6,26 @@
 
 .paper-text {
     font-weight: bold;
+    transition: all .5s;
 }
 
 .paper-text:hover {
     text-decoration: underline;
-    cursor: pointer;
 }
 
 .paper-text:hover + .cross-identifier {
     transform: rotate(0deg);
     visibility: visible;
+}
+
+.paper-edit-icon-group {
+    transition: opacity .5s;
+}
+
+.paper-edit-icon {
+    transition: opacity .5s;
+}
+
+.paper-edit-icon:hover {
+    cursor: pointer;
 }

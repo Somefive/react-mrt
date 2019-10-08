@@ -3,6 +3,7 @@ import Node from './node'
 import randomstring from 'randomstring'
 import chroma from 'chroma-js'
 import _ from 'lodash'
+import './index.css'
 
 export default class MRT extends React.Component {
 
@@ -71,13 +72,26 @@ export default class MRT extends React.Component {
         this.data.branches.forEach(branch => branch.sort((a, b) => {
             return a.year === b.year ? (b.citations - a.citations) : (b.year - a.year)
         }))
+        this.clusterNames = this._data.branches.map((branch, idx) => `Cluster ${idx}`)
+
+        let userEdits = {}
+        userEdits[this.data.root.id] = {rate: 0, cluster: 0}
+        this.data.branches.forEach((branch, idx) => branch.forEach(node => userEdits[node.id] = {rate: 0, cluster: Math.floor(idx / 2)}))
+        this.state = {userEdits, toExchange: null}
     }
     
     render() {
 
-        let views = {colorDefs: [], nodes: {}, edges: [], background: []}
+        let views = {colorDefs: [], nodes: {}, edges: []}
 
-        let dataView = _.cloneDeep(this.data)
+        let dataView = {root: _.cloneDeep(this.data.root), branches: this.data.branches.map(() => [])}
+        {
+            this.data.branches.forEach((branch, idx) => branch.forEach(node => {
+                const _node = _.cloneDeep(node)
+                dataView.branches[this.state.userEdits[node.id].cluster * 2 + idx % 2].push(_node)
+            }))
+        }
+
         if (this.hideSubBranch) dataView.branches = dataView.branches.map((branch, idx) => idx % 2 === 0 ? branch : [])
         let numBranches = dataView.branches.length
         let numClusters = Math.floor(numBranches / 2)
@@ -116,30 +130,34 @@ export default class MRT extends React.Component {
 
         // Arrange coornidates for each era node
         views.nodes.root = {
+            isRoot: true,
             x: this.nodeWidth * (dataView.branches.length - 1) / 2 + this.nodeOffsetX,
             y: this.nodeOffsetY,
             color: rootColor,
             pins: [{
-                citations: dataView.root.citations,
-                text: dataView.root.text,
+                source: dataView.root,
+                edits: this.state.userEdits[dataView.root.id],
                 textPieces: this.nodeTextFold(dataView.root.text, 2)
-            }]
+            }],
+            clusterIndex: -1,
         }
         views.nodes.branches = dataView.branches.map((branch, branchID) => eras.map((era, eraID) => { return {
+            isRoot: false,
             x: this.nodeWidth * branchID + this.nodeOffsetX,
             y: 0,
             color: chroma(colors[Math.floor(branchID / 2)]).brighten(branchID % 2),
             pins: branch.filter(paper => paper.year >= era.from && paper.year <= era.to).map(paper => { return {
-                citations: paper.citations,
-                text: paper.text,
-            }}),
+                source: paper,
+                edits: this.state.userEdits[paper.id],
+            }}).sort((a, b) => (a.source.year === b.source.year) ? (b.source.citations - a.source.citations) : (b.source.year - a.source.year)),
             era: eraID,
+            clusterIndex: Math.floor(branchID / 2),
         }}))
         
         views.nodes.branches.forEach((branch, branchID) => branch.forEach((node, eraID) => {
             if (node.pins.length === 0) return
             const span = (branchID < numBranches - 1 && views.nodes.branches[branchID+1][eraID].pins.length === 0) ? 2 : 1
-            node.pins.forEach(pin => pin.textPieces = this.nodeTextFold(pin.text, span))
+            node.pins.forEach(pin => pin.textPieces = this.nodeTextFold(pin.source.text, span))
         }))
 
         let horizon = this.nodeHeight(this.nodeTextLines(views.nodes.root)) + this.nodePaddingTop
@@ -198,22 +216,44 @@ export default class MRT extends React.Component {
 
         _height += this.labelTextFontSize * 3
         
-        // For vertical background
-        {
-            views.nodes.branches.forEach((branch, idx) => {
-                if (idx % 2 !== 0) return
-                views.background.push(<g key={idx}>
-                    <rect x={this.nodeWidth*idx} y="0" width={this.nodeWidth*2} height={_height} fill={chroma(branch[0].color).luminance(0.9)}></rect>
-                    <text x={this.nodeWidth*idx+this.nodeOffsetX} y={_height - this.labelTextFontSize} fill={chroma(branch[0].color).luminance(0.7)} fontSize={this.labelTextFontSize}>Cluster {idx}</text>
-                </g>)
-            })
+        const onEdit = (action, source, param) => {
+            const _state = {...this.state}
+            if (action === "thumb-up" && _state.userEdits[source.id].rate <= 0) {
+                _state.userEdits[source.id].rate = 1
+                this.setState(_state)
+            } else if (action === "thumb-down" && _state.userEdits[source.id].rate >= 0) {
+                _state.userEdits[source.id].rate = -1
+                this.setState(_state)
+            } else if (action === "thumb-delete" && _state.userEdits[source.id].rate !== 0) {
+                _state.userEdits[source.id].rate = 0
+                this.setState(_state)
+            } else if (action === "to-exchange" && _state.toExchange === null) {
+                _state.toExchange = source
+                this.setState(_state)
+            } else if (action === "exchange") {
+                _state.userEdits[source.id].cluster = param
+                _state.toExchange = null
+                this.setState(_state)
+            }
         }
 
-
         const _width = this.nodeWidth * dataView.branches.length
-        return <svg className='mrt' width={`${_width}px`} height={`${_height}px`} /*width="100%"*/ viewBox={`0 0 ${_width} ${_height}`}>
+        return <svg className='mrt' /*width={`${_width}px`} height={`${_height}px`}*/ width="100%" viewBox={`0 0 ${_width} ${_height}`}>
             {views.colorDefs}
-            {views.background}
+            {
+                <g className="mrt-background">
+                    <rect x="0" y="0" width={_width} height={horizon} fill={chroma(rootColor).luminance(0.9)}></rect>
+                </g>
+            }
+            {
+                views.nodes.branches.map((branch, idx) => {
+                    if (idx % 2 !== 0) return
+                    return <g className="mrt-background" key={idx} opacity={this.state.toExchange === null ? 1 : 0}>
+                        <rect x={this.nodeWidth*idx} y={horizon} width={this.nodeWidth*2} height={_height-horizon} fill={chroma(branch[0].color).luminance(0.9)}></rect>
+                        <text x={this.nodeWidth*idx+this.nodeOffsetX} y={_height - this.labelTextFontSize} fill={chroma(branch[0].color).luminance(0.7)} fontSize={this.labelTextFontSize}>{this.clusterNames[Math.floor(idx / 2)]}</text>
+                    </g>
+                })
+            }
             {views.edges.map((edge, idx) =>
                 <line key={idx} x1={edge.x1} y1={edge.y1} x2={edge.x2} y2={edge.y2} strokeWidth={this.strokeWidth - 1} stroke={edge.color}/>
             )}
@@ -224,9 +264,22 @@ export default class MRT extends React.Component {
                       radius={this.nodeRadius}
                       lineHeight={this.nodeTextLineHeight}
                       color={node.color}
-                    //   citations={node.citations}
+                      isRoot={node.isRoot}
+                      clusterIndex={node.clusterIndex}
+                      clusterNames={this.clusterNames}
                       fontSize={this.nodeTextFontSize}
-                      strokeWidth={this.strokeWidth}/>)}
+                      strokeWidth={this.strokeWidth}
+                      onEdit={onEdit}/>)}
+            {
+                views.nodes.branches.map((branch, idx) => {
+                    if (idx % 2 !== 0) return
+                    const isCurrent = this.state.toExchange !== null && Math.floor(idx / 2) === this.state.userEdits[this.state.toExchange.id].cluster
+                    return <g className="mrt-background" key={idx} opacity={this.state.toExchange === null ? 0 : 1} visibility={this.state.toExchange === null ? "hidden" : "none"} onClick={() => onEdit("exchange", this.state.toExchange, Math.floor(idx / 2))}>
+                        <rect className="mrt-background-card" x={this.nodeWidth*idx} y={horizon} width={this.nodeWidth*2} height={_height-horizon} fill={chroma(branch[0].color).luminance(0.5)}></rect>
+                        <text className="mrt-background-text" x={this.nodeWidth*idx+this.nodeOffsetX} y={_height - this.labelTextFontSize} fill={chroma(branch[0].color).luminance(0.2)} fontSize={this.labelTextFontSize * (isCurrent ? 1 : 0.5)}>{this.clusterNames[Math.floor(idx / 2)]}</text>
+                    </g>
+                })
+            }
         </svg>
     }
 }
