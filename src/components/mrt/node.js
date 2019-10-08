@@ -40,7 +40,7 @@ export default class Node extends React.Component {
         const expanded_path = `M ${-this.props.radius},0 A ${this.props.radius} ${this.props.radius} 0 0 1 ${this.props.radius},0 L ${this.props.radius},${bottomY} A ${this.props.radius} ${this.props.radius} 0 0 1 ${-this.props.radius},${bottomY} L ${-this.props.radius},0`
         return (
             <g transform={`translate(${this.props.x}, ${this.props.y})`}>
-                <rect x={textXOffset} y={-this.props.lineHeight-this.props.radius/2} width={maxTextWidth * this.props.fontSize / 2} height={this.props.lineHeight * textLines + this.props.radius} fill="white"/>
+                {/* <rect x={textXOffset} y={-this.props.lineHeight-this.props.radius/2} width={maxTextWidth * this.props.fontSize / 2} height={this.props.lineHeight * textLines + this.props.radius} fill="white"/> */}
                 <g onClick={() => this.setState({...this.state, displayInteractionTool: !this.state.displayInteractionTool})}>
                     <path id={`path-${this.id}`} stroke={this.props.color} strokeWidth={this.props.strokeWidth} fill="white">
                     </path>

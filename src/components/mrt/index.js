@@ -2,91 +2,110 @@ import React from 'react'
 import Node from './node'
 import randomstring from 'randomstring'
 import chroma from 'chroma-js'
+import _ from 'lodash'
 
 export default class MRT extends React.Component {
 
     constructor(props) {
         super(props)
 
+        this.hideSubBranch = this.props.hideSubBranch
+
         this.EraMinRatio = this.props.EraMinRatio || 0.05
         this.lastEraRatio = this.props.lastEraRatio || 0.2
 
-        this.branchWidth = 400
-        this.branchNodeXOffset = 50
-        this.eraMargin = 60
-
         this.strokeWidth = 4
-        this.textWidth = 36
-        this.radius = 18
 
-        this.fontSize = this.radius - this.strokeWidth
-        this.lineHeight = this.fontSize * 1.1
+        this.labelTextFontSize = 64
 
-        this.data = props.data
-        this.data.branches.forEach(subBranches => subBranches.forEach(branch => branch.sort((a, b) => {
-            return a.year === b.year ? (b.citations - a.citations) : (b.year - a.year)
-        })))
-        this.traverse = (rootCallback, branchCallback, branchNodeCallback) => {
-            if (rootCallback) rootCallback(this.data.root)
-            if (branchCallback || branchNodeCallback) this.data.branches.forEach((subBranches, branchID) => {
-                subBranches.forEach((branch, subBranchID) => {
-                    if (branchCallback) branchCallback(branch, branchID, subBranchID)
-                    if (branchNodeCallback) branch.forEach((node) => branchNodeCallback(node, branchID, subBranchID))
-                })
-            })
+        this.nodeRadius = 20
+        this.nodeTextLeadingMargin = 20
+        this.nodeTextWidth = 260
+        this.nodeTextFontSize = 16
+        this.nodeTextLineHeight = 18
+
+        this.averageFontWidthRatio = 0.6
+        
+        this.nodePaddingLeft = 20
+        this.nodePaddingRight = 20
+        this.nodePaddingTop = 32
+        this.nodePaddingBottom = 12
+
+        this.nodeOffsetX = this.nodePaddingLeft + this.nodeRadius
+        this.nodeOffsetY = this.nodePaddingTop + this.nodeRadius
+        
+        this.nodeWidth = this.nodePaddingLeft + 2 * this.nodeRadius + this.nodeTextLeadingMargin + this.nodeTextWidth + this.nodePaddingRight
+        this.nodeTextLines = (node) => node.pins.reduce((prev, pin) => prev + pin.textPieces.length, 0)
+        this.nodeHeight = (lines) => this.nodePaddingTop + this.nodeRadius + Math.max(this.nodeRadius, (lines-1) * this.nodeTextLineHeight) + this.nodePaddingBottom
+        this.nodeTextFold = (text, span) => {
+            const textLength = Math.floor(((span - 1) * this.nodeWidth + this.nodeTextWidth) / (this.nodeTextFontSize * this.averageFontWidthRatio))
+            return text.match(new RegExp(`([^\\n]{1,${textLength}})(\\s|$)`, 'g'))
         }
-      
-        const extract_annotator = (node) => {
-            node.id = node["paper_id"]
-            node.year = node["paper_year"]
-            node.venue = node["paper_venue"].trim()
-            node.title = node["paper_title"].trim()
-            node.citations = node["paper_citations"]
-            let prefix = `${node.year}`
-            const venue_year = /^(19|20)\d{2}\b/.exec(node.venue)
-            if (venue_year == null && node.venue.length > 0) {
-                prefix = `${node.year} ${node.venue}`
+
+        this._data = props.data
+
+        const extract = (paper) => {
+            const id = paper["paper_id"]
+            const year = paper["paper_year"]
+            const venue = paper["paper_venue"].trim()
+            const title = paper["paper_title"].trim()
+            const citations = paper["paper_citations"]
+            let prefix = `${year}`
+            const venue_year = /^(19|20)\d{2}\b/.exec(venue)
+            if (venue_year == null && venue.length > 0) {
+                prefix = `${year} ${venue}`
             } else if (venue_year != null) {
-                prefix = `${node.venue}`
+                prefix = `${venue}`
             }
-            node.text = `[${prefix}] ${node.title}`.replace('\t', ' ').replace('\n', ' ')
+            const text = `[${prefix}] ${title}`.replace('\t', ' ').replace('\n', ' ')
+            return {id, year, venue, title, citations, text}
         }
-        this.traverse(extract_annotator, null, extract_annotator)
-
-        console.log(this.data)
+        this.data = {
+            root: extract(this._data.root),
+            branches: []
+        }
+        this._data.branches.forEach(branch => {
+            this.data.branches.push(branch[0].map(extract))
+            this.data.branches.push(branch[1].map(extract))
+        })
+        this.data.branches.forEach(branch => branch.sort((a, b) => {
+            return a.year === b.year ? (b.citations - a.citations) : (b.year - a.year)
+        }))
     }
     
     render() {
 
+        let views = {colorDefs: [], nodes: {}, edges: [], background: []}
+
+        let dataView = _.cloneDeep(this.data)
+        if (this.hideSubBranch) dataView.branches = dataView.branches.map((branch, idx) => idx % 2 === 0 ? branch : [])
+        let numBranches = dataView.branches.length
+        let numClusters = Math.floor(numBranches / 2)
+
         const rootColor = chroma.scale()(0.5)
+        const colors = chroma.cubehelix().start(200).rotations(3).gamma(0.7).lightness([0.2, 0.6]).scale().correctLightness().colors(numClusters)
 
-        const colors = chroma.cubehelix().start(200).rotations(3).gamma(0.7).lightness([0.2, 0.6]).scale().correctLightness().colors(this.data.branches.length)
-
-        let years = []
-        this.traverse(null, null, (node) => years.push(node.year))
-        years.sort((a, b) => (b - a))
         let eras = []
-        let _to = years[0]
-        let _cnt = 1
-        let eraMinSize = this.EraMinRatio * years.length
-        let lastEraMinSize = this.lastEraRatio * years.length
-        for (let i = 1; i < years.length; i++) {
-            if (years[i] === years[i-1] || _cnt < eraMinSize || i > years.length - lastEraMinSize) _cnt += 1
-            else {
-                eras.push({from: years[i-1], to: _to, cnt: _cnt})
-                _to = years[i]
-                _cnt = 1
+        {
+            let years = dataView.branches.flat().map(paper => paper.year).sort((a, b) => (b - a))
+            let _to = years[0]
+            let _cnt = 1
+            let eraMinSize = this.EraMinRatio * years.length
+            let lastEraMinSize = this.lastEraRatio * years.length
+            for (let i = 1; i < years.length; i++) {
+                if (years[i] === years[i-1] || _cnt < eraMinSize || i > years.length - lastEraMinSize) _cnt += 1
+                else {
+                    eras.push({from: years[i-1], to: _to, cnt: _cnt})
+                    _to = years[i]
+                    _cnt = 1
+                }
             }
+            eras.push({from: years[years.length-1], to: _to, cnt: _cnt})
         }
-        eras.push({from: years[years.length-1], to: _to, cnt: _cnt})
         
-        const matchTextPieces = (text, textWidth) => text.match(new RegExp(`([^\\n]{1,${textWidth}})(\\s|$)`, 'g'))
-        const calculateHeight = (nodeView) => this.radius * 0.5 + Math.max(this.lineHeight * nodeView.pins.reduce((prev, pin) => prev + pin.textPieces.length, 0), this.radius * 1.75)
-
-        let colorDefs = []
-        const gradientColor = (from, to, x1, y1, x2, y2) => {
+        views.generateGradientColor = (from, to, x1, y1, x2, y2) => {
             const colorID = randomstring.generate(8)
-            colorDefs.push(<defs key={colorID}>
+            views.colorDefs.push(<defs key={colorID}>
                 <linearGradient id={colorID} x1={x1} y1={y1} x2={x2} y2={y2} gradientUnits="userSpaceOnUse">
                   <stop offset="20%"  stopColor={from} />
                   <stop offset="80%" stopColor={to} />
@@ -94,179 +113,119 @@ export default class MRT extends React.Component {
               </defs>)
             return `url('#${colorID}')`
         }
-        
 
         // Arrange coornidates for each era node
-        let nodesView = {
-            root: {
-                x: this.branchWidth * (this.data.branches.length - 1) / 2 + this.branchNodeXOffset,
-                y: this.eraMargin,
-                color: rootColor,
-                pins: [{
-                    citations: this.data.root.citations,
-                    textPieces: matchTextPieces(this.data.root.text, this.textWidth * Math.floor((this.data.branches.length - 1) / 2))
-                }]
-            },
-            branches: this.data.branches.map(subBranches => subBranches.map(() => []))
+        views.nodes.root = {
+            x: this.nodeWidth * (dataView.branches.length - 1) / 2 + this.nodeOffsetX,
+            y: this.nodeOffsetY,
+            color: rootColor,
+            pins: [{
+                citations: dataView.root.citations,
+                text: dataView.root.text,
+                textPieces: this.nodeTextFold(dataView.root.text, 2)
+            }]
         }
-        let forkY = nodesView.root.y + calculateHeight(nodesView.root) + this.eraMargin
-        let edgesView = [{
-                x1: nodesView.root.x, y1: nodesView.root.y,
-                x2: nodesView.root.x, y2: forkY,
-                color: rootColor
-            }
-        ]
-        let eraY = forkY + this.eraMargin
-        for (let i = 0; i < eras.length; i++) {
-            let maxHeight = 0
-            let era = eras[i]
-            let branches = this.data.branches.map(subBranches => subBranches.map(branch => branch.filter(node => node.year >= era.from && node.year <= era.to)))
-            for (let branchID = 0; branchID < branches.length; branchID++) {
-                let subBranches = branches[branchID]
-                for (let subBranchID = 0; subBranchID < subBranches.length; subBranchID++) {
-                    let branch = subBranches[subBranchID]
-                    if (branch.length === 0) continue
-                    const _textWidth = (subBranchID === 0 && subBranches[1].length === 0) ? this.textWidth : Math.floor(this.textWidth * 0.4)
-                    const _nodeView = {
-                        x: this.branchWidth * (branchID + (subBranchID > 0) * 0.5) + this.branchNodeXOffset,
-                        y: eraY,
-                        color: chroma(colors[branchID]).brighten(subBranchID),
-                        pins: branch.map(node => { return {
-                            citations: node.citations,
-                            textPieces: matchTextPieces(node.text, _textWidth)
-                        }})
+        views.nodes.branches = dataView.branches.map((branch, branchID) => eras.map((era, eraID) => { return {
+            x: this.nodeWidth * branchID + this.nodeOffsetX,
+            y: 0,
+            color: chroma(colors[Math.floor(branchID / 2)]).brighten(branchID % 2),
+            pins: branch.filter(paper => paper.year >= era.from && paper.year <= era.to).map(paper => { return {
+                citations: paper.citations,
+                text: paper.text,
+            }}),
+            era: eraID,
+        }}))
+        
+        views.nodes.branches.forEach((branch, branchID) => branch.forEach((node, eraID) => {
+            if (node.pins.length === 0) return
+            const span = (branchID < numBranches - 1 && views.nodes.branches[branchID+1][eraID].pins.length === 0) ? 2 : 1
+            node.pins.forEach(pin => pin.textPieces = this.nodeTextFold(pin.text, span))
+        }))
+
+        let horizon = this.nodeHeight(this.nodeTextLines(views.nodes.root)) + this.nodePaddingTop
+        let _height = horizon + this.nodePaddingBottom
+        {
+            eras.forEach((era, eraID) => {
+                const maxLines = views.nodes.branches.reduce((prev, branch) => Math.max(prev, this.nodeTextLines(branch[eraID])), 0)
+                views.nodes.branches.forEach(branch => branch[eraID].y = _height + this.nodeOffsetY)
+                _height += this.nodeHeight(maxLines)
+            })
+        }
+
+        {
+            let node = views.nodes.root
+            views.edges.push({x1: node.x, y1: node.y, x2: node.x, y2: horizon, color: rootColor})
+            let nodeLeft = views.nodes.branches[0][0]
+            let nodeRight = views.nodes.branches[numBranches - 2][0]
+            views.edges.push({x1: nodeLeft.x, y1: horizon, x2: nodeRight.x, y2: horizon, color: rootColor})
+        }
+        {
+            views.nodes.branches.forEach((branch, branchID) => {
+                const _branch = branch.filter(node => node.pins.length > 0)
+                if (_branch.length === 0) return
+                const startEra = (branchID % 2 === 0) ? 0 : _branch[0].era
+                let endEra = _branch[_branch.length-1].era
+                if (branchID % 2 === 0) {
+                    const _nextBranch = views.nodes.branches[branchID+1].filter(node => node.pins.length > 0)
+                    if (_nextBranch.length > 0) {
+                        endEra = Math.max(endEra, _nextBranch[0].era)
                     }
-                    if (nodesView.branches[branchID][subBranchID].length > 0) {
-                        let parentNodeView = nodesView.branches[branchID][subBranchID][nodesView.branches[branchID][subBranchID].length - 1]
-                        edgesView.push({x1: _nodeView.x, y1: _nodeView.y, x2: parentNodeView.x, y2: parentNodeView.y, color: _nodeView.color})
-                    }
-                    nodesView.branches[branchID][subBranchID].push(_nodeView)
-                    maxHeight = Math.max(maxHeight, calculateHeight(_nodeView))
                 }
-            }
-            eraY += maxHeight + this.eraMargin
+                for (let eraID = startEra + 1; eraID <= endEra; eraID++) {
+                    let node = branch[eraID]
+                    let sib = branchID > 0 ? views.nodes.branches[branchID-1][eraID] : null
+                    const yStart = (node.pins.length === 0 && ((branchID > 0 && sib.pins.length > 0) || (eraID === endEra))) ? (node.y - this.nodeRadius - this.nodeTextLineHeight) : node.y
+                    node = branch[eraID-1]
+                    sib = branchID > 0 ? views.nodes.branches[branchID-1][eraID-1] : null
+                    const yEnd = (node.pins.length === 0 && branchID > 0 && sib.pins.length > 0) ? (node.y - this.nodeOffsetY + this.nodeHeight(this.nodeTextLines(sib)) - this.nodePaddingBottom + this.nodeTextLineHeight) : node.y
+                    views.edges.push({x1: node.x, y1: yStart, x2: node.x, y2: yEnd, color: node.color})
+                }
+                if (branchID % 2 === 0) {
+                    const node = branch[0]
+                    const sib = branchID > 0 ? views.nodes.branches[branchID-1][0] : null
+                    const yEnd = (node.pins.length === 0 && branchID > 0 && sib.pins.length > 0) ? (node.y - this.nodeRadius - this.nodeTextLineHeight) : node.y
+                    views.edges.push({x1: node.x, y1: horizon, x2: node.x, y2: yEnd, color: views.generateGradientColor(rootColor, node.color, node.x, horizon, node.x, yEnd)})
+                } else {
+                    const node = branch[startEra]
+                    const sib = views.nodes.branches[branchID-1][startEra]
+                    const yEnd = node.y - this.nodeRadius - this.nodeTextLineHeight
+                    const yStart = node.y
+                    views.edges.push({x1: node.x, y1: yStart, x2: node.x, y2: yEnd, color: node.color})
+                    views.edges.push({x1: node.x, y1: yEnd, x2: sib.x, y2: yEnd, color: views.generateGradientColor(node.color, sib.color, node.x, yEnd, sib.x, yEnd)})
+                }
+            })
         }
+
+        _height += this.labelTextFontSize * 3
         
-        nodesView.branches.forEach((subBranches, idx) => {
-            let node = subBranches[0][0]
-            edgesView.push({x1: node.x, y1: node.y, x2: node.x, y2: forkY, color: gradientColor(node.color, rootColor, node.x, node.y, node.x, forkY)})
-            if (subBranches[1].length > 0) {
-                let _node = subBranches[1][0]
-                edgesView.push({x1: node.x, y1: subBranches[0][subBranches[0].length - 1].y, x2: node.x, y2: _node.y - this.eraMargin / 2, color: node.color})
-                edgesView.push({x1: _node.x, y1: _node.y, x2: _node.x, y2: _node.y - this.eraMargin / 2, color: _node.color})
-                edgesView.push({x1: node.x, y1: _node.y - this.eraMargin / 2, x2: _node.x, y2: _node.y - this.eraMargin / 2, color: gradientColor(node.color, _node.color, node.x, _node.y - this.eraMargin / 2, _node.x, _node.y - this.eraMargin / 2)})
-            }
-            if (idx > 0) {
-                let _node = nodesView.branches[idx - 1][0][0]
-                edgesView.push({x1: _node.x, y1: forkY, x2: node.x, y2: forkY, color: rootColor})
-            }
-        })
+        // For vertical background
+        {
+            views.nodes.branches.forEach((branch, idx) => {
+                if (idx % 2 !== 0) return
+                views.background.push(<g key={idx}>
+                    <rect x={this.nodeWidth*idx} y="0" width={this.nodeWidth*2} height={_height} fill={chroma(branch[0].color).luminance(0.9)}></rect>
+                    <text x={this.nodeWidth*idx+this.nodeOffsetX} y={_height - this.labelTextFontSize} fill={chroma(branch[0].color).luminance(0.7)} fontSize={this.labelTextFontSize}>Cluster {idx}</text>
+                </g>)
+            })
+        }
 
-        console.log(nodesView)
 
-        // let _yearBranches = []
-        // for (let year = this.data.root.year; year >= years[0]; year--) {
-        //     let branches = this.data.branches.map(subBranches => subBranches.map(branch => branch.filter(node => node.year == year)))
-        //     let node_cnt = branches.reduce((prev, subBranches) => prev + subBranches.reduce((_prev, branch) => _prev + branch.length, 0), 0)
-        //     if (node_cnt == 0) continue
-        //     _yearBranches.push({"year": year, "count": node_cnt, "branches": branches})
-        // }
-
-        // let trailingYears = years[]
-
-        // let nodes = []
-        // for (let id in this.nodesMap) nodes.push(this.nodesMap[id])
-
-        // let branches = this.root.children.map(() => [])
-        // const annotateBranchID = (id, branchID, subBranchID) => {
-        //     let node = this.nodesMap[id]
-        //     node.branchID = branchID
-        //     node.subBranchID = subBranchID
-        //     branches[branchID].push(node)
-        //     node.children.forEach((child, idx) => annotateBranchID(child, branchID, subBranchID + idx))
-        // }
-        // this.root.branchID = -1
-        // this.root.subBranchID = 0
-        // this.root.children.forEach((child, idx) => annotateBranchID(child, idx, 0))
-
-        // const annotateX = (node) => { if (node.branchID >= 0) node.x = (node.branchID + (node.subBranchID > 0) * 0.5) * this.branchWidth + this.radius * 2.5 }
-        // this.root.x = (this.root.children.length - 1) / 2 * this.branchWidth + this.radius * 2
-        // nodes.forEach(annotateX)
-        
-        
-        
-        // annotateTextPieces(this.root, Math.floor(this.textWidth * (this.root.children.length - 1) / 2))
-        // annotateHeight(this.root, 1.5)
-
-        // this.root.y = 2 * this.radius
-        // let yearY = this.root.y + this.root.height + this.yearMargin * 2
-        // for (let year = this.root.year; year > 1900; year--) {
-        //     let _branches = branches.map(branch => branch.filter(node => node.year == year))
-        //     let nextYearY = yearY
-        //     for (let i = 0; i < _branches.length; i++) {
-        //         let _y = yearY
-        //         let main = _branches[i].filter(node => node.subBranchID == 0)
-        //         let sub = _branches[i].filter(node => node.subBranchID > 0)
-        //         let factor = sub.length > 0 ? 0.4 : 1
-        //         for (let j = 0; j < main.length; j++) {
-        //             annotateTextPieces(main[j], Math.floor(this.textWidth * factor))
-        //             annotateHeight(main[j])
-        //             main[j].y = _y
-        //             _y += main[j].height
-        //         }
-        //         let __y = yearY
-        //         for (let j = 0; j < sub.length; j++) {
-        //             annotateTextPieces(sub[j], Math.floor(this.textWidth * factor))
-        //             annotateHeight(sub[j])
-        //             let _parent = this.nodesMap[sub[j].parent]
-        //             if (_parent.y + _parent.height > __y) __y = _parent.y + _parent.height
-        //             sub[j].y = __y
-        //             __y += sub[j].height
-        //         }
-        //         if (_y > nextYearY) nextYearY = _y
-        //         if (__y > nextYearY) nextYearY = __y
-        //     }
-        //     if (nextYearY > yearY) nextYearY += this.yearMargin
-        //     yearY = nextYearY
-        // }
-
-        // let baselineY = this.root.y + this.root.height
-        // let edges = [{x1: this.root.x, y1: baselineY, x2: this.root.x, y2: this.root.y, color: "black"}]
-        // let leftMostX = 0
-        // let rightMostX = 0
-        // for (let id in this.nodesMap) {
-        //     const node = this.nodesMap[id]
-        //     if (node.parent.length > 0) {
-        //         const parentNode = this.nodesMap[node.parent]
-        //         if (node.parent === this.root.id) {
-        //             edges.push({x1: node.x, y1: baselineY, x2: node.x, y2: node.y, color: node.color})
-        //             if (node.x < leftMostX || leftMostX == 0) leftMostX = node.x
-        //             if (node.x > rightMostX || rightMostX == 0) rightMostX = node.x
-        //         } else {
-        //             edges.push({x1: parentNode.x, y1: parentNode.y, x2: node.x, y2: node.y, color: node.color})
-        //         }
-        //     }
-        // }
-        // edges.push({x1: leftMostX, y1: baselineY, x2: rightMostX, y2: baselineY, color: "black"})
-
-        // console.log(nodes, edges)
-
-        const _width = this.branchWidth * this.data.branches.length
-        const _height = eraY
+        const _width = this.nodeWidth * dataView.branches.length
         return <svg className='mrt' width={`${_width}px`} height={`${_height}px`} /*width="100%"*/ viewBox={`0 0 ${_width} ${_height}`}>
-            {colorDefs}
-            {edgesView.map((edge, idx) =>
+            {views.colorDefs}
+            {views.background}
+            {views.edges.map((edge, idx) =>
                 <line key={idx} x1={edge.x1} y1={edge.y1} x2={edge.x2} y2={edge.y2} strokeWidth={this.strokeWidth - 1} stroke={edge.color}/>
             )}
-            {[nodesView.root, ...nodesView.branches.flat(Infinity)].map((nodeView, idx) => 
+            {[views.nodes.root, ...views.nodes.branches.flat(Infinity)].map((node, idx) => node.pins.length > 0 &&
                 <Node key={idx}
-                      pins={nodeView.pins} 
-                      x={nodeView.x} y={nodeView.y}
-                      radius={this.radius}
-                      lineHeight={this.lineHeight}
-                      color={nodeView.color}
+                      pins={node.pins} 
+                      x={node.x} y={node.y}
+                      radius={this.nodeRadius}
+                      lineHeight={this.nodeTextLineHeight}
+                      color={node.color}
                     //   citations={node.citations}
-                      fontSize={this.fontSize}
+                      fontSize={this.nodeTextFontSize}
                       strokeWidth={this.strokeWidth}/>)}
         </svg>
     }
