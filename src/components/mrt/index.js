@@ -11,11 +11,11 @@ export default class MRT extends React.Component {
         this.EraMinRatio = this.props.EraMinRatio || 0.05
         this.lastEraRatio = this.props.lastEraRatio || 0.2
 
-        this.branchWidth = 350
+        this.branchWidth = 400
         this.branchNodeXOffset = 50
-        this.eraMargin = 75
+        this.eraMargin = 60
 
-        this.strokeWidth = 3
+        this.strokeWidth = 4
         this.textWidth = 36
         this.radius = 18
 
@@ -58,6 +58,8 @@ export default class MRT extends React.Component {
     
     render() {
 
+        const rootColor = chroma.scale()(0.5)
+
         const colors = chroma.cubehelix().start(200).rotations(3).gamma(0.7).lightness([0.2, 0.6]).scale().correctLightness().colors(this.data.branches.length)
 
         let years = []
@@ -99,7 +101,7 @@ export default class MRT extends React.Component {
             root: {
                 x: this.branchWidth * (this.data.branches.length - 1) / 2 + this.branchNodeXOffset,
                 y: this.eraMargin,
-                color: "black",
+                color: rootColor,
                 pins: [{
                     citations: this.data.root.citations,
                     textPieces: matchTextPieces(this.data.root.text, this.textWidth * Math.floor((this.data.branches.length - 1) / 2))
@@ -111,7 +113,7 @@ export default class MRT extends React.Component {
         let edgesView = [{
                 x1: nodesView.root.x, y1: nodesView.root.y,
                 x2: nodesView.root.x, y2: forkY,
-                color: "black"
+                color: rootColor
             }
         ]
         let eraY = forkY + this.eraMargin
@@ -147,15 +149,16 @@ export default class MRT extends React.Component {
         
         nodesView.branches.forEach((subBranches, idx) => {
             let node = subBranches[0][0]
-            edgesView.push({x1: node.x, y1: node.y, x2: node.x, y2: forkY, color: gradientColor(node.color, "black", node.x, node.y, node.x, forkY)})
+            edgesView.push({x1: node.x, y1: node.y, x2: node.x, y2: forkY, color: gradientColor(node.color, rootColor, node.x, node.y, node.x, forkY)})
             if (subBranches[1].length > 0) {
                 let _node = subBranches[1][0]
+                edgesView.push({x1: node.x, y1: subBranches[0][subBranches[0].length - 1].y, x2: node.x, y2: _node.y - this.eraMargin / 2, color: node.color})
                 edgesView.push({x1: _node.x, y1: _node.y, x2: _node.x, y2: _node.y - this.eraMargin / 2, color: _node.color})
                 edgesView.push({x1: node.x, y1: _node.y - this.eraMargin / 2, x2: _node.x, y2: _node.y - this.eraMargin / 2, color: gradientColor(node.color, _node.color, node.x, _node.y - this.eraMargin / 2, _node.x, _node.y - this.eraMargin / 2)})
             }
             if (idx > 0) {
                 let _node = nodesView.branches[idx - 1][0][0]
-                edgesView.push({x1: _node.x, y1: forkY, x2: node.x, y2: forkY, color: "black"})
+                edgesView.push({x1: _node.x, y1: forkY, x2: node.x, y2: forkY, color: rootColor})
             }
         })
 
@@ -250,7 +253,7 @@ export default class MRT extends React.Component {
 
         const _width = this.branchWidth * this.data.branches.length
         const _height = eraY
-        return <svg className='mrt' /*width={`${_width}px`} height={`${_height}px`}*/ width="100%" viewBox={`0 0 ${_width} ${_height}`}>
+        return <svg className='mrt' width={`${_width}px`} height={`${_height}px`} /*width="100%"*/ viewBox={`0 0 ${_width} ${_height}`}>
             {colorDefs}
             {edgesView.map((edge, idx) =>
                 <line key={idx} x1={edge.x1} y1={edge.y1} x2={edge.x2} y2={edge.y2} strokeWidth={this.strokeWidth - 1} stroke={edge.color}/>

@@ -1,11 +1,11 @@
 .cross-identifier {
     transform: rotate(45deg);
     transition: all .5s ease;
-    opacity: 0;
+    visibility: hidden;
 }
 
 .paper-text {
-    background: white;
+    font-weight: bold;
 }
 
 .paper-text:hover {
@@ -15,5 +15,5 @@
 
 .paper-text:hover + .cross-identifier {
     transform: rotate(0deg);
-    opacity: 1;
+    visibility: visible;
 }
