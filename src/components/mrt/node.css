@@ -12,17 +12,53 @@
 }
 
 .paper-edit-icon {
-    transition: opacity .5s;
+    transition: fill .5s;
 }
 
 .paper-edit-icon:hover {
     cursor: pointer;
 }
 
-.paper-view-group {
+.paper-view-group-inner {
+    transition: transform .5s;
+    opacity: 1;
+}
+
+
+
+
+.paper-view-group-inner .paper-edit-icon-group {
+    transform: scale(0);
     transition: transform .5s;
 }
 
+.paper-view-group-inner:hover .paper-edit-icon-group {
+    transform: scale(1);
+}
+
+.era-node-text-group:hover .paper-view-group-inner:hover {
+    transform: scale(2); 
+    cursor: pointer;
+}
+
+.era-node-text-group:hover .paper-view-group-inner:hover text {
+    opacity: 0.75;
+}
+
+.era-node-text-group:hover .paper-view-group-inner {
+    transform: scale(0.5);   
+}
+
+.era-node-text-group:hover .paper-view-group-inner text {
+    opacity: 0.25;
+}
+
+
 .era-node-circle {
-    transition: all .5s;
+    transition-property: d, fill;
+    transition-duration: .5s;
+}
+
+.era-node-circle:hover {
+    cursor: pointer;
 }
