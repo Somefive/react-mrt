@@ -26,10 +26,10 @@ export default class MRT extends React.Component {
         this.nodeRadius = 20
         this.nodeTextLeadingMargin = 20
         this.nodeTextWidth = 260
-        this.nodeTextFontSize = 16
-        this.nodeTextSecondaryFontSize = 14
-        this.nodeTextLineHeight = 18
-        this.nodeTextSecondaryLineHeight = 16
+        this.nodeTextFontSize = 18
+        this.nodeTextSecondaryFontSize = 16
+        this.nodeTextLineHeight = 20
+        this.nodeTextSecondaryLineHeight = 18
 
         this.nodeFullSpan = 2
 
@@ -268,11 +268,11 @@ export default class MRT extends React.Component {
             }
         }
 
-        _height = views.nodes.branches.map(branch => branch[branch.length-1]).reduce((prev, node) => {
-            let y = node.y - this.nodeTextLineHeight
+        const extendedBottomY = views.nodes.branches.map(branch => branch[branch.length-1]).reduce((prev, node) => {
+            let centerY = node.y
             node.pins.forEach(pin => {
-                y += pin.fullTextPieces.length * this.nodeTextLineHeight
-                prev = Math.max(prev, y + pin.abstractPieces.length * this.nodeTextSecondaryLineHeight + this.nodeTextLineHeight * 2)
+                prev = Math.max(prev, centerY + (pin.fullTextPieces.length - 1) * this.nodeTextLineHeight * 2 + pin.abstractPieces.length * this.nodeTextSecondaryLineHeight + this.nodeTextLineHeight * 2)
+                centerY += pin.textPieces.length * this.nodeTextLineHeight
             })
             return prev
         }, _height)
@@ -289,7 +289,22 @@ export default class MRT extends React.Component {
         )
         const clusterLabelsHeight = clusterLabelTextPieces.reduce((prev, pieces) => Math.max(prev, pieces.length), 0) * this.labelTextLineHeight
         _height += clusterLabelsHeight + this.labelTextLineHeight
-        return <svg className='mrt' /*width={`${_width}px`} height={`${_height}px`}*/ width="100%" viewBox={`0 0 ${_width} ${_height}`}>
+
+        const extendedHeight = Math.max(0, extendedBottomY - _height)
+        const backgroundSolidColors = clusterColors.map(color => chroma(color).luminance(0.9))
+        const backgroundTextSolidColors = clusterColors.map(color => chroma(color).luminance(0.7))
+        const backgroundGradientSolidColors = clusterColors.map((color, idx) => {
+            const x = views.nodes.branches[idx*2][eras.length-1].x
+            return generateGradientColor(chroma(color).luminance(0.9), "white", x, _height, x, _height+extendedHeight)
+        })
+        const backgroundSelectionColors = clusterColors.map(color => chroma(color).luminance(0.5))
+        const backgroundTextSelectionColors = clusterColors.map(color => chroma(color).luminance(0.2))
+        const backgroundGradientSelectionColors = clusterColors.map((color, idx) => {
+            const x = views.nodes.branches[idx*2][eras.length-1].x
+            return generateGradientColor(chroma(color).luminance(0.5), "white", x, _height, x, _height+extendedHeight)
+        })
+
+        return <svg className='mrt' /*width={`${_width}px`} height={`${_height}px`}*/ width="100%" viewBox={`0 0 ${_width} ${_height+extendedHeight}`}>
             {views.defs}
             <filter id="blur-filter">
                 <feGaussianBlur stdDeviation={this.nodeTextLineHeight} in="SourceGraphic"/>
@@ -302,8 +317,9 @@ export default class MRT extends React.Component {
             {
                 clusterLabelTexts.map((texts, idx) => {
                     return <g className="mrt-background" key={idx} opacity={this.state.toExchange === null ? 1 : 0}>
-                        <rect x={this.nodeWidth*idx*2} y={horizon} width={this.nodeWidth*2} height={_height-horizon} fill={chroma(clusterColors[idx]).luminance(0.9)}></rect>
-                        <g transform={`translate(${this.nodeWidth*idx*2+this.nodeOffsetX}, ${_height-this.labelTextLineHeight/2})`} fill={chroma(clusterColors[idx]).luminance(0.7)} fontSize={this.labelTextFontSize}>{texts}</g>
+                        <rect x={this.nodeWidth*idx*2} y={horizon} width={this.nodeWidth*2} height={_height-horizon} fill={backgroundSolidColors[idx]}/>
+                        <rect x={this.nodeWidth*idx*2} y={_height} width={this.nodeWidth*2} height={extendedHeight} fill={backgroundGradientSolidColors[idx]}/>
+                        <g transform={`translate(${this.nodeWidth*idx*2+this.nodeOffsetX}, ${_height-this.labelTextLineHeight/2})`} fill={backgroundTextSolidColors[idx]} fontSize={this.labelTextFontSize}>{texts}</g>
                     </g>
                 })
             }
@@ -357,8 +373,9 @@ export default class MRT extends React.Component {
                 clusterLabelTexts.map((texts, idx) => {
                     const isCurrent = this.state.toExchange !== null && idx === this.state.toExchange.clusterID
                     return <g className="mrt-background" key={idx} opacity={this.state.toExchange === null ? 0 : 1} visibility={this.state.toExchange === null ? "hidden" : "none"} onClick={() => onEdit("exchange", this.state.toExchange, idx)}>
-                        <rect className="mrt-background-card" x={this.nodeWidth*idx*2} y={horizon} width={this.nodeWidth*2} height={_height-horizon} fill={chroma(clusterColors[idx]).luminance(0.5)}></rect>
-                        <g className="mrt-background-text" transform={`translate(${this.nodeWidth*idx*2+this.nodeOffsetX}, ${_height-this.labelTextLineHeight/2})`} fill={chroma(clusterColors[idx]).luminance(0.2)} fontSize={this.labelTextFontSize}>{texts}</g>
+                        <rect className="mrt-background-card" x={this.nodeWidth*idx*2} y={horizon} width={this.nodeWidth*2} height={_height-horizon} fill={backgroundSelectionColors[idx]}/>
+                        <rect className="mrt-background-card" x={this.nodeWidth*idx*2} y={_height} width={this.nodeWidth*2} height={extendedHeight} fill={backgroundGradientSelectionColors[idx]}/>
+                        <g className="mrt-background-text" style={{textDecoration: isCurrent ? "underline" : ""}} transform={`translate(${this.nodeWidth*idx*2+this.nodeOffsetX}, ${_height-this.labelTextLineHeight/2})`} fill={backgroundTextSelectionColors[idx]} fontSize={this.labelTextFontSize}>{texts}</g>
                     </g>
                 })
             }
