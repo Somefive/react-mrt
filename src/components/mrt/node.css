@@ -24,7 +24,14 @@
     opacity: 1;
 }
 
+.paper-view-group-inner:hover .paper-text-background {
+    opacity: 1;
+}
 
+.paper-text-background {
+    opacity: 0;
+    transition: opacity .5s;
+}
 
 
 .paper-view-group-inner .paper-edit-icon-group {
@@ -42,7 +49,7 @@
 }
 
 .era-node-text-group:hover .paper-view-group-inner:hover text {
-    opacity: 0.75;
+    opacity: 1;
 }
 
 .era-node-text-group:hover .paper-view-group-inner {

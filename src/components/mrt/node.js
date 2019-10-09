@@ -6,10 +6,10 @@ import chroma from 'chroma-js'
 import randomstring from 'randomstring'
 import './node.css'
 
-const ThumbUpSolidColor = chroma("green").brighten(2)
-const ThumbUpColor = ThumbUpSolidColor.darken(4)
-const ThumbDownSolidColor = chroma("red").brighten(2)
-const ThumbDownColor = ThumbDownSolidColor.darken(4)
+const ThumbUpSolidColor = chroma("green").brighten(1)
+const ThumbUpColor = ThumbUpSolidColor.darken(2)
+const ThumbDownSolidColor = chroma("red").brighten(1)
+const ThumbDownColor = ThumbDownSolidColor.darken(2)
 const ExchangeColor = chroma("blue").brighten(0)
 
 export class NodeCircle extends React.Component {
@@ -51,9 +51,10 @@ export default class Node extends React.Component {
         const iconSize = this.props.lineHeight * 2
         const texts = this.props.pins.map((pin, _idx) => {
             baseY = textLines * this.props.lineHeight
-            const generateEditIcon = (T, x, y, fill, action) => <g>
-                <T className="paper-edit-icon" x={x} y={y} fill={fill} width={iconSize} height={iconSize}/>
-                <rect x={x} y={y} width={iconSize} height={iconSize} onClick={() => this.onEdit(action, pin)} fill="transparent" />
+            const iconY = (pin.textPieces.length - 1) * this.props.lineHeight + this.props.editButtonMarginTop
+            const generateEditIcon = (T, x, fill, action) => <g>
+                <T className="paper-edit-icon" x={x} y={iconY} fill={fill} width={iconSize} height={iconSize}/>
+                <rect x={x} y={iconY} width={iconSize} height={iconSize} onClick={() => this.onEdit(action, pin)} fill="transparent" />
             </g>
             const isUp = pin.edits && pin.edits.rate > 0
             const isDown = pin.edits && pin.edits.rate < 0
@@ -63,7 +64,10 @@ export default class Node extends React.Component {
                     onMouseOver={() => { if (this.props.onHover) this.props.onHover(true) }}
                     onMouseLeave={() => { if (this.props.onHover) this.props.onHover(false) }}
                     transform={`translate(${this.props.textLeadingMargin + this.props.radius}, ${baseY})`}>
-                    <g className="paper-view-group-inner">
+                    <g className="paper-view-group-inner" style={{transformOrigin: `0px ${-this.props.lineHeight}px`}}>
+                        <rect className="paper-text-background" x="0" y={-this.props.lineHeight * 1.5}
+                            width={this.props.textWidth} height={this.props.lineHeight * 2 + iconY + iconSize}
+                            fill="white" filter="url(#blur-filter)"/>
                         <text className="paper-text" fontSize={this.props.fontSize} fill={textColor}>
                             {pin.textPieces.map((_text, idx) => {
                                 textLines++
@@ -72,10 +76,10 @@ export default class Node extends React.Component {
                         </text>
                         {this.props.editable &&
                         <g className="paper-edit-icon-group">
-                            <rect x="0" y={-this.props.lineHeight-iconSize} width={iconSize * 5.5} height={iconSize} opacity="0"/>
-                            {generateEditIcon(IconThumbsUpSolid, iconSize * 0.5, -this.props.lineHeight-iconSize, isUp ? ThumbUpSolidColor : ThumbUpColor, isUp ? "thumb-delete" : "thumb-up")}
-                            {generateEditIcon(IconThumbsDownSolid, iconSize * 2, -this.props.lineHeight-iconSize, isDown ? ThumbDownSolidColor : ThumbDownColor, isDown ? "thumb-delete" : "thumb-down")}
-                            {generateEditIcon(IconExchange, iconSize * 3.5, -this.props.lineHeight-iconSize, ExchangeColor, "to-exchange")}
+                            <rect x="0" y={iconY - this.props.editButtonMarginTop} width={iconSize * 5.5} height={iconSize + this.props.editButtonMarginTop} opacity="0"/>
+                            {generateEditIcon(IconThumbsUpSolid, iconSize * 0.5, isUp ? ThumbUpSolidColor : ThumbUpColor, isUp ? "thumb-delete" : "thumb-up")}
+                            {generateEditIcon(IconThumbsDownSolid, iconSize * 2, isDown ? ThumbDownSolidColor : ThumbDownColor, isDown ? "thumb-delete" : "thumb-down")}
+                            {generateEditIcon(IconExchange, iconSize * 3.5, ExchangeColor, "to-exchange")}
                         </g>
                         }
                     </g>

@@ -28,7 +28,7 @@ export default class MRT extends React.Component {
         this.nodeTextLineHeight = 18
 
         this.horizonMarginTop = 32
-        this.horizonMarginBottom = 32
+        this.horizonMarginBottom = 48
 
         this.averageFontWidthRatio = 0.6
         
@@ -36,6 +36,8 @@ export default class MRT extends React.Component {
         this.nodePaddingRight = 20
         this.nodePaddingTop = 32
         this.nodePaddingBottom = 12
+
+        this.nodeEditButtonMarginTop = 10
 
         this.nodeOffsetX = this.nodePaddingLeft + this.nodeRadius
         this.nodeOffsetY = this.nodePaddingTop + this.nodeRadius
@@ -125,13 +127,13 @@ export default class MRT extends React.Component {
         const rootColor = chroma.scale()(0.5)
         const clusterColors = chroma.cubehelix().start(200).rotations(3).gamma(0.7).lightness([0.2, 0.6]).scale().correctLightness().colors(numClusters)
         const branchColors = dataView.branches.map((_, branchID) => chroma(clusterColors[Math.floor(branchID / 2)]).luminance(branchID % 2 === 0 ? 0.25 : 0.5))
-        let views = {colorDefs: [], nodes: {}, edges: []}
+        let views = {defs: [], nodes: {}, edges: []}
         const addEdge = (x1, y1, x2, y2, color) => views.edges.push(<line key={views.edges.length} x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth={this.strokeWidth - 1} stroke={color}/>)
         const addVerticalEdge = (x, y1, y2, color) => addEdge(x, y1, x, y2, color)
         const addHorizontalEdge = (x1, x2, y, color) => addEdge(x1, y, x2, y, color)
         const generateGradientColor = (from, to, x1, y1, x2, y2) => {
             const colorID = randomstring.generate(8)
-            views.colorDefs.push(
+            views.defs.push(
                 <defs key={colorID}>
                     <linearGradient id={colorID} x1={x1} y1={y1} x2={x2} y2={y2} gradientUnits="userSpaceOnUse">
                     <stop offset="20%"  stopColor={from} />
@@ -247,9 +249,15 @@ export default class MRT extends React.Component {
             }
         }
 
+        const renderNodes = views.nodes.branches.flat(Infinity).sort((a, b) => (a.eraID === b.eraID) ? (b.branchID - a.branchID) : (b.eraID - a.eraID))
+        renderNodes.push(views.nodes.root)
+
         const _width = this.nodeWidth * dataView.branches.length
         return <svg className='mrt' /*width={`${_width}px`} height={`${_height}px`}*/ width="100%" viewBox={`0 0 ${_width} ${_height}`}>
-            {views.colorDefs}
+            {views.defs}
+            <filter id="blur-filter">
+                <feGaussianBlur stdDeviation={this.nodeTextLineHeight} in="SourceGraphic"/>
+            </filter>
             {
                 <g className="mrt-background">
                     <rect x="0" y="0" width={_width} height={horizon} fill={chroma(rootColor).luminance(0.9)}></rect>
@@ -265,7 +273,7 @@ export default class MRT extends React.Component {
                 })
             }
             {views.edges}
-            {[views.nodes.root, ...views.nodes.branches.flat(Infinity)].map((node, idx) => node.pins.length > 0 &&
+            {renderNodes.map((node, idx) => node.pins.length > 0 &&
                 <NodeCircle key={idx} node={node}
                             radius={this.nodeRadius}
                             lineHeight={this.nodeTextLineHeight}
@@ -274,19 +282,36 @@ export default class MRT extends React.Component {
                             onHover={(hover) => this.setFocusNodeIndex(hover ? idx : -1)}
                             expand={idx === this.state.focusNodeIndex}/>
             )}
-            {[views.nodes.root, ...views.nodes.branches.flat(Infinity)].map((node, idx) => node.pins.length > 0 &&
+            {renderNodes.map((node, idx) => node.pins.length > 0 &&
                 <Node key={idx}
                       pins={node.pins} 
                       x={node.x} y={node.y}
                       radius={this.nodeRadius}
                       lineHeight={this.nodeTextLineHeight}
+                      textWidth={(node.span - 1) * this.nodeWidth + this.nodeTextWidth}
                       color={node.color}
                       fontSize={this.nodeTextFontSize}
                       strokeWidth={this.strokeWidth}
                       onEdit={onEdit}
                       textLeadingMargin={this.nodeTextLeadingMargin}
                       onHover={(hover) => this.setFocusNodeIndex(hover ? idx : -1)}
-                      editable={typeof(node.clusterID) !== "undefined"}/>)}
+                      editable={typeof(node.clusterID) !== "undefined"}
+                      editButtonMarginTop={this.nodeEditButtonMarginTop}/>)}
+            {
+                views.nodes.branches.map((branch, idx) => {
+                    if (idx % 2 !== 0) return
+                    const _branch = branch.filter(node => node.pins.length > 0)
+                    const _sibBranch = views.nodes.branches[idx+1].filter(node => node.pins.length > 0)
+                    if (_branch.length === 0 && _sibBranch.length === 0) return
+                    const fontSize = this.nodeTextFontSize * 2
+                    const y = ((_branch.length === 0 || (_sibBranch.length > 0 && _sibBranch[0].eraID <= _branch[0].eraID)) ?
+                        (_sibBranch[0].y - this.nodeRadius - this.nodeTextLineHeight) :
+                        (_branch[0].y - this.nodeTextLineHeight)) - fontSize / 2
+                    const x = branch[0].x + this.nodeRadius + this.nodeTextLeadingMargin
+                    const color = chroma(branchColors[idx]).darken(2)
+                    return <text key={idx} x={x} y={y} fill={color} fontSize={fontSize}>{this.clusterNames[Math.floor(idx / 2)]}</text>
+                })
+            }
             {
                 views.nodes.branches.map((branch, idx) => {
                     if (idx % 2 !== 0) return
