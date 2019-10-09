@@ -105,7 +105,7 @@ export class NodeText extends React.Component {
         })
         return (
             <g className="era-node-text-group" transform={`translate(${this.props.x}, ${this.props.y})`}>
-                {texts}
+                {texts.reverse()}
             </g>
         )
     }
