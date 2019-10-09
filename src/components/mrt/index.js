@@ -1,7 +1,8 @@
 import React from 'react'
-import Node, { NodeCircle } from './node'
+import { NodeCircle, NodeText } from './node'
 import randomstring from 'randomstring'
 import chroma from 'chroma-js'
+import lodash from 'lodash'
 import './index.css'
 
 export default class MRT extends React.Component {
@@ -20,12 +21,17 @@ export default class MRT extends React.Component {
         this.strokeWidth = 4
 
         this.labelTextFontSize = 64
+        this.labelTextLineHeight = 72
 
         this.nodeRadius = 20
         this.nodeTextLeadingMargin = 20
         this.nodeTextWidth = 260
         this.nodeTextFontSize = 16
+        this.nodeTextSecondaryFontSize = 14
         this.nodeTextLineHeight = 18
+        this.nodeTextSecondaryLineHeight = 16
+
+        this.nodeFullSpan = 2
 
         this.horizonMarginTop = 32
         this.horizonMarginBottom = 48
@@ -47,7 +53,11 @@ export default class MRT extends React.Component {
         this.nodeHeight = (lines) => this.nodePaddingTop + this.nodeRadius + Math.max(this.nodeRadius, (lines-1) * this.nodeTextLineHeight) + this.nodePaddingBottom
         this.nodeTextFold = (text, span) => {
             const textLength = Math.floor(((span - 1) * this.nodeWidth + this.nodeTextWidth) / (this.nodeTextFontSize * this.averageFontWidthRatio))
-            return text.match(new RegExp(`([^\\n]{1,${textLength}})(\\s|$)`, 'g'))
+            return (text.match(new RegExp(`([^\\n]{1,${textLength}})(\\s|$)`, 'g')) || []).filter(line => line.length > 0)
+        }
+        this.nodeTextSecondaryFold = (text, span) => {
+            const textLength = Math.floor(((span - 1) * this.nodeWidth + this.nodeTextWidth) / (this.nodeTextSecondaryFontSize * this.averageFontWidthRatio))
+            return (text.match(new RegExp(`([^\\n]{1,${textLength}})(\\s|$)`, 'g')) || []).filter(line => line.length > 0)
         }
 
         this._data = props.data
@@ -66,7 +76,8 @@ export default class MRT extends React.Component {
                 prefix = `${venue}`
             }
             const text = `[${prefix}] ${title}`.replace('\t', ' ').replace('\n', ' ')
-            return {id, year, venue, title, citations, text}
+            const abstract = paper["paper_abstract"] ? paper["paper_abstract"].trim().replace('\t', ' ') : ""
+            return {id, year, venue, title, citations, text, abstract}
         }
         this.data = {
             root: extract(this._data.root),
@@ -79,7 +90,7 @@ export default class MRT extends React.Component {
         this.data.branches.forEach(branch => branch.sort((a, b) => {
             return a.year === b.year ? (b.citations - a.citations) : (b.year - a.year)
         }))
-        this.clusterNames = this._data.branches.map((_, idx) => `Cluster ${idx}`)
+        this.clusterNames = this.props.data.clusterNames.map(name => name.split(' ').map(lodash.capitalize).join(' '))
 
         this.state = {userEdits: {}, toExchange: null, focusNodeIndex: -1}
     }
@@ -149,8 +160,14 @@ export default class MRT extends React.Component {
             x: this.nodeWidth * (dataView.branches.length - 1) / 2 + this.nodeOffsetX,
             y: this.nodeOffsetY,
             color: rootColor,
-            pins: [{...dataView.root, textPieces: this.nodeTextFold(dataView.root.text, 2)}],
+            pins: [{...dataView.root, 
+                textPieces: this.nodeTextFold(dataView.root.text, 2), 
+                fullTextPieces: this.nodeTextFold(dataView.root.text, this.nodeFullSpan),
+                abstractPieces: this.nodeTextSecondaryFold(dataView.root.abstract, this.nodeFullSpan),
+                edits: this.state.userEdits[dataView.root.id]
+            }],
             span: 2,
+            fullSpan: this.nodeFullSpan,
         }
         views.nodes.root.lines = this.nodeTextLines(views.nodes.root)
         views.nodes.root.height = this.nodeHeight(views.nodes.root.lines)
@@ -168,10 +185,14 @@ export default class MRT extends React.Component {
         
         views.nodes.branches.forEach((branch, branchID) => branch.forEach((node, eraID) => {
             if (node.pins.length === 0) return
-            const span = (branchID < numBranches - 1 && views.nodes.branches[branchID+1][eraID].pins.length === 0
+            node.span = (branchID < numBranches - 1 && views.nodes.branches[branchID+1][eraID].pins.length === 0
                 && !this.disableTextBranchSpan && (!this.disableTextClusterSpan || branchID % 2 === 0)) ? 2 : 1
-            node.pins.forEach(pin => pin.textPieces = this.nodeTextFold(pin.text, span))
-            node.span = span
+            node.fullSpan = (branchID < numBranches - 1) ? this.nodeFullSpan : 1
+            node.pins.forEach(pin => {
+                pin.textPieces = this.nodeTextFold(pin.text, node.span)
+                pin.fullTextPieces = this.nodeTextFold(pin.text, node.fullSpan)
+                pin.abstractPieces = this.nodeTextSecondaryFold(pin.abstract, node.fullSpan)
+            })
             node.lines = this.nodeTextLines(node)
             node.height = this.nodeHeight(node.lines)
         }))
@@ -222,8 +243,6 @@ export default class MRT extends React.Component {
                 }
             })
         }
-
-        _height += this.labelTextFontSize * 3
         
         const onEdit = (action, source, param) => {
             const _state = {...this.state}
@@ -249,10 +268,27 @@ export default class MRT extends React.Component {
             }
         }
 
+        _height = views.nodes.branches.map(branch => branch[branch.length-1]).reduce((prev, node) => {
+            let y = node.y - this.nodeTextLineHeight
+            node.pins.forEach(pin => {
+                y += pin.fullTextPieces.length * this.nodeTextLineHeight
+                prev = Math.max(prev, y + pin.abstractPieces.length * this.nodeTextSecondaryLineHeight + this.nodeTextLineHeight * 2)
+            })
+            return prev
+        }, _height)
+
         const renderNodes = views.nodes.branches.flat(Infinity).sort((a, b) => (a.eraID === b.eraID) ? (b.branchID - a.branchID) : (b.eraID - a.eraID))
         renderNodes.push(views.nodes.root)
 
         const _width = this.nodeWidth * dataView.branches.length
+        const clusterLabelTextPieces = this.clusterNames.map(name => name.split(' '))
+        const clusterLabelTexts = clusterLabelTextPieces.map((pieces, _idx) => 
+            <text key={_idx}>
+                {pieces.reverse().map((_text, idx) => <tspan key={idx} x="0" y={-idx * this.labelTextLineHeight}>{_text}</tspan>)}
+            </text>
+        )
+        const clusterLabelsHeight = clusterLabelTextPieces.reduce((prev, pieces) => Math.max(prev, pieces.length), 0) * this.labelTextLineHeight
+        _height += clusterLabelsHeight + this.labelTextLineHeight
         return <svg className='mrt' /*width={`${_width}px`} height={`${_height}px`}*/ width="100%" viewBox={`0 0 ${_width} ${_height}`}>
             {views.defs}
             <filter id="blur-filter">
@@ -264,39 +300,13 @@ export default class MRT extends React.Component {
                 </g>
             }
             {
-                views.nodes.branches.map((branch, idx) => {
-                    if (idx % 2 !== 0) return
+                clusterLabelTexts.map((texts, idx) => {
                     return <g className="mrt-background" key={idx} opacity={this.state.toExchange === null ? 1 : 0}>
-                        <rect x={this.nodeWidth*idx} y={horizon} width={this.nodeWidth*2} height={_height-horizon} fill={chroma(branch[0].color).luminance(0.9)}></rect>
-                        <text x={this.nodeWidth*idx+this.nodeOffsetX} y={_height - this.labelTextFontSize} fill={chroma(branch[0].color).luminance(0.7)} fontSize={this.labelTextFontSize}>{this.clusterNames[Math.floor(idx / 2)]}</text>
+                        <rect x={this.nodeWidth*idx*2} y={horizon} width={this.nodeWidth*2} height={_height-horizon} fill={chroma(clusterColors[idx]).luminance(0.9)}></rect>
+                        <g transform={`translate(${this.nodeWidth*idx*2+this.nodeOffsetX}, ${_height-this.labelTextLineHeight/2})`} fill={chroma(clusterColors[idx]).luminance(0.7)} fontSize={this.labelTextFontSize}>{texts}</g>
                     </g>
                 })
             }
-            {views.edges}
-            {renderNodes.map((node, idx) => node.pins.length > 0 &&
-                <NodeCircle key={idx} node={node}
-                            radius={this.nodeRadius}
-                            lineHeight={this.nodeTextLineHeight}
-                            color={node.color}
-                            strokeWidth={this.strokeWidth}
-                            onHover={(hover) => this.setFocusNodeIndex(hover ? idx : -1)}
-                            expand={idx === this.state.focusNodeIndex}/>
-            )}
-            {renderNodes.map((node, idx) => node.pins.length > 0 &&
-                <Node key={idx}
-                      pins={node.pins} 
-                      x={node.x} y={node.y}
-                      radius={this.nodeRadius}
-                      lineHeight={this.nodeTextLineHeight}
-                      textWidth={(node.span - 1) * this.nodeWidth + this.nodeTextWidth}
-                      color={node.color}
-                      fontSize={this.nodeTextFontSize}
-                      strokeWidth={this.strokeWidth}
-                      onEdit={onEdit}
-                      textLeadingMargin={this.nodeTextLeadingMargin}
-                      onHover={(hover) => this.setFocusNodeIndex(hover ? idx : -1)}
-                      editable={typeof(node.clusterID) !== "undefined"}
-                      editButtonMarginTop={this.nodeEditButtonMarginTop}/>)}
             {
                 views.nodes.branches.map((branch, idx) => {
                     if (idx % 2 !== 0) return
@@ -312,13 +322,43 @@ export default class MRT extends React.Component {
                     return <text key={idx} x={x} y={y} fill={color} fontSize={fontSize}>{this.clusterNames[Math.floor(idx / 2)]}</text>
                 })
             }
+            {views.edges}
+            {renderNodes.map((node, idx) => node.pins.length > 0 &&
+                <NodeCircle key={idx} node={node}
+                            radius={this.nodeRadius}
+                            lineHeight={this.nodeTextLineHeight}
+                            color={node.color}
+                            strokeWidth={this.strokeWidth}
+                            onHover={(hover) => this.setFocusNodeIndex(hover ? idx : -1)}
+                            expand={idx === this.state.focusNodeIndex}/>
+            )}
+            <g className="mrt-node-text-container">
+            {renderNodes.map((node, idx) => node.pins.length > 0 &&
+                <NodeText key={idx}
+                      pins={node.pins} 
+                      x={node.x} y={node.y}
+                      radius={this.nodeRadius}
+                      lineHeight={this.nodeTextLineHeight}
+                      secondaryLineHeight={this.nodeTextSecondaryLineHeight}
+                      textWidth={(node.span - 1) * this.nodeWidth + this.nodeTextWidth}
+                      fullTextWidth={(node.fullSpan - 1) * this.nodeWidth + this.nodeTextWidth}
+                      color={node.color}
+                      fontSize={this.nodeTextFontSize}
+                      secondaryFontSize={this.nodeTextSecondaryFontSize}
+                      strokeWidth={this.strokeWidth}
+                      onEdit={onEdit}
+                      textLeadingMargin={this.nodeTextLeadingMargin}
+                      onHover={(hover) => this.setFocusNodeIndex(hover ? idx : -1)}
+                      editable={typeof(node.clusterID) !== "undefined"}
+                      editButtonMarginTop={this.nodeEditButtonMarginTop}
+                      scaleOrigin={(node.clusterID === numClusters - 1) ? "right" : ((node.branchID === numBranches - 3) ? "middle" : "left")}/>)}
+            </g>
             {
-                views.nodes.branches.map((branch, idx) => {
-                    if (idx % 2 !== 0) return
-                    const isCurrent = this.state.toExchange !== null && Math.floor(idx / 2) === this.state.toExchange.clusterID
-                    return <g className="mrt-background" key={idx} opacity={this.state.toExchange === null ? 0 : 1} visibility={this.state.toExchange === null ? "hidden" : "none"} onClick={() => onEdit("exchange", this.state.toExchange, Math.floor(idx / 2))}>
-                        <rect className="mrt-background-card" x={this.nodeWidth*idx} y={horizon} width={this.nodeWidth*2} height={_height-horizon} fill={chroma(branch[0].color).luminance(0.5)}></rect>
-                        <text className="mrt-background-text" x={this.nodeWidth*idx+this.nodeOffsetX} y={_height - this.labelTextFontSize} fill={chroma(branch[0].color).luminance(0.2)} fontSize={this.labelTextFontSize * (isCurrent ? 1 : 0.5)}>{this.clusterNames[Math.floor(idx / 2)]}</text>
+                clusterLabelTexts.map((texts, idx) => {
+                    const isCurrent = this.state.toExchange !== null && idx === this.state.toExchange.clusterID
+                    return <g className="mrt-background" key={idx} opacity={this.state.toExchange === null ? 0 : 1} visibility={this.state.toExchange === null ? "hidden" : "none"} onClick={() => onEdit("exchange", this.state.toExchange, idx)}>
+                        <rect className="mrt-background-card" x={this.nodeWidth*idx*2} y={horizon} width={this.nodeWidth*2} height={_height-horizon} fill={chroma(clusterColors[idx]).luminance(0.5)}></rect>
+                        <g className="mrt-background-text" transform={`translate(${this.nodeWidth*idx*2+this.nodeOffsetX}, ${_height-this.labelTextLineHeight/2})`} fill={chroma(clusterColors[idx]).luminance(0.2)} fontSize={this.labelTextFontSize}>{texts}</g>
                     </g>
                 })
             }

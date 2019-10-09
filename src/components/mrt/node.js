@@ -2,6 +2,8 @@ import React from 'react'
 import { ReactComponent as IconThumbsUpSolid } from '@fortawesome/fontawesome-free/svgs/solid/thumbs-up.svg'
 import { ReactComponent as IconThumbsDownSolid } from '@fortawesome/fontawesome-free/svgs/solid/thumbs-down.svg'
 import { ReactComponent as IconExchange } from '@fortawesome/fontawesome-free/svgs/solid/exchange-alt.svg'
+import { ReactComponent as IconCaretDown } from '@fortawesome/fontawesome-free/svgs/solid/caret-down.svg'
+import { ReactComponent as IconCaretUp } from '@fortawesome/fontawesome-free/svgs/solid/caret-up.svg'
 import chroma from 'chroma-js'
 import randomstring from 'randomstring'
 import './node.css'
@@ -11,6 +13,7 @@ const ThumbUpColor = ThumbUpSolidColor.darken(2)
 const ThumbDownSolidColor = chroma("red").brighten(1)
 const ThumbDownColor = ThumbDownSolidColor.darken(2)
 const ExchangeColor = chroma("blue").brighten(0)
+const CaretColor = chroma("grey").brighten(0)
 
 export class NodeCircle extends React.Component {
     
@@ -31,17 +34,22 @@ export class NodeCircle extends React.Component {
 
 }
 
-export default class Node extends React.Component {
+export class NodeText extends React.Component {
 
     constructor(props) {
         super(props)
         this.state = {displayInteractionTool: false}
         this.id = randomstring.generate(8)
-        this.state = { focusIndex: -1 }
+        this.state = { expand: -1 }
     }
 
     onEdit(action, source) {
         if (this.props.onEdit) this.props.onEdit(action, source)
+    }
+
+    onHover(hover) {
+        if (!hover && this.state.expand !== -1) this.setState({expand: -1})
+        if (this.props.onHover) this.props.onHover(hover)
     }
 
     render() {
@@ -51,37 +59,46 @@ export default class Node extends React.Component {
         const iconSize = this.props.lineHeight * 2
         const texts = this.props.pins.map((pin, _idx) => {
             baseY = textLines * this.props.lineHeight
-            const iconY = (pin.textPieces.length - 1) * this.props.lineHeight + this.props.editButtonMarginTop
-            const generateEditIcon = (T, x, fill, action) => <g>
-                <T className="paper-edit-icon" x={x} y={iconY} fill={fill} width={iconSize} height={iconSize}/>
-                <rect x={x} y={iconY} width={iconSize} height={iconSize} onClick={() => this.onEdit(action, pin)} fill="transparent" />
+            const isFocus = this.state.expand === _idx
+            const collapseHandler = () => this.setState({expand: isFocus ? -1 : _idx})
+            const textPieces = isFocus ? pin.fullTextPieces : pin.textPieces
+            const abstractHeight = pin.abstractPieces.length * this.props.secondaryLineHeight
+            const iconY = (textPieces.length - 1) * this.props.lineHeight + this.props.editButtonMarginTop + isFocus * abstractHeight
+            const textWidth = isFocus ? this.props.fullTextWidth : this.props.textWidth
+            const generateEditIcon = (T, dx, fill, action) => <g>
+                <T className="paper-edit-icon" x={textWidth-iconSize*dx} y={iconY} fill={fill} width={iconSize} height={iconSize}/>
+                <rect className="paper-edit-icon" x={textWidth-iconSize*dx} y={iconY} width={iconSize} height={iconSize} 
+                    onClick={action === "collapse" ? collapseHandler : (() => this.onEdit(action, pin))} fill="transparent" />
             </g>
             const isUp = pin.edits && pin.edits.rate > 0
             const isDown = pin.edits && pin.edits.rate < 0
+            const transformOriginX = (this.props.scaleOrigin === "left") ? 0 : (this.props.scaleOrigin === "middle" ? (textWidth / 2) : textWidth)
             return (
                 <g className="paper-view-group-outer"
                     key={_idx}
-                    onMouseOver={() => { if (this.props.onHover) this.props.onHover(true) }}
-                    onMouseLeave={() => { if (this.props.onHover) this.props.onHover(false) }}
+                    onMouseOver={() => this.onHover(true)}
+                    onMouseLeave={() => this.onHover(false)}
                     transform={`translate(${this.props.textLeadingMargin + this.props.radius}, ${baseY})`}>
-                    <g className="paper-view-group-inner" style={{transformOrigin: `0px ${-this.props.lineHeight}px`}}>
-                        <rect className="paper-text-background" x="0" y={-this.props.lineHeight * 1.5}
-                            width={this.props.textWidth} height={this.props.lineHeight * 2 + iconY + iconSize}
+                    <g className="paper-view-group-inner" style={{transformOrigin: `${transformOriginX}px ${-this.props.lineHeight}px`}}>
+                        <rect className="paper-text-background" x={-this.props.lineHeight} y={-this.props.lineHeight * 2.5}
+                            width={textWidth+2*this.props.lineHeight} height={this.props.lineHeight * 4 + iconY + iconSize}
                             fill="white" filter="url(#blur-filter)"/>
-                        <text className="paper-text" fontSize={this.props.fontSize} fill={textColor}>
-                            {pin.textPieces.map((_text, idx) => {
+                        <text className="paper-text" fontSize={this.props.fontSize} fill={textColor} onClick={collapseHandler}>
+                            {textPieces.map((_text, idx) => {
                                 textLines++
                                 return <tspan key={idx} x="0" y={idx * this.props.lineHeight}>{_text}</tspan>
                             })}
                         </text>
-                        {this.props.editable &&
+                        {isFocus && 
+                            <text className="paper-abstract-inner" fontSize={this.props.secondaryFontSize} fill={textColor}>
+                                {pin.abstractPieces.map((_text, idx) => <tspan key={idx} x="0" y={textPieces.length * this.props.lineHeight + idx * this.props.secondaryLineHeight}>{_text}</tspan>)}
+                            </text>}
                         <g className="paper-edit-icon-group">
-                            <rect x="0" y={iconY - this.props.editButtonMarginTop} width={iconSize * 5.5} height={iconSize + this.props.editButtonMarginTop} opacity="0"/>
-                            {generateEditIcon(IconThumbsUpSolid, iconSize * 0.5, isUp ? ThumbUpSolidColor : ThumbUpColor, isUp ? "thumb-delete" : "thumb-up")}
-                            {generateEditIcon(IconThumbsDownSolid, iconSize * 2, isDown ? ThumbDownSolidColor : ThumbDownColor, isDown ? "thumb-delete" : "thumb-down")}
-                            {generateEditIcon(IconExchange, iconSize * 3.5, ExchangeColor, "to-exchange")}
+                            {this.props.editable && generateEditIcon(IconExchange, 6, ExchangeColor, "to-exchange")}
+                            {generateEditIcon(IconThumbsUpSolid, 4.5, isUp ? ThumbUpSolidColor : ThumbUpColor, isUp ? "thumb-delete" : "thumb-up")}
+                            {generateEditIcon(IconThumbsDownSolid, 3, isDown ? ThumbDownSolidColor : ThumbDownColor, isDown ? "thumb-delete" : "thumb-down")}
+                            {pin.abstractPieces.length > 0 && generateEditIcon(isFocus ? IconCaretUp : IconCaretDown, 1.5, CaretColor, "collapse")}
                         </g>
-                        }
                     </g>
                 </g>
             )

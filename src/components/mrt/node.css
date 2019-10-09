@@ -5,6 +5,7 @@
 
 .paper-text:hover {
     text-decoration: underline;
+    cursor: pointer;
 }
 
 .paper-edit-icon-group {
@@ -25,12 +26,12 @@
 }
 
 .paper-view-group-inner:hover .paper-text-background {
-    opacity: 1;
+    transform: scale(1);
 }
 
 .paper-text-background {
-    opacity: 0;
-    transition: opacity .5s;
+    transform: scale(0);
+    transition: transform .5s;
 }
 
 
@@ -43,20 +44,19 @@
     transform: scale(1);
 }
 
-.era-node-text-group:hover .paper-view-group-inner:hover {
-    transform: scale(2); 
-    cursor: pointer;
+.paper-view-group-inner:hover {
+    transform: scale(2);
 }
 
-.era-node-text-group:hover .paper-view-group-inner:hover text {
+.mrt-node-text-container:hover .paper-view-group-inner:hover text {
     opacity: 1;
 }
 
-.era-node-text-group:hover .paper-view-group-inner {
+/* .era-node-text-group:hover .paper-view-group-inner {
     transform: scale(0.5);   
-}
+} */
 
-.era-node-text-group:hover .paper-view-group-inner text {
+.mrt-node-text-container:hover .paper-view-group-inner text {
     opacity: 0.25;
 }
 
