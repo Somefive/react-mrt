@@ -35,16 +35,16 @@
 }
 
 
-.paper-view-group-inner .paper-edit-icon-group {
+.paper-view-group-outer .paper-edit-icon-group {
     transform: scale(0);
     transition: transform .5s;
 }
 
-.paper-view-group-inner:hover .paper-edit-icon-group {
+.paper-view-group-outer:hover .paper-edit-icon-group {
     transform: scale(1);
 }
 
-.paper-view-group-inner:hover {
+.paper-view-group-outer:hover .paper-view-group-inner {
     transform: scale(2);
 }
 
