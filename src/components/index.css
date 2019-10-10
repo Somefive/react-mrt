@@ -1,0 +1,26 @@
+.mrt-toolbox {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 0.25rem;
+}
+
+.mrt-container {
+    position: relative;
+}
+
+.mrt-toolbox-tool-icon {
+    font-size: 1.5rem;
+    margin: 0rem 0.5rem;
+    float: right;
+    transition: transform .25s;
+}
+
+.mrt-toolbox-tool-icon:hover {
+    cursor: pointer;
+    transform: scale(1.25);
+}
+
+.mrt-toolbox-tool-icon:focus {
+    outline: 0;
+}

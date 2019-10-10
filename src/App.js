@@ -1,12 +1,14 @@
 import React from 'react';
 import './App.css';
-import MRT from './components/mrt';
 import sample_data from './sample.json';
+import MRT from './components';
 
 function App() {
   return (
     <div className="App">
-      <MRT data={sample_data}/>
+      <div>
+        <MRT data={sample_data}/>
+      </div>
     </div>
   );
 }

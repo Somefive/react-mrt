@@ -5,15 +5,10 @@ import chroma from 'chroma-js'
 import lodash from 'lodash'
 import './index.css'
 
-export default class MRT extends React.Component {
+export default class MRTViewer extends React.Component {
 
     constructor(props) {
         super(props)
-
-        this.disableTextBranchSpan = this.props.disableTextBranchSpan
-        this.disableTextClusterSpan = this.props.disableTextClusterSpan
-
-        this.hideSubBranch = this.props.hideSubBranch
 
         this.EraMinRatio = this.props.EraMinRatio || 0.05
         this.lastEraRatio = this.props.lastEraRatio || 0.2
@@ -92,10 +87,14 @@ export default class MRT extends React.Component {
         }))
         this.clusterNames = this.props.data.clusterNames.map(name => name.split(' ').map(lodash.capitalize).join(' '))
 
-        this.state = {userEdits: {}, toExchange: null, focusNodeIndex: -1, focusEraIndex: -1}
+        this.state = {userEdits: this.props.userEdits || {}, toExchange: null, focusNodeIndex: -1, focusEraIndex: -1}
     }
 
     render() {
+
+        this.hideSubBranch = this.props.hideSubBranch
+        this.disableTextBranchSpan = this.props.disableTextBranchSpan
+        this.disableTextClusterSpan = this.props.disableTextClusterSpan
 
         // initialize dataView (filter subBranch is hideSubBranch is enabled)
         let dataView = {root: {...this.data.root}, branches: this.data.branches.map(() => [])}
@@ -219,16 +218,16 @@ export default class MRT extends React.Component {
             for (let eraID = startEra + 1; eraID <= endEra; eraID++) {
                 let node = branch[eraID]
                 let sib = branchID > 0 ? views.nodes.branches[branchID-1][eraID] : null
-                const yStart = (node.pins.length === 0 && ((branchID > 0 && sib.pins.length > 0) || (eraID === endEra))) ? (node.y - this.nodeRadius - this.nodeTextLineHeight) : node.y
+                const yStart = (!this.disableTextClusterSpan && node.pins.length === 0 && ((branchID > 0 && sib.pins.length > 0) || (eraID === endEra))) ? (node.y - this.nodeRadius - this.nodeTextLineHeight) : node.y
                 node = branch[eraID-1]
                 sib = branchID > 0 ? views.nodes.branches[branchID-1][eraID-1] : null
-                const yEnd = (node.pins.length === 0 && branchID > 0 && sib.pins.length > 0) ? (node.y - this.nodeOffsetY + this.nodeHeight(this.nodeTextLines(sib)) - this.nodePaddingBottom + this.nodeTextLineHeight) : node.y
+                const yEnd = (!this.disableTextClusterSpan && node.pins.length === 0 && branchID > 0 && sib.pins.length > 0) ? (node.y - this.nodeOffsetY + this.nodeHeight(this.nodeTextLines(sib)) - this.nodePaddingBottom + this.nodeTextLineHeight) : node.y
                 addVerticalEdge(node.x, yStart, yEnd, node.color)
             }
             if (branchID % 2 === 0) {
                 const node = branch[0]
                 const sib = branchID > 0 ? views.nodes.branches[branchID-1][0] : null
-                const yEnd = (node.pins.length === 0 && branchID > 0 && sib.pins.length > 0) ? (node.y - this.nodeRadius - this.nodeTextLineHeight) : node.y
+                const yEnd = (!this.disableTextClusterSpan && node.pins.length === 0 && branchID > 0 && sib.pins.length > 0) ? (node.y - this.nodeRadius - this.nodeTextLineHeight) : node.y
                 addVerticalEdge(node.x, horizon, yEnd, generateGradientColor(rootColor, node.color, node.x, horizon, node.x, yEnd))
             } else {
                 const node = branch[startEra]
@@ -300,7 +299,7 @@ export default class MRT extends React.Component {
             return generateGradientColor(chroma(color).luminance(0.5), "white", x, _height, x, _height+extendedHeight)
         })
 
-        return <svg className='mrt' /*width={`${_width}px`} height={`${_height}px`}*/ width="100%" viewBox={`0 0 ${_width} ${_height+extendedHeight}`}>
+        return <svg className="mrt" id={this.props.id} /*width={`${_width}px`} height={`${_height}px`}*/ width="100%" viewBox={`0 0 ${_width} ${_height+extendedHeight}`}>
             {views.defs}
             <filter id="blur-filter">
                 <feGaussianBlur stdDeviation={this.nodeTextLineHeight} in="SourceGraphic"/>
