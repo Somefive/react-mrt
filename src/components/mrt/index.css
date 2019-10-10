@@ -23,3 +23,7 @@
 .mrt-background:hover .mrt-background-card:hover {
     cursor: pointer;
 }
+
+.mrt-era-background {
+    transition: opacity .5s;
+}

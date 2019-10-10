@@ -1,19 +1,19 @@
 import React from 'react'
-import { ReactComponent as IconThumbsUpSolid } from '@fortawesome/fontawesome-free/svgs/solid/thumbs-up.svg'
-import { ReactComponent as IconThumbsDownSolid } from '@fortawesome/fontawesome-free/svgs/solid/thumbs-down.svg'
-import { ReactComponent as IconExchange } from '@fortawesome/fontawesome-free/svgs/solid/exchange-alt.svg'
-import { ReactComponent as IconCaretDown } from '@fortawesome/fontawesome-free/svgs/solid/caret-down.svg'
-import { ReactComponent as IconCaretUp } from '@fortawesome/fontawesome-free/svgs/solid/caret-up.svg'
+import { ReactComponent as IconThumbsUp } from '@ant-design/icons-svg/inline-svg/outline/like.svg'
+import { ReactComponent as IconThumbsDown } from '@ant-design/icons-svg/inline-svg/outline/dislike.svg'
+import { ReactComponent as IconThumbsUpSolid } from '@ant-design/icons-svg/inline-svg/fill/like.svg'
+import { ReactComponent as IconThumbsDownSolid } from '@ant-design/icons-svg/inline-svg/fill/dislike.svg'
+import { ReactComponent as IconExchange } from '@ant-design/icons-svg/inline-svg/outline/pull-request.svg'
+import { ReactComponent as IconCaretDown } from '@ant-design/icons-svg/inline-svg/outline/arrows-alt.svg'
+import { ReactComponent as IconCaretUp } from '@ant-design/icons-svg/inline-svg/outline/shrink.svg'
 import chroma from 'chroma-js'
 import randomstring from 'randomstring'
 import './node.css'
 
-const ThumbUpSolidColor = chroma("green").brighten(1)
-const ThumbUpColor = ThumbUpSolidColor.darken(2)
-const ThumbDownSolidColor = chroma("red").brighten(1)
-const ThumbDownColor = ThumbDownSolidColor.darken(2)
-const ExchangeColor = chroma("blue").brighten(0)
-const CaretColor = chroma("grey").brighten(0)
+const ThumbUpColor = chroma("green").luminance(0.3).desaturate(1)
+const ThumbDownColor = chroma("red").luminance(0.3).desaturate(2)
+const ExchangeColor = chroma("blue").luminance(0.3).desaturate(1)
+const CaretColor = chroma("grey").luminance(0.3)
 
 export class NodeCircle extends React.Component {
     
@@ -56,7 +56,7 @@ export class NodeText extends React.Component {
         let textColor = chroma(this.props.color).darken()
         let baseY = 0
         let textLines = 0
-        const iconSize = this.props.lineHeight * 2
+        const iconSize = this.props.lineHeight * 1.25
         const texts = this.props.pins.map((pin, _idx) => {
             baseY = textLines * this.props.lineHeight
             const isFocus = this.state.expand === _idx
@@ -65,10 +65,12 @@ export class NodeText extends React.Component {
             const abstractHeight = pin.abstractPieces.length * this.props.secondaryLineHeight
             const iconY = (textPieces.length - 1) * this.props.lineHeight + this.props.editButtonMarginTop + isFocus * abstractHeight
             const textWidth = isFocus ? this.props.fullTextWidth : this.props.textWidth
-            const generateEditIcon = (T, dx, fill, action) => <g>
-                <T className="paper-edit-icon" x={textWidth-iconSize*dx} y={iconY} fill={fill} width={iconSize} height={iconSize}/>
-                <rect className="paper-edit-icon" x={textWidth-iconSize*dx} y={iconY} width={iconSize} height={iconSize} 
-                    onClick={action === "collapse" ? collapseHandler : (() => this.onEdit(action, pin))} fill="transparent" />
+            const generateEditIcon = (T, dx, fill, action) => <g transform={`translate(${textWidth-iconSize*dx}, ${iconY})`}>
+                <g className="paper-edit-icon" style={{transformOrigin: `${iconSize/2}px ${iconSize/2}px`}}
+                    onClick={action === "collapse" ? collapseHandler : (() => this.onEdit(action, pin))}>
+                    <T className="paper-edit-icon" fill={fill} width={iconSize} height={iconSize}/>
+                    <rect className="paper-edit-icon" width={iconSize} height={iconSize} fill="transparent"/>
+                </g>
             </g>
             const isUp = pin.edits && pin.edits.rate > 0
             const isDown = pin.edits && pin.edits.rate < 0
@@ -95,8 +97,8 @@ export class NodeText extends React.Component {
                             </text>}
                         <g className="paper-edit-icon-group">
                             {this.props.editable && generateEditIcon(IconExchange, 6, ExchangeColor, "to-exchange")}
-                            {generateEditIcon(IconThumbsUpSolid, 4.5, isUp ? ThumbUpSolidColor : ThumbUpColor, isUp ? "thumb-delete" : "thumb-up")}
-                            {generateEditIcon(IconThumbsDownSolid, 3, isDown ? ThumbDownSolidColor : ThumbDownColor, isDown ? "thumb-delete" : "thumb-down")}
+                            {generateEditIcon(isUp ? IconThumbsUpSolid : IconThumbsUp, 4.5, ThumbUpColor, isUp ? "thumb-delete" : "thumb-up")}
+                            {generateEditIcon(isDown ? IconThumbsDownSolid : IconThumbsDown, 3, ThumbDownColor, isDown ? "thumb-delete" : "thumb-down")}
                             {pin.abstractPieces.length > 0 && generateEditIcon(isFocus ? IconCaretUp : IconCaretDown, 1.5, CaretColor, "collapse")}
                         </g>
                     </g>

@@ -92,13 +92,9 @@ export default class MRT extends React.Component {
         }))
         this.clusterNames = this.props.data.clusterNames.map(name => name.split(' ').map(lodash.capitalize).join(' '))
 
-        this.state = {userEdits: {}, toExchange: null, focusNodeIndex: -1}
+        this.state = {userEdits: {}, toExchange: null, focusNodeIndex: -1, focusEraIndex: -1}
     }
 
-    setFocusNodeIndex(idx) {
-        this.setState({...this.state, focusNodeIndex: idx})
-    }
-    
     render() {
 
         // initialize dataView (filter subBranch is hideSubBranch is enabled)
@@ -199,9 +195,11 @@ export default class MRT extends React.Component {
 
         const horizon = views.nodes.root.height + this.horizonMarginTop
         let _height = horizon + this.horizonMarginBottom
-        eras.forEach((_, eraID) => {
+        const erasHeight = eras.map((_, eraID) => {
             views.nodes.branches.forEach(branch => branch[eraID].y = _height + this.nodeOffsetY)
-            _height += views.nodes.branches.reduce((prev, branch) => Math.max(prev, branch[eraID].height || 0), 0)
+            const eraHeight = views.nodes.branches.reduce((prev, branch) => Math.max(prev, branch[eraID].height || 0), 0)
+            _height += eraHeight
+            return eraHeight
         })
 
         {
@@ -324,6 +322,15 @@ export default class MRT extends React.Component {
                 })
             }
             {
+                eras.map((era, idx) => 
+                <g key={idx} className="mrt-era-background" transform={`translate(0, ${views.nodes.branches[0][idx].y - this.nodeRadius - this.nodePaddingTop + erasHeight[idx]})`}>
+                    <rect className="mrt-era-background" x="0" y={-erasHeight[idx]} width={_width} height={erasHeight[idx]} opacity={(idx === this.state.focusEraIndex) ? 0.1 : 0}/>
+                    <text className="mrt-era-background" fontSize={this.labelTextFontSize} x={this.nodePaddingLeft} y={-this.labelTextFontSize/2} opacity={(idx === this.state.focusEraIndex) ? 0.2 : 0}>
+                        {era.from === era.to ? era.from : `${era.from} - ${era.to}`}
+                    </text>
+                </g>)
+            }
+            {
                 views.nodes.branches.map((branch, idx) => {
                     if (idx % 2 !== 0) return
                     const _branch = branch.filter(node => node.pins.length > 0)
@@ -345,7 +352,12 @@ export default class MRT extends React.Component {
                             lineHeight={this.nodeTextLineHeight}
                             color={node.color}
                             strokeWidth={this.strokeWidth}
-                            onHover={(hover) => this.setFocusNodeIndex(hover ? idx : -1)}
+                            onHover={(hover) => 
+                                this.setState({...this.state,
+                                    focusNodeIndex: hover ? idx : -1,
+                                    focusEraIndex: hover ? node.eraID : -1
+                                })   
+                            }
                             expand={idx === this.state.focusNodeIndex}/>
             )}
             <g className="mrt-node-text-container">
@@ -364,7 +376,7 @@ export default class MRT extends React.Component {
                       strokeWidth={this.strokeWidth}
                       onEdit={onEdit}
                       textLeadingMargin={this.nodeTextLeadingMargin}
-                      onHover={(hover) => this.setFocusNodeIndex(hover ? idx : -1)}
+                      onHover={(hover) => this.setState({...this.state, focusNodeIndex: hover ? idx : -1})}
                       editable={typeof(node.clusterID) !== "undefined"}
                       editButtonMarginTop={this.nodeEditButtonMarginTop}
                       scaleOrigin={(node.clusterID === numClusters - 1) ? "right" : ((node.branchID === numBranches - 3) ? "middle" : "left")}/>)}
