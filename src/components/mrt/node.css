@@ -63,10 +63,5 @@
 
 
 .era-node-circle {
-    transition-property: d, fill;
-    transition-duration: .5s;
-}
-
-.era-node-circle:hover {
-    cursor: pointer;
+    transition: fill .5s;
 }

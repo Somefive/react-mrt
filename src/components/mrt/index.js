@@ -111,7 +111,7 @@ export default class MRT extends React.Component {
         // calculate eras according to density of paper
         let eras = []
         {
-            let years = dataView.branches.flat().map(paper => paper.year).sort().reverse()
+            let years = lodash.flatten(dataView.branches).map(paper => paper.year).sort().reverse()
             let _to = years[0]
             let _cnt = 1
             let eraMinSize = this.EraMinRatio * years.length
@@ -207,40 +207,38 @@ export default class MRT extends React.Component {
             addVerticalEdge(node.x, node.y, horizon, rootColor)
             addHorizontalEdge(nodeLeft.x, nodeRight.x, horizon, rootColor)
         }
-        {
-            views.nodes.branches.forEach((branch, branchID) => {
-                const _branch = branch.filter(node => node.pins.length > 0)
-                if (_branch.length === 0 && branchID % 2 === 1) return
-                const startEra = (branchID % 2 === 0) ? 0 : _branch[0].eraID
-                let endEra = (_branch.length > 0) ? _branch[_branch.length-1].eraID : 0
-                if (branchID % 2 === 0) {
-                    const _nextBranch = views.nodes.branches[branchID+1].filter(node => node.pins.length > 0)
-                    if (_nextBranch.length > 0) endEra = Math.max(endEra, _nextBranch[0].eraID)
-                }
-                for (let eraID = startEra + 1; eraID <= endEra; eraID++) {
-                    let node = branch[eraID]
-                    let sib = branchID > 0 ? views.nodes.branches[branchID-1][eraID] : null
-                    const yStart = (node.pins.length === 0 && ((branchID > 0 && sib.pins.length > 0) || (eraID === endEra))) ? (node.y - this.nodeRadius - this.nodeTextLineHeight) : node.y
-                    node = branch[eraID-1]
-                    sib = branchID > 0 ? views.nodes.branches[branchID-1][eraID-1] : null
-                    const yEnd = (node.pins.length === 0 && branchID > 0 && sib.pins.length > 0) ? (node.y - this.nodeOffsetY + this.nodeHeight(this.nodeTextLines(sib)) - this.nodePaddingBottom + this.nodeTextLineHeight) : node.y
-                    addVerticalEdge(node.x, yStart, yEnd, node.color)
-                }
-                if (branchID % 2 === 0) {
-                    const node = branch[0]
-                    const sib = branchID > 0 ? views.nodes.branches[branchID-1][0] : null
-                    const yEnd = (node.pins.length === 0 && branchID > 0 && sib.pins.length > 0) ? (node.y - this.nodeRadius - this.nodeTextLineHeight) : node.y
-                    addVerticalEdge(node.x, horizon, yEnd, generateGradientColor(rootColor, node.color, node.x, horizon, node.x, yEnd))
-                } else {
-                    const node = branch[startEra]
-                    const sib = views.nodes.branches[branchID-1][startEra]
-                    const yEnd = node.y - this.nodeRadius - this.nodeTextLineHeight
-                    const yStart = node.y
-                    addVerticalEdge(node.x, yStart, yEnd, node.color)
-                    addHorizontalEdge(node.x, sib.x, yEnd, generateGradientColor(node.color, sib.color, node.x, yEnd, sib.x, yEnd))
-                }
-            })
-        }
+        views.nodes.branches.forEach((branch, branchID) => {
+            const _branch = branch.filter(node => node.pins.length > 0)
+            if (_branch.length === 0 && branchID % 2 === 1) return
+            const startEra = (branchID % 2 === 0) ? 0 : _branch[0].eraID
+            let endEra = (_branch.length > 0) ? _branch[_branch.length-1].eraID : 0
+            if (branchID % 2 === 0) {
+                const _nextBranch = views.nodes.branches[branchID+1].filter(node => node.pins.length > 0)
+                if (_nextBranch.length > 0) endEra = Math.max(endEra, _nextBranch[0].eraID)
+            }
+            for (let eraID = startEra + 1; eraID <= endEra; eraID++) {
+                let node = branch[eraID]
+                let sib = branchID > 0 ? views.nodes.branches[branchID-1][eraID] : null
+                const yStart = (node.pins.length === 0 && ((branchID > 0 && sib.pins.length > 0) || (eraID === endEra))) ? (node.y - this.nodeRadius - this.nodeTextLineHeight) : node.y
+                node = branch[eraID-1]
+                sib = branchID > 0 ? views.nodes.branches[branchID-1][eraID-1] : null
+                const yEnd = (node.pins.length === 0 && branchID > 0 && sib.pins.length > 0) ? (node.y - this.nodeOffsetY + this.nodeHeight(this.nodeTextLines(sib)) - this.nodePaddingBottom + this.nodeTextLineHeight) : node.y
+                addVerticalEdge(node.x, yStart, yEnd, node.color)
+            }
+            if (branchID % 2 === 0) {
+                const node = branch[0]
+                const sib = branchID > 0 ? views.nodes.branches[branchID-1][0] : null
+                const yEnd = (node.pins.length === 0 && branchID > 0 && sib.pins.length > 0) ? (node.y - this.nodeRadius - this.nodeTextLineHeight) : node.y
+                addVerticalEdge(node.x, horizon, yEnd, generateGradientColor(rootColor, node.color, node.x, horizon, node.x, yEnd))
+            } else {
+                const node = branch[startEra]
+                const sib = views.nodes.branches[branchID-1][startEra]
+                const yEnd = node.y - this.nodeRadius - this.nodeTextLineHeight
+                const yStart = node.y
+                addVerticalEdge(node.x, yStart, yEnd, node.color)
+                addHorizontalEdge(node.x, sib.x, yEnd, generateGradientColor(node.color, sib.color, node.x, yEnd, sib.x, yEnd))
+            }
+        })
         
         const onEdit = (action, source, param) => {
             const _state = {...this.state}
@@ -275,7 +273,7 @@ export default class MRT extends React.Component {
             return prev
         }, _height)
 
-        const renderNodes = views.nodes.branches.flat(Infinity).sort((a, b) => (a.eraID === b.eraID) ? (b.branchID - a.branchID) : (b.eraID - a.eraID))
+        const renderNodes = lodash.flattenDeep(views.nodes.branches).sort((a, b) => (a.eraID === b.eraID) ? (b.branchID - a.branchID) : (b.eraID - a.eraID))
         renderNodes.push(views.nodes.root)
 
         const _width = this.nodeWidth * dataView.branches.length
@@ -332,10 +330,10 @@ export default class MRT extends React.Component {
             }
             {
                 views.nodes.branches.map((branch, idx) => {
-                    if (idx % 2 !== 0) return
+                    if (idx % 2 !== 0) return <text key={idx}/>
                     const _branch = branch.filter(node => node.pins.length > 0)
                     const _sibBranch = views.nodes.branches[idx+1].filter(node => node.pins.length > 0)
-                    if (_branch.length === 0 && _sibBranch.length === 0) return
+                    if (_branch.length === 0 && _sibBranch.length === 0) return <text key={idx}/>
                     const fontSize = this.nodeTextFontSize * 2
                     const y = ((_branch.length === 0 || (_sibBranch.length > 0 && _sibBranch[0].eraID <= _branch[0].eraID)) ?
                         (_sibBranch[0].y - this.nodeRadius - this.nodeTextLineHeight) :

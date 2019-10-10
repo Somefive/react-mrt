@@ -14,21 +14,17 @@ const ThumbUpColor = chroma("green").luminance(0.3).desaturate(1)
 const ThumbDownColor = chroma("red").luminance(0.3).desaturate(2)
 const ExchangeColor = chroma("blue").luminance(0.3).desaturate(1)
 const CaretColor = chroma("grey").luminance(0.3)
+const AbstractColor = chroma("grey").luminance(0.1)
 
 export class NodeCircle extends React.Component {
     
     render() {
-        const bottomY = Math.max((this.props.node.lines - 2) * this.props.lineHeight, this.props.radius)
-        const collapsed_path = `M ${-this.props.radius},0 A ${this.props.radius} ${this.props.radius} 0 0 1 ${this.props.radius},0 L ${this.props.radius},0 A ${this.props.radius} ${this.props.radius} 0 0 1 ${-this.props.radius},0 L ${-this.props.radius},0`
-        const expanded_path = `M ${-this.props.radius},0 A ${this.props.radius} ${this.props.radius} 0 0 1 ${this.props.radius},0 L ${this.props.radius},${bottomY} A ${this.props.radius} ${this.props.radius} 0 0 1 ${-this.props.radius},${bottomY} L ${-this.props.radius},0`
-        const path = this.props.expand ? expanded_path : collapsed_path
         return (
-            <path className="era-node-circle" d={path}
-                transform={`translate(${this.props.node.x}, ${this.props.node.y})`}
+            <circle className="era-node-circle" cx={this.props.node.x} cy={this.props.node.y} r={this.props.radius}
                 onMouseOver={() => { if (this.props.onHover) this.props.onHover(true) }}
                 onMouseLeave={() => { if (this.props.onHover) this.props.onHover(false) }}
                 stroke={this.props.color} strokeWidth={this.props.strokeWidth}
-                fill={this.props.expand ? this.props.color : "white"} />
+                fill={this.props.expand ? this.props.color : "white"}/>
         )
     }
 
@@ -92,7 +88,7 @@ export class NodeText extends React.Component {
                             })}
                         </text>
                         {isFocus && 
-                            <text className="paper-abstract-inner" fontSize={this.props.secondaryFontSize} fill={textColor}>
+                            <text className="paper-abstract-inner" fontSize={this.props.secondaryFontSize} fill={AbstractColor}>
                                 {pin.abstractPieces.map((_text, idx) => <tspan key={idx} x="0" y={textPieces.length * this.props.lineHeight + idx * this.props.secondaryLineHeight}>{_text}</tspan>)}
                             </text>}
                         <g className="paper-edit-icon-group">

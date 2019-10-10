@@ -1,5 +1,4 @@
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
 import MRT from './components/mrt';
 import sample_data from './sample.json';
