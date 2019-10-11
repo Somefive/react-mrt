@@ -6,9 +6,7 @@ import MRT from './components';
 function App() {
   return (
     <div className="App">
-      <div>
-        <MRT data={sample_data}/>
-      </div>
+      <MRT data={sample_data} authors={["Somefive", "Rainatum"]}/>
     </div>
   );
 }

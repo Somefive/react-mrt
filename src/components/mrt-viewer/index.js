@@ -4,6 +4,7 @@ import randomstring from 'randomstring'
 import chroma from 'chroma-js'
 import lodash from 'lodash'
 import './index.css'
+import { ReactComponent as Logo } from '../logo.svg'
 
 export default class MRTViewer extends React.Component {
 
@@ -21,10 +22,6 @@ export default class MRTViewer extends React.Component {
         this.nodeRadius = 20
         this.nodeTextLeadingMargin = 20
         this.nodeTextWidth = 260
-        this.nodeTextFontSize = 18
-        this.nodeTextSecondaryFontSize = 16
-        this.nodeTextLineHeight = 20
-        this.nodeTextSecondaryLineHeight = 18
 
         this.nodeFullSpan = 2
 
@@ -46,14 +43,6 @@ export default class MRTViewer extends React.Component {
         this.nodeWidth = this.nodePaddingLeft + 2 * this.nodeRadius + this.nodeTextLeadingMargin + this.nodeTextWidth + this.nodePaddingRight
         this.nodeTextLines = (node) => node.pins.reduce((prev, pin) => prev + pin.textPieces.length, 0)
         this.nodeHeight = (lines) => this.nodePaddingTop + this.nodeRadius + Math.max(this.nodeRadius, (lines-1) * this.nodeTextLineHeight) + this.nodePaddingBottom
-        this.nodeTextFold = (text, span) => {
-            const textLength = Math.floor(((span - 1) * this.nodeWidth + this.nodeTextWidth) / (this.nodeTextFontSize * this.averageFontWidthRatio))
-            return (text.match(new RegExp(`([^\\n]{1,${textLength}})(\\s|$)`, 'g')) || []).filter(line => line.length > 0)
-        }
-        this.nodeTextSecondaryFold = (text, span) => {
-            const textLength = Math.floor(((span - 1) * this.nodeWidth + this.nodeTextWidth) / (this.nodeTextSecondaryFontSize * this.averageFontWidthRatio))
-            return (text.match(new RegExp(`([^\\n]{1,${textLength}})(\\s|$)`, 'g')) || []).filter(line => line.length > 0)
-        }
 
         this._data = props.data
 
@@ -95,6 +84,20 @@ export default class MRTViewer extends React.Component {
         this.hideSubBranch = this.props.hideSubBranch
         this.disableTextBranchSpan = this.props.disableTextBranchSpan
         this.disableTextClusterSpan = this.props.disableTextClusterSpan
+
+        this.nodeFontExtraSize = this.props.fontExtraSize || 0
+        this.nodeTextFontSize = 20 + this.nodeFontExtraSize
+        this.nodeTextSecondaryFontSize = 16 + this.nodeFontExtraSize
+        this.nodeTextLineHeight = 20 + this.nodeFontExtraSize
+        this.nodeTextSecondaryLineHeight = 18 + this.nodeFontExtraSize
+        this.nodeTextFold = (text, span) => {
+            const textLength = Math.floor(((span - 1) * this.nodeWidth + this.nodeTextWidth) / (this.nodeTextFontSize * this.averageFontWidthRatio))
+            return (text.match(new RegExp(`([^\\n]{1,${textLength}})(\\s|$)`, 'g')) || []).filter(line => line.length > 0)
+        }
+        this.nodeTextSecondaryFold = (text, span) => {
+            const textLength = Math.floor(((span - 1) * this.nodeWidth + this.nodeTextWidth) / (this.nodeTextSecondaryFontSize * this.averageFontWidthRatio))
+            return (text.match(new RegExp(`([^\\n]{1,${textLength}})(\\s|$)`, 'g')) || []).filter(line => line.length > 0)
+        }
 
         // initialize dataView (filter subBranch is hideSubBranch is enabled)
         let dataView = {root: {...this.data.root}, branches: this.data.branches.map(() => [])}
@@ -215,19 +218,20 @@ export default class MRTViewer extends React.Component {
                 const _nextBranch = views.nodes.branches[branchID+1].filter(node => node.pins.length > 0)
                 if (_nextBranch.length > 0) endEra = Math.max(endEra, _nextBranch[0].eraID)
             }
+            const shrinkFlag = !this.disableTextBranchSpan && (!(this.disableTextClusterSpan && branchID % 2 === 0))
             for (let eraID = startEra + 1; eraID <= endEra; eraID++) {
                 let node = branch[eraID]
                 let sib = branchID > 0 ? views.nodes.branches[branchID-1][eraID] : null
-                const yStart = (!this.disableTextClusterSpan && node.pins.length === 0 && ((branchID > 0 && sib.pins.length > 0) || (eraID === endEra))) ? (node.y - this.nodeRadius - this.nodeTextLineHeight) : node.y
+                const yStart = (shrinkFlag && node.pins.length === 0 && ((branchID > 0 && sib.pins.length > 0) || (eraID === endEra))) ? (node.y - this.nodeRadius - this.nodeTextLineHeight) : node.y
                 node = branch[eraID-1]
                 sib = branchID > 0 ? views.nodes.branches[branchID-1][eraID-1] : null
-                const yEnd = (!this.disableTextClusterSpan && node.pins.length === 0 && branchID > 0 && sib.pins.length > 0) ? (node.y - this.nodeOffsetY + this.nodeHeight(this.nodeTextLines(sib)) - this.nodePaddingBottom + this.nodeTextLineHeight) : node.y
+                const yEnd = (shrinkFlag && node.pins.length === 0 && branchID > 0 && sib.pins.length > 0) ? (node.y - this.nodeOffsetY + this.nodeHeight(this.nodeTextLines(sib)) - this.nodePaddingBottom + this.nodeTextLineHeight) : node.y
                 addVerticalEdge(node.x, yStart, yEnd, node.color)
             }
             if (branchID % 2 === 0) {
                 const node = branch[0]
                 const sib = branchID > 0 ? views.nodes.branches[branchID-1][0] : null
-                const yEnd = (!this.disableTextClusterSpan && node.pins.length === 0 && branchID > 0 && sib.pins.length > 0) ? (node.y - this.nodeRadius - this.nodeTextLineHeight) : node.y
+                const yEnd = (shrinkFlag && node.pins.length === 0 && branchID > 0 && sib.pins.length > 0) ? (node.y - this.nodeRadius - this.nodeTextLineHeight) : node.y
                 addVerticalEdge(node.x, horizon, yEnd, generateGradientColor(rootColor, node.color, node.x, horizon, node.x, yEnd))
             } else {
                 const node = branch[startEra]
@@ -285,7 +289,7 @@ export default class MRTViewer extends React.Component {
         const clusterLabelsHeight = clusterLabelTextPieces.reduce((prev, pieces) => Math.max(prev, pieces.length), 0) * this.labelTextLineHeight
         _height += clusterLabelsHeight + this.labelTextLineHeight
 
-        const extendedHeight = Math.max(0, extendedBottomY - _height)
+        const extendedHeight = Math.max(this.labelTextLineHeight * 1.5, extendedBottomY - _height)
         const backgroundSolidColors = clusterColors.map(color => chroma(color).luminance(0.9))
         const backgroundTextSolidColors = clusterColors.map(color => chroma(color).luminance(0.7))
         const backgroundGradientSolidColors = clusterColors.map((color, idx) => {
@@ -387,6 +391,17 @@ export default class MRTViewer extends React.Component {
                         <g className="mrt-background-text" style={{textDecoration: isCurrent ? "underline" : ""}} transform={`translate(${this.nodeWidth*idx*2+this.nodeOffsetX}, ${_height-this.labelTextLineHeight/2})`} fill={backgroundTextSelectionColors[idx]} fontSize={this.labelTextFontSize}>{texts}</g>
                     </g>
                 })
+            }
+            {
+                <g opacity="0.5" transform={`translate(${_width}, ${_height+extendedHeight-this.labelTextLineHeight * 0.5})`}>                    
+                    <Logo x={-this.labelTextFontSize * 3.35} y={-this.labelTextFontSize * 1.78} height={this.labelTextFontSize * 0.8} width={this.labelTextFontSize * 0.8}/>
+                    <text x={-this.labelTextFontSize * 0.1} y={-this.labelTextFontSize * 0.05} textAnchor="end"
+                        fontSize={this.labelTextFontSize * 0.75} fill={chroma("grey").luminance(0.3).hex()}>{(this.props.authors || []).join(', ')}
+                    </text>
+                    <text x={-this.labelTextFontSize * 0.1} y={-this.labelTextFontSize * 1} textAnchor="end"
+                        fontSize={this.labelTextFontSize * 0.7} fill={chroma("grey").luminance(0.3).hex()}>AMiner
+                    </text>
+                </g>
             }
         </svg>
     }
