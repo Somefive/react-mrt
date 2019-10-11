@@ -1,19 +1,19 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "80233d90bacbb6d25ce56b198b921166",
+    "revision": "51bbfaa5287981d56ee97f9fbdae5e5c",
     "url": "/react-mrt/index.html"
   },
   {
-    "revision": "465a6be6c7829444fd66",
-    "url": "/react-mrt/static/css/main.b70d1c37.chunk.css"
+    "revision": "0a54c76b48ff56d55bdf",
+    "url": "/react-mrt/static/css/main.ccc536ab.chunk.css"
   },
   {
-    "revision": "d1b29960614c6ce505b6",
-    "url": "/react-mrt/static/js/2.5fffbc1c.chunk.js"
+    "revision": "f2b0b21eaac5434ab04f",
+    "url": "/react-mrt/static/js/2.70aba754.chunk.js"
   },
   {
-    "revision": "465a6be6c7829444fd66",
-    "url": "/react-mrt/static/js/main.0c2df9f2.chunk.js"
+    "revision": "0a54c76b48ff56d55bdf",
+    "url": "/react-mrt/static/js/main.7f4b568f.chunk.js"
   },
   {
     "revision": "618c6031612da7f6f6c2",
@@ -38,6 +38,10 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
     "revision": "eb23c40d962f73107dff66afb19d6411",
     "url": "/react-mrt/static/media/like.eb23c40d.svg"
+  },
+  {
+    "revision": "7ecb0366caa1940795dd25aa6d9958f4",
+    "url": "/react-mrt/static/media/logo.7ecb0366.svg"
   },
   {
     "revision": "f02c941741866b409459dbb06a315c27",
