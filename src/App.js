@@ -3,12 +3,20 @@ import './App.css';
 import sample_data from './sample.json';
 import MRT from './components';
 
-function App() {
-  return (
-    <div className="App">
-      <MRT data={sample_data} authors={["Somefive", "Rainatum"]}/>
-    </div>
-  );
+class App extends React.Component {
+  
+  constructor(props) {
+    super(props)
+    this.state = {data: sample_data}
+  }
+
+  render() {
+    return (
+      <div className="App">
+        <MRT data={this.state.data} authors={["Somefive", "Rainatum"]} onLoadJson={(data) => this.setState({data})}/>
+      </div>
+    );
+  }
 }
 
 export default App;

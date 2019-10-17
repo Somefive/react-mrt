@@ -44,7 +44,12 @@ export default class MRTViewer extends React.Component {
         this.nodeTextLines = (node) => node.pins.reduce((prev, pin) => prev + pin.textPieces.length, 0)
         this.nodeHeight = (lines) => this.nodePaddingTop + this.nodeRadius + Math.max(this.nodeRadius, (lines-1) * this.nodeTextLineHeight) + this.nodePaddingBottom
 
-        this._data = props.data
+        this.state = {userEdits: this.props.userEdits || {}, toExchange: null, focusEraIndex: -1}
+    }
+
+    render() {
+
+        this._data = this.props.data
 
         const extract = (paper) => {
             const id = paper["paper_id"]
@@ -75,11 +80,6 @@ export default class MRTViewer extends React.Component {
             return a.year === b.year ? (b.citations - a.citations) : (b.year - a.year)
         }))
         this.clusterNames = this.props.data.clusterNames.map(name => name.split(' ').map(lodash.capitalize).join(' '))
-
-        this.state = {userEdits: this.props.userEdits || {}, toExchange: null, focusNodeIndex: -1, focusEraIndex: -1}
-    }
-
-    render() {
 
         this.hideSubBranch = this.props.hideSubBranch
         this.disableTextBranchSpan = this.props.disableTextBranchSpan
@@ -303,7 +303,7 @@ export default class MRTViewer extends React.Component {
             return generateGradientColor(chroma(color).luminance(0.5), "white", x, _height, x, _height+extendedHeight)
         })
 
-        return <svg className="mrt" id={this.props.id} /*width={`${_width}px`} height={`${_height}px`}*/ width="100%" viewBox={`0 0 ${_width} ${_height+extendedHeight}`}>
+        return <svg className="mrt" id={this.props.id} width="100%" viewBox={`0 0 ${_width} ${_height+extendedHeight}`}>
             {views.defs}
             <filter id="blur-filter">
                 <feGaussianBlur stdDeviation={this.nodeTextLineHeight} in="SourceGraphic"/>
@@ -355,11 +355,9 @@ export default class MRTViewer extends React.Component {
                             strokeWidth={this.strokeWidth}
                             onHover={(hover) => 
                                 this.setState({...this.state,
-                                    focusNodeIndex: hover ? idx : -1,
                                     focusEraIndex: hover ? node.eraID : -1
                                 })   
-                            }
-                            expand={idx === this.state.focusNodeIndex}/>
+                            }/>
             )}
             <g className="mrt-node-text-container">
             {renderNodes.map((node, idx) => node.pins.length > 0 &&
@@ -377,7 +375,6 @@ export default class MRTViewer extends React.Component {
                       strokeWidth={this.strokeWidth}
                       onEdit={onEdit}
                       textLeadingMargin={this.nodeTextLeadingMargin}
-                      onHover={(hover) => this.setState({...this.state, focusNodeIndex: hover ? idx : -1})}
                       editable={typeof(node.clusterID) !== "undefined"}
                       editButtonMarginTop={this.nodeEditButtonMarginTop}
                       scaleOrigin={(node.clusterID === numClusters - 1) ? "right" : ((node.branchID === numBranches - 3) ? "middle" : "left")}/>)}

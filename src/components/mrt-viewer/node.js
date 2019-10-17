@@ -17,14 +17,24 @@ const CaretColor = chroma("grey").luminance(0.3)
 const AbstractColor = chroma("grey").luminance(0.1)
 
 export class NodeCircle extends React.Component {
+
+    constructor(props) {
+        super(props)
+        this.state = {hover: false}
+    }
+
+    onHover(hover) {
+        this.setState({hover})
+        if (this.props.onHover) this.props.onHover(hover)
+    }
     
     render() {
         return (
             <circle className="era-node-circle" cx={this.props.node.x} cy={this.props.node.y} r={this.props.radius}
-                onMouseOver={() => { if (this.props.onHover) this.props.onHover(true) }}
-                onMouseLeave={() => { if (this.props.onHover) this.props.onHover(false) }}
+                onMouseOver={() => { this.onHover(true) }}
+                onMouseLeave={() => { this.onHover(false) }}
                 stroke={this.props.color} strokeWidth={this.props.strokeWidth}
-                fill={this.props.expand ? this.props.color : "white"}/>
+                fill={this.state.hover ? this.props.color : "white"}/>
         )
     }
 
@@ -45,7 +55,6 @@ export class NodeText extends React.Component {
 
     onHover(hover) {
         if (!hover && this.state.expand !== -1) this.setState({expand: -1})
-        if (this.props.onHover) this.props.onHover(hover)
     }
 
     render() {

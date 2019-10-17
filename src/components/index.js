@@ -52,6 +52,15 @@ export default class MRT extends React.Component {
         this.setState({...this.state, displayQRCode: display})
     }
 
+    onLoadJson(e) {
+        if (e.target.files.length === 0) return
+        const reader = new FileReader()
+        reader.onload = (e) => {
+            if (this.props.onLoadJson) this.props.onLoadJson(JSON.parse(e.target.result))
+        }
+        reader.readAsText(e.target.files[0])
+    }
+
     render() {
         return (
             <div className="mrt-container" style={{width: `${this.state.viewerScale}%`}}>
@@ -113,6 +122,10 @@ export default class MRT extends React.Component {
                         </div>
                         <div className="menu-item vertical-secondary mrt-toolbox-tool-icon" onClick={() => this.setState({...this.state, disableTextClusterSpan: !this.state.disableTextClusterSpan})}>
                             <Icon type="column-width" theme="outlined" style={{color: chroma("teal").luminance(0.2).hex()}}/>
+                        </div>
+                        <div className="menu-item vertical-secondary mrt-toolbox-tool-icon" onClick={() => document.getElementById("mrt-file-load-input").click()}>
+                            <Icon type="folder-open" theme="outlined" style={{color: chroma("teal").luminance(0.2).hex()}}/>
+                            <input id="mrt-file-load-input" type="file" hidden onChange={(e) => this.onLoadJson(e)}/>
                         </div>
                     </div>
                     <div className="menu-item mrt-toolbox-menu vertical">
