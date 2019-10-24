@@ -1,0 +1,11 @@
+.qrcode {
+    position: absolute;
+    left: 100%;
+    top: 0;
+    display: none;
+    margin: 0 0.5rem;
+}
+
+.qrcode-icon:hover > .qrcode {
+    display: block;
+}

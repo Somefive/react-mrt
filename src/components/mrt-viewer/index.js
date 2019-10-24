@@ -44,7 +44,11 @@ export default class MRTViewer extends React.Component {
         this.nodeTextLines = (node) => node.pins.reduce((prev, pin) => prev + pin.textPieces.length, 0)
         this.nodeHeight = (lines) => this.nodePaddingTop + this.nodeRadius + Math.max(this.nodeRadius, (lines-1) * this.nodeTextLineHeight) + this.nodePaddingBottom
 
-        this.state = {userEdits: this.props.userEdits || {}, toExchange: null, focusEraIndex: -1}
+        this.state = {toExchange: null, focusEraIndex: -1}
+    }
+
+    onEditChange(edits) {
+        if (this.props.onEditChange) this.props.onEditChange(edits)
     }
 
     render() {
@@ -103,7 +107,7 @@ export default class MRTViewer extends React.Component {
         let dataView = {root: {...this.data.root}, branches: this.data.branches.map(() => [])}
         this.data.branches.forEach((branch, idx) => branch.forEach(paper => {
             const isSub = idx % 2 === 1
-            const edits = this.state.userEdits[paper.id]
+            const edits = this.props.userEdits[paper.id]
             const clusterID = edits ? edits.clusterID : Math.floor(idx / 2)
             const branchID = clusterID * 2 + isSub
             if (!this.hideSubBranch || !isSub) dataView.branches[branchID].push({...paper, isSub, edits, clusterID, branchID})
@@ -162,7 +166,7 @@ export default class MRTViewer extends React.Component {
                 textPieces: this.nodeTextFold(dataView.root.text, 2), 
                 fullTextPieces: this.nodeTextFold(dataView.root.text, this.nodeFullSpan),
                 abstractPieces: this.nodeTextSecondaryFold(dataView.root.abstract, this.nodeFullSpan),
-                edits: this.state.userEdits[dataView.root.id]
+                edits: this.props.userEdits[dataView.root.id]
             }],
             span: 2,
             fullSpan: this.nodeFullSpan,
@@ -244,26 +248,25 @@ export default class MRTViewer extends React.Component {
         })
         
         const onEdit = (action, source, param) => {
-            const _state = {...this.state}
-            if (!_state.userEdits[source.id] && (action === "thumb-up" || action === "thumb-down" || action === "exchange")) {
-                _state.userEdits[source.id] = {rate: 0, clusterID: source.clusterID}
+            let userEdits = {...this.props.userEdits}
+            if (!userEdits[source.id] && (action === "thumb-up" || action === "thumb-down" || action === "exchange")) {
+                userEdits[source.id] = {rate: 0, clusterID: source.clusterID}
             }
-            if (action === "thumb-up" && _state.userEdits[source.id].rate <= 0) {
-                _state.userEdits[source.id].rate = 1
-                this.setState(_state)
-            } else if (action === "thumb-down" && _state.userEdits[source.id].rate >= 0) {
-                _state.userEdits[source.id].rate = -1
-                this.setState(_state)
-            } else if (action === "thumb-delete" && _state.userEdits[source.id] && _state.userEdits[source.id].rate !== 0) {
-                _state.userEdits[source.id].rate = 0
-                this.setState(_state)
-            } else if (action === "to-exchange" && _state.toExchange === null) {
-                _state.toExchange = source
-                this.setState(_state)
+            if (action === "thumb-up" && userEdits[source.id].rate <= 0) {
+                userEdits[source.id].rate = 1
+                this.onEditChange(userEdits)
+            } else if (action === "thumb-down" && userEdits[source.id].rate >= 0) {
+                userEdits[source.id].rate = -1
+                this.onEditChange(userEdits)
+            } else if (action === "thumb-delete" && userEdits[source.id] && userEdits[source.id].rate !== 0) {
+                userEdits[source.id].rate = 0
+                this.onEditChange(userEdits)
+            } else if (action === "to-exchange" && this.state.toExchange === null) {
+                this.setState({toExchange: source})
             } else if (action === "exchange") {
-                _state.userEdits[source.id].clusterID = param
-                _state.toExchange = null
-                this.setState(_state)
+                userEdits[source.id].clusterID = param
+                this.onEditChange(userEdits)
+                this.setState({toExchange: null})
             }
         }
 

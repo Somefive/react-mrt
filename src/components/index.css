@@ -2,63 +2,33 @@
     position: relative;
 }
 
-.mrt-toolbox {
+.toolgroup.horizontal {
     position: absolute;
     top: 0;
     left: 1rem;
     padding: 0.25rem;
 }
 
-.mrt-toolbox-menu.horizontal .menu-item {
+.toolgroup.horizontal .toolgroup {
     float: right;
 }
 
-.mrt-toolbox-menu.vertical .menu-item {
+.toolgroup.vertical .tool {
     float: none;
 }
 
-.mrt-toolbox-menu.horizontal .menu-item.horizontal-secondary {
+.toolgroup.horizontal .toolgroup.secondary {
     display: none;
 }
 
-.mrt-toolbox-menu.horizontal:hover .menu-item.horizontal-secondary {
+.toolgroup.horizontal:hover .toolgroup.secondary {
     display: block;
 }
 
-.mrt-toolbox-menu.vertical .menu-item.vertical-secondary {
+.toolgroup.vertical .tool.secondary {
     display: none;
 }
 
-.mrt-toolbox-menu.vertical:hover .menu-item.vertical-secondary {
+.toolgroup.vertical:hover .tool.secondary {
     display: block;
-}
-
-
-
-
-.mrt-toolbox-tool-icon {
-    font-size: 1.5rem;
-    padding: 0.25rem;
-    opacity: 0.6;
-    transition-property: opacity, transform;
-    transition-duration: .25s; 
-}
-
-.mrt-toolbox-tool-icon:hover {
-    cursor: pointer;
-    opacity: 1;
-    transform: scale(1.25);
-}
-
-.mrt-toolbox-tool-icon:focus {
-    outline: 0;
-}
-
-
-
-.mrt-qrcode {
-    position: absolute;
-    left: 1rem;
-    top: 3rem;
-    border-radius: 1rem;
 }
