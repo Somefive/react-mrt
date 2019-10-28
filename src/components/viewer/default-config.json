@@ -1,0 +1,29 @@
+{
+    "EraMinRatio": 0.05,
+    "LastEraRatio": 0.2,
+    
+
+    "CellTextFontSize": 20,
+    "CellTextLineHeight": 22,
+    "CellTextMargin": 10,
+
+    "CellTextFontWeight": 600,
+
+    "CellTextLeadMargin": 20,
+    "CellTextWidth": 260,
+
+    "CellStrokeWidth": 4,
+    "CellOrbmentRadius": 16,
+
+    "CellPaddingLeft": 20,
+    "CellPaddingRight": 20,
+    "CellPaddingTop": 32,
+    "CellPaddingBottom": 32,
+
+
+    "HorizonMarginTop": 20,
+    "HorizonMarginBottom": 20,
+
+    "DisableTextBranchSpan": false,
+    "DisableTextClusterSpan": false
+}

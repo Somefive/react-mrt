@@ -3,6 +3,7 @@ import MRTViewer from './mrt-viewer'
 import './index.css'
 import svgLib from 'save-svg-as-png'
 import { Toolbox } from './toolbox/index'
+import Viewer from './viewer'
 
 export default class MRT extends React.Component {
     
