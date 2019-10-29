@@ -16,30 +16,6 @@ const ExchangeColor = chroma("blue").luminance(0.3).desaturate(1)
 const CaretColor = chroma("grey").luminance(0.3)
 const AbstractColor = chroma("grey").luminance(0.1)
 
-export class NodeCircle extends React.Component {
-
-    constructor(props) {
-        super(props)
-        this.state = {hover: false}
-    }
-
-    onHover(hover) {
-        this.setState({hover})
-        if (this.props.onHover) this.props.onHover(hover)
-    }
-    
-    render() {
-        return (
-            <circle className="era-node-circle" cx={this.props.node.x} cy={this.props.node.y} r={this.props.radius}
-                onMouseOver={() => { this.onHover(true) }}
-                onMouseLeave={() => { this.onHover(false) }}
-                stroke={this.props.color} strokeWidth={this.props.strokeWidth}
-                fill={this.state.hover ? this.props.color : "white"}/>
-        )
-    }
-
-}
-
 export class NodeText extends React.Component {
 
     constructor(props) {
