@@ -16,7 +16,7 @@
     "CellTextWidth": 260,
 
     "CellStrokeWidth": 4,
-    "CellOrbmentRadius": 16,
+    "CellOrbmentRadius": 20,
 
     "CellPaddingLeft": 20,
     "CellPaddingRight": 20,
@@ -28,5 +28,11 @@
     "HorizonMarginBottom": 20,
 
     "DisableTextBranchSpan": false,
-    "DisableTextClusterSpan": false
+    "DisableTextClusterSpan": false,
+
+    "BottomLabelTextFontSize": 64,
+    "BottomLabelTextLineHeight": 72,
+
+    "TopLabelTextFontSize": 36,
+    "TopLabelTextLineHeight": 18
 }

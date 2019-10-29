@@ -34,7 +34,7 @@ export class NodeText extends React.Component {
     }
 
     render() {
-        let textColor = chroma(this.props.color).darken()
+        let textColor = this.props.textColor
         let baseY = 0
         let textLines = 0
         const iconSize = this.props.lineHeight * 1.25

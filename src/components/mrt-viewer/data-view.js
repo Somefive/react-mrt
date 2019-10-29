@@ -1,15 +1,34 @@
-import adapter from './data-adapter'
 import _ from 'lodash'
+
+function adapter(paper) {
+    const id = paper["paper_id"]
+    const year = paper["paper_year"]
+    const venue = paper["paper_venue"].trim()
+    const title = paper["paper_title"].trim()
+    const citations = []
+    const score = paper["paper_citations"]
+    let prefix = `${year}`
+    const venue_year = /^(19|20)\d{2}\b/.exec(venue)
+    if (venue_year == null && venue.length > 0) {
+        prefix = `${year} ${venue}`
+    } else if (venue_year != null) {
+        prefix = `${venue}`
+    }
+    const text = `[${prefix}] ${title}`.replace('\t', ' ').replace('\n', ' ')
+    const abstract = paper["paper_abstract"] ? paper["paper_abstract"].trim().replace('\t', ' ') : ""
+    return {id, year, venue, title, citations, score, text, abstract}
+}
 
 export default class DataView {
  
-    constructor(data, userEdits, hideSubBranch, eraMinRatio, lastEraRatio) {
+    constructor(data, userEdits, config) {
+        const { HideSubBranch, EraMinRatio, LastEraRatio } = config
         this.root = adapter(data.root)
         const branches = _.flatten(data.branches).map(() => [])
         const years = []
         data.branches.forEach((cluster, clusterID) => 
             cluster.forEach((branch, idx) => {
-                if (hideSubBranch && idx > 0) return
+                if (HideSubBranch && idx > 0) return
                 branch.forEach(raw => {
                     const paper = adapter(raw)
                     paper.isSub = idx > 0
@@ -21,9 +40,9 @@ export default class DataView {
                 })
             }
         ))
-        this.eras = this.__calculateEras(years, eraMinRatio, lastEraRatio)
+        this.eras = this.__calculateEras(years, EraMinRatio, LastEraRatio)
         this.grid = this.__calculateGrid(this.eras, branches)
-        this.gridShape = [this.eras.length, branches.length]
+        this.gridT = this.grid[0].map((col, i) => this.grid.map(row => row[i]))
     }
 
     __calculateEras(years, eraMinRatio, lastEraRatio) {
