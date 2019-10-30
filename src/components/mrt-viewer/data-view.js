@@ -1,11 +1,12 @@
 import _ from 'lodash'
 
-function adapter(paper) {
+function adapter(paper, userEdits) {
     const id = paper["paper_id"]
     const year = paper["paper_year"]
     const venue = paper["paper_venue"].trim()
     const title = paper["paper_title"].trim()
-    const citations = []
+    const citations = paper["citations"] || []
+    const references = paper["references"] || []
     const score = paper["paper_citations"]
     let prefix = `${year}`
     const venue_year = /^(19|20)\d{2}\b/.exec(venue)
@@ -16,33 +17,39 @@ function adapter(paper) {
     }
     const text = `[${prefix}] ${title}`.replace('\t', ' ').replace('\n', ' ')
     const abstract = paper["paper_abstract"] ? paper["paper_abstract"].trim().replace('\t', ' ') : ""
-    return {id, year, venue, title, citations, score, text, abstract}
+    const edits = userEdits[id]
+    return {id, year, venue, title, citations, references, score, text, abstract, edits}
 }
 
 export default class DataView {
  
     constructor(data, userEdits, config) {
         const { HideSubBranch, EraMinRatio, LastEraRatio } = config
-        this.root = adapter(data.root)
+        this.root = adapter(data.root, userEdits)
+        this.papers = {}
         const branches = _.flatten(data.branches).map(() => [])
         const years = []
         data.branches.forEach((cluster, clusterID) => 
             cluster.forEach((branch, idx) => {
                 if (HideSubBranch && idx > 0) return
                 branch.forEach(raw => {
-                    const paper = adapter(raw)
+                    const paper = adapter(raw, userEdits)
                     paper.isSub = idx > 0
-                    paper.edits = userEdits[paper.id]
                     paper.clusterID = paper.edits ? paper.edits.clusterID : clusterID
                     paper.branchID = paper.clusterID * 2 + paper.isSub
                     branches[paper.branchID].push(paper)
                     years.push(paper.year)
+                    this.papers[paper.id] = paper
                 })
             }
         ))
         this.eras = this.__calculateEras(years, EraMinRatio, LastEraRatio)
         this.grid = this.__calculateGrid(this.eras, branches)
         this.gridT = this.grid[0].map((col, i) => this.grid.map(row => row[i]))
+        this.ncols = this.gridT.length
+        this.nrows = this.grid.length
+        this.clusterWords = data.clusterNames.map(name => name.split(' ').map(_.capitalize))
+        this.clusterNames = this.clusterWords.map(words => words.join(' '))
     }
 
     __calculateEras(years, eraMinRatio, lastEraRatio) {

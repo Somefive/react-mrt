@@ -8,6 +8,8 @@
     "CellTextFontWeight": 600,
     "CellTextMargin": 10,
 
+    "EditIconSize": 25,
+
     "CellTextSecondaryFontSize": 18,
     "CellTextSecondaryLineHeight": 20,
     "CellTextSecondaryFontWeight": 400,
@@ -16,10 +18,12 @@
     "CellTextWidth": 260,
 
     "CellStrokeWidth": 4,
+    "CellLinkStroke": 6,
+    "CellLinkStrokeArray": 10,
     "CellOrbmentRadius": 20,
 
-    "CellPaddingLeft": 20,
-    "CellPaddingRight": 20,
+    "CellPaddingLeft": 32,
+    "CellPaddingRight": 32,
     "CellPaddingTop": 32,
     "CellPaddingBottom": 48,
 
