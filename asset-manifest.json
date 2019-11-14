@@ -1,27 +1,27 @@
 {
   "files": {
-    "main.css": "/react-mrt/static/css/main.126f90c2.chunk.css",
-    "main.js": "/react-mrt/static/js/main.5621f7dc.chunk.js",
-    "main.js.map": "/react-mrt/static/js/main.5621f7dc.chunk.js.map",
+    "main.css": "/react-mrt/static/css/main.67cecdcc.chunk.css",
+    "main.js": "/react-mrt/static/js/main.42179aaa.chunk.js",
+    "main.js.map": "/react-mrt/static/js/main.42179aaa.chunk.js.map",
     "runtime-main.js": "/react-mrt/static/js/runtime-main.714b5461.js",
     "runtime-main.js.map": "/react-mrt/static/js/runtime-main.714b5461.js.map",
-    "static/js/2.6fb37194.chunk.js": "/react-mrt/static/js/2.6fb37194.chunk.js",
-    "static/js/2.6fb37194.chunk.js.map": "/react-mrt/static/js/2.6fb37194.chunk.js.map",
+    "static/js/2.76a1d402.chunk.js": "/react-mrt/static/js/2.76a1d402.chunk.js",
+    "static/js/2.76a1d402.chunk.js.map": "/react-mrt/static/js/2.76a1d402.chunk.js.map",
     "index.html": "/react-mrt/index.html",
-    "precache-manifest.b6405dbbe1e172c79b00c29608116d52.js": "/react-mrt/precache-manifest.b6405dbbe1e172c79b00c29608116d52.js",
+    "precache-manifest.4fad52ac99fc258dcfd164408b65abf8.js": "/react-mrt/precache-manifest.4fad52ac99fc258dcfd164408b65abf8.js",
     "service-worker.js": "/react-mrt/service-worker.js",
-    "static/css/main.126f90c2.chunk.css.map": "/react-mrt/static/css/main.126f90c2.chunk.css.map",
-    "static/media/arrows-alt.svg": "/react-mrt/static/media/arrows-alt.29e619b5.svg",
+    "static/css/main.67cecdcc.chunk.css.map": "/react-mrt/static/css/main.67cecdcc.chunk.css.map",
     "static/media/dislike.svg": "/react-mrt/static/media/dislike.d77318fe.svg",
     "static/media/like.svg": "/react-mrt/static/media/like.eb23c40d.svg",
     "static/media/logo.7ecb0366.svg": "/react-mrt/static/media/logo.7ecb0366.svg",
     "static/media/pull-request.svg": "/react-mrt/static/media/pull-request.f02c9417.svg",
-    "static/media/shrink.svg": "/react-mrt/static/media/shrink.f45eb514.svg"
+    "static/media/share-alt.svg": "/react-mrt/static/media/share-alt.fa4062f0.svg",
+    "static/media/star.svg": "/react-mrt/static/media/star.3140f179.svg"
   },
   "entrypoints": [
     "static/js/runtime-main.714b5461.js",
-    "static/js/2.6fb37194.chunk.js",
-    "static/css/main.126f90c2.chunk.css",
-    "static/js/main.5621f7dc.chunk.js"
+    "static/js/2.76a1d402.chunk.js",
+    "static/css/main.67cecdcc.chunk.css",
+    "static/js/main.42179aaa.chunk.js"
   ]
 }

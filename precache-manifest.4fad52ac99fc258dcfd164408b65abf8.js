@@ -1,27 +1,23 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "a9be7824ad5eea0ca250d0cbc8191ef9",
+    "revision": "5d8bb4c28a337879062894a607d3b906",
     "url": "/react-mrt/index.html"
   },
   {
-    "revision": "04ca1ab494fa54ba868e",
-    "url": "/react-mrt/static/css/main.126f90c2.chunk.css"
+    "revision": "4102813ec64ad1899231",
+    "url": "/react-mrt/static/css/main.67cecdcc.chunk.css"
   },
   {
-    "revision": "a58a391f5a2538d312af",
-    "url": "/react-mrt/static/js/2.6fb37194.chunk.js"
+    "revision": "ad725971be488daa11b7",
+    "url": "/react-mrt/static/js/2.76a1d402.chunk.js"
   },
   {
-    "revision": "04ca1ab494fa54ba868e",
-    "url": "/react-mrt/static/js/main.5621f7dc.chunk.js"
+    "revision": "4102813ec64ad1899231",
+    "url": "/react-mrt/static/js/main.42179aaa.chunk.js"
   },
   {
     "revision": "618c6031612da7f6f6c2",
     "url": "/react-mrt/static/js/runtime-main.714b5461.js"
-  },
-  {
-    "revision": "29e619b54575cb75fd4cc48cfde69566",
-    "url": "/react-mrt/static/media/arrows-alt.29e619b5.svg"
   },
   {
     "revision": "9ef156635e353717d7b310bfa0b28fb1",
@@ -48,7 +44,11 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/react-mrt/static/media/pull-request.f02c9417.svg"
   },
   {
-    "revision": "f45eb5144673545e56f8c32b65e565f4",
-    "url": "/react-mrt/static/media/shrink.f45eb514.svg"
+    "revision": "fa4062f0c19eec5c210d86f33f1d2a33",
+    "url": "/react-mrt/static/media/share-alt.fa4062f0.svg"
+  },
+  {
+    "revision": "3140f179c3ed2d49ceacf05503f487d2",
+    "url": "/react-mrt/static/media/star.3140f179.svg"
   }
 ]);
