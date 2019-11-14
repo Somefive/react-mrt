@@ -113,15 +113,13 @@ export default class MRTViewer extends React.Component {
         dataView.branches.forEach(branch => branch.sort((a, b) => (a.year === b.year) ? (b.citations.length - a.citations.length) : (b.year - a.year)))
 
         const paperCount = _.flatten(dataView.branches).length
-        {
-            _.flatten(dataView.branches).sort((a, b) => (b.score - a.score)).forEach((paper, idx) => {
-                paper.scoreRank = idx
-                if (idx < paperCount * 0.1) paper.level = 3
-                else if (idx < paperCount * 0.3) paper.level = 2
-                else if (idx < paperCount * 0.6) paper.level = 1
-                else paper.level = 0
-            })
-        }
+        _.flatten(dataView.branches).sort((a, b) => (b.score - a.score)).forEach((paper, idx) => {
+            paper.scoreRank = idx
+            if (idx < paperCount * 0.1) paper.level = 3
+            else if (idx < paperCount * 0.3) paper.level = 2
+            else if (idx < paperCount * 0.6) paper.level = 1
+            else paper.level = 0
+        })
 
         // calculate eras according to density of paper
         let eras = []

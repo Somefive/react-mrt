@@ -56,7 +56,6 @@ export default class MRT extends React.Component {
                     scaleFont={(larger) => this.scaleFont(larger)}
                     zoom={(larger) => this.zoom(larger)}
                     capture={(full) => this.capture(full)}
-                    lang={this.props.lang}
                 />
                 <MRTViewer id="mrt-viewer" data={this.props.data} userEdits={this.props.userEdits} 
                     hideSubBranch={this.state.hideSubBranch} disableTextClusterSpan={this.state.disableTextClusterSpan}
