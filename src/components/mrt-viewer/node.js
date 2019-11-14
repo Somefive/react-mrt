@@ -93,6 +93,7 @@ export class NodeText extends React.Component {
                             <text className="paper-abstract-inner" fontSize={this.props.secondaryFontSize} fill={AbstractColor}>
                                 {pin.abstractPieces.map((_text, idx) => <tspan key={idx} x="0" y={textPieces.length * this.props.lineHeight + idx * this.props.secondaryLineHeight}>{_text}</tspan>)}
                             </text>}
+                        {isFocus &&
                         <g className="paper-edit-icon-group">
                             {this.props.editable && generateEditIcon(IconExchange, 6, ExchangeColor, "to-exchange", "Move")}
                             {generateEditIcon(isUp ? IconThumbsUpSolid : IconThumbsUp, 4.5, ThumbUpColor, isUp ? "thumb-delete" : "thumb-up", "Like")}
@@ -108,6 +109,7 @@ export class NodeText extends React.Component {
                             </g>
                             }
                         </g>
+                        }
                     </g>
                 </g>
             )
