@@ -2,10 +2,9 @@ import React from 'react'
 import { NodeCircle, NodeText, NodeLinks } from './node'
 import randomstring from 'randomstring'
 import chroma from 'chroma-js'
-import lodash from 'lodash'
 import './index.css'
 import { ReactComponent as Logo } from '../logo.svg'
-import { pipelineTopicExpression } from '@babel/types'
+import _ from 'lodash'
 
 export default class MRTViewer extends React.Component {
 
@@ -42,10 +41,10 @@ export default class MRTViewer extends React.Component {
         this.nodeOffsetY = this.nodePaddingTop + this.nodeRadius
         
         this.nodeWidth = this.nodePaddingLeft + 2 * this.nodeRadius + this.nodeTextLeadingMargin + this.nodeTextWidth + this.nodePaddingRight
-        // this.nodeTextLines = (node) => node.pins.reduce((prev, pin) => prev + pin.textPieces.length, 0)
+        this.pinHeight = (pin, lineHeight) => (pin.textPieces.length + 0.4) * lineHeight
         this.nodeHeight = (node) => {
-            const actualLines = node.pins.reduce((prev, pin) => prev + pin.textPieces.length, -1) + (node.pins.length - 1) / 2
-            return this.nodePaddingTop + this.nodeRadius + Math.max(this.nodeRadius, actualLines * this.nodeTextLineHeight) + this.nodePaddingBottom
+            const pinsHeight = _.sum(node.pins.map(pin => this.pinHeight(pin, this.nodeTextLineHeight)))
+            return this.nodePaddingTop + this.nodeRadius + Math.max(this.nodeRadius, pinsHeight) + this.nodePaddingBottom
         }
 
         this.state = {toExchange: null, focusEraIndex: -1, linksVisibility: {}}
@@ -54,15 +53,10 @@ export default class MRTViewer extends React.Component {
     onSwitchLinksVisibility(id) {
         const linksVisibility = this.state.linksVisibility
         linksVisibility[id] = !(linksVisibility[id] === true)
-        console.log(linksVisibility)
         this.setState({linksVisibility})
     }
 
     render() {
-
-        this._data = this.props.data
-        console.log(this._data)
-
         const extract = (paper) => {
             const id = paper["paper_id"]
             const year = paper["paper_year"]
@@ -70,6 +64,7 @@ export default class MRTViewer extends React.Component {
             const title = paper["paper_title"].trim()
             const citations = paper["citations"]
             const references = paper["references"]
+            const score = paper["score"]
             let prefix = `${year}`
             const venue_year = /^(19|20)\d{2}\b/.exec(venue)
             if (venue_year == null && venue.length > 0) {
@@ -79,20 +74,10 @@ export default class MRTViewer extends React.Component {
             }
             const text = `[${prefix}] ${title}`.replace('\t', ' ').replace('\n', ' ')
             const abstract = paper["paper_abstract"] ? paper["paper_abstract"].trim().replace('\t', ' ') : ""
-            return {id, year, venue, title, citations, references, text, abstract}
+            return {id, year, venue, title, citations, references, text, abstract, score}
         }
-        this.data = {
-            root: extract(this._data.root),
-            branches: []
-        }
-        this._data.branches.forEach(branch => {
-            this.data.branches.push(branch[0].map(extract))
-            this.data.branches.push(branch[1].map(extract))
-        })
-        this.data.branches.forEach(branch => branch.sort((a, b) => {
-            return a.year === b.year ? (b.citations.length - a.citations.length) : (b.year - a.year)
-        }))
-        this.clusterNames = this.props.data.clusterNames.map(name => name.split(' ').map(lodash.capitalize).join(' '))
+
+        this.clusterNames = this.props.data.clusterNames.map(name => name.split(' ').map(_.capitalize).join(' '))
 
         this.hideSubBranch = this.props.hideSubBranch
         this.disableTextBranchSpan = this.props.disableTextBranchSpan
@@ -110,21 +95,38 @@ export default class MRTViewer extends React.Component {
         this.nodeTextFold = (text, span) => this.nodeTextCustomFold(text, span, this.nodeTextFontSize)
         this.nodeTextSecondaryFold = (text, span) => this.nodeTextCustomFold(text, span, this.nodeTextSecondaryFontSize)
 
+
+        const importance = this.props.data.importance
+        const maxImportance = _.max(importance), minImportance = _.min(importance)
+        const clusterStrokeWidth = importance.map((i) => ((i - minImportance) / (maxImportance - minImportance) + 1) / 2 * this.strokeWidth)
+
         // initialize dataView (filter subBranch is hideSubBranch is enabled)
-        let dataView = {root: {...this.data.root}, branches: this.data.branches.map(() => [])}
-        this.data.branches.forEach((branch, idx) => branch.forEach(paper => {
-            const isSub = idx % 2 === 1
-            const edits = this.props.userEdits[paper.id]
-            const clusterID = edits ? edits.clusterID : Math.floor(idx / 2)
-            const branchID = clusterID * 2 + isSub
-            if (!this.hideSubBranch || !isSub) dataView.branches[branchID].push({...paper, isSub, edits, clusterID, branchID})
-        }))
+        let dataView = {root: extract(this.props.data.root), branches: _.range(0, 2 * this.props.data.branches.length).map(() => [])}
+        this.props.data.branches.forEach((subBranches, clusterID) => subBranches.forEach((branch, isSub) => branch.forEach(raw => {
+            const paper = extract(raw)
+            paper.isSub = isSub
+            paper.edits = this.props.userEdits[paper.id]
+            paper.clusterID = paper.edits ? paper.edits.clusterID : clusterID
+            paper.branchID = paper.clusterID * 2 + isSub
+            if (!this.hideSubBranch || !isSub) dataView.branches[paper.branchID].push(paper)
+        })))
         dataView.branches.forEach(branch => branch.sort((a, b) => (a.year === b.year) ? (b.citations.length - a.citations.length) : (b.year - a.year)))
+
+        const paperCount = _.flatten(dataView.branches).length
+        {
+            _.flatten(dataView.branches).sort((a, b) => (b.score - a.score)).forEach((paper, idx) => {
+                paper.scoreRank = idx
+                if (idx < paperCount * 0.1) paper.level = 3
+                else if (idx < paperCount * 0.3) paper.level = 2
+                else if (idx < paperCount * 0.6) paper.level = 1
+                else paper.level = 0
+            })
+        }
 
         // calculate eras according to density of paper
         let eras = []
         {
-            let years = lodash.flatten(dataView.branches).map(paper => paper.year).sort().reverse()
+            let years = _.flatten(dataView.branches).map(paper => paper.year).sort().reverse()
             let _to = years[0]
             let _cnt = 1
             let eraMinSize = this.EraMinRatio * years.length
@@ -142,15 +144,16 @@ export default class MRTViewer extends React.Component {
         const branchWithEra = (branch, era) => branch.filter(paper => paper.year >= era.from && paper.year <= era.to)
 
         // initialize views
-        let numBranches = dataView.branches.length
-        let numClusters = Math.floor(numBranches / 2)
+        let numClusters = this.props.data.branches.length
+        let numBranches = numClusters * 2
         const rootColor = chroma.scale()(0.5)
         const clusterColors = chroma.cubehelix().start(200).rotations(3).gamma(0.7).lightness([0.2, 0.6]).scale().correctLightness().colors(numClusters)
         const branchColors = dataView.branches.map((_, branchID) => chroma(clusterColors[Math.floor(branchID / 2)]).luminance(branchID % 2 === 0 ? 0.25 : 0.5))
+        const branchTextColors = branchColors.map(color => chroma(color).darken())
         let views = {defs: [], nodes: {}, edges: []}
-        const addEdge = (x1, y1, x2, y2, color) => views.edges.push(<line key={views.edges.length} x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth={this.strokeWidth - 1} stroke={color}/>)
-        const addVerticalEdge = (x, y1, y2, color) => addEdge(x, y1, x, y2, color)
-        const addHorizontalEdge = (x1, x2, y, color) => addEdge(x1, y, x2, y, color)
+        const addEdge = (x1, y1, x2, y2, color, strokeWidth) => views.edges.push(<line key={views.edges.length} x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth={strokeWidth} stroke={color}/>)
+        const addVerticalEdge = (x, y1, y2, color, strokeWidth) => addEdge(x, y1, x, y2, color, strokeWidth)
+        const addHorizontalEdge = (x1, x2, y, color, strokeWidth) => addEdge(x1, y, x2, y, color, strokeWidth)
         const generateGradientColor = (from, to, x1, y1, x2, y2) => {
             const colorID = randomstring.generate(8)
             views.defs.push(
@@ -169,6 +172,7 @@ export default class MRTViewer extends React.Component {
             x: this.nodeWidth * (dataView.branches.length - 1) / 2 + this.nodeOffsetX,
             y: this.nodeOffsetY,
             color: rootColor,
+            textColor: chroma(rootColor).darken(),
             pins: [{...dataView.root, 
                 textPieces: this.nodeTextCustomFold(dataView.root.text, 3, this.nodeTextFontSize * 1.5), 
                 fullTextPieces: this.nodeTextCustomFold(dataView.root.text, 3, this.nodeTextFontSize * 1.5),
@@ -182,13 +186,15 @@ export default class MRTViewer extends React.Component {
             lineHeight: this.nodeTextLineHeight * 1.5,
             secondaryLineHeight: this.nodeTextSecondaryLineHeight * 1.5,
         }
-        // views.nodes.root.lines = this.nodeTextLines(views.nodes.root)
         views.nodes.root.height = this.nodeHeight(views.nodes.root)
+        views.nodes.root.pins[0].x = views.nodes.root.x
+        views.nodes.root.pins[0].y = views.nodes.root.y
 
         views.nodes.branches = dataView.branches.map((branch, branchID) => eras.map((era, eraID) => { return {
             x: this.nodeWidth * branchID + this.nodeOffsetX,
             y: 0,
             color: branchColors[branchID],
+            textColor: branchTextColors[branchID],
             pins: branchWithEra(branch, era),
             era,
             eraID,
@@ -198,6 +204,8 @@ export default class MRTViewer extends React.Component {
             secondaryFontSize: this.nodeTextSecondaryFontSize,
             lineHeight: this.nodeTextLineHeight,
             secondaryLineHeight: this.nodeTextSecondaryLineHeight,
+            height: 0,
+            edgeStrokeWidth: clusterStrokeWidth[Math.floor(branchID / 2)]
         }}))
         
         views.nodes.branches.forEach((branch, branchID) => branch.forEach((node, eraID) => {
@@ -210,7 +218,6 @@ export default class MRTViewer extends React.Component {
                 pin.fullTextPieces = this.nodeTextFold(pin.text, node.fullSpan)
                 pin.abstractPieces = this.nodeTextSecondaryFold(pin.abstract, node.fullSpan)
             })
-            // node.lines = this.nodeTextLines(node)
             node.height = this.nodeHeight(node)
         }))
 
@@ -226,15 +233,14 @@ export default class MRTViewer extends React.Component {
         const nodesLookup = {}
         views.nodes.branches.forEach(branch => branch.forEach(node => node.pins.forEach((pin, idx) => {
             pin.x = node.x
-            pin.y = node.y + node.pins.slice(0, idx).reduce((prev, pin) => prev + (pin.textPieces.length + 0.5) * this.nodeTextLineHeight, 0)
+            pin.y = node.y + node.pins.slice(0, idx).reduce((prev, pin) => prev + (pin.textPieces.length + 0.4) * this.nodeTextLineHeight, 0)
             nodesLookup[pin.id] = pin
         })))
-        console.log(nodesLookup)
 
         {
             const node = views.nodes.root, nodeLeft = views.nodes.branches[0][0], nodeRight = views.nodes.branches[numBranches - 2][0]
-            addVerticalEdge(node.x, node.y, horizon, rootColor)
-            addHorizontalEdge(nodeLeft.x, nodeRight.x, horizon, rootColor)
+            addVerticalEdge(node.x, node.y, horizon, rootColor, this.strokeWidth)
+            addHorizontalEdge(nodeLeft.x, nodeRight.x, horizon, rootColor, this.strokeWidth)
         }
         views.nodes.branches.forEach((branch, branchID) => {
             const _branch = branch.filter(node => node.pins.length > 0)
@@ -252,21 +258,21 @@ export default class MRTViewer extends React.Component {
                 const yStart = (shrinkFlag && node.pins.length === 0 && ((branchID > 0 && sib.pins.length > 0) || (eraID === endEra))) ? (node.y - this.nodeRadius - this.nodeTextLineHeight) : node.y
                 node = branch[eraID-1]
                 sib = branchID > 0 ? views.nodes.branches[branchID-1][eraID-1] : null
-                const yEnd = (shrinkFlag && node.pins.length === 0 && branchID > 0 && sib.pins.length > 0) ? (node.y - this.nodeOffsetY + this.nodeHeight(sib) - this.nodePaddingBottom + this.nodeTextLineHeight) : node.y
-                addVerticalEdge(node.x, yStart, yEnd, node.color)
+                const yEnd = (shrinkFlag && node.pins.length === 0 && branchID > 0 && sib.pins.length > 0) ? (node.y - this.nodeOffsetY + sib.height - this.nodePaddingBottom + this.nodeTextLineHeight) : node.y
+                addVerticalEdge(node.x, yStart, yEnd, node.color, node.edgeStrokeWidth)
             }
             if (branchID % 2 === 0) {
                 const node = branch[0]
                 const sib = branchID > 0 ? views.nodes.branches[branchID-1][0] : null
                 const yEnd = (shrinkFlag && node.pins.length === 0 && branchID > 0 && sib.pins.length > 0) ? (node.y - this.nodeRadius - this.nodeTextLineHeight) : node.y
-                addVerticalEdge(node.x, horizon, yEnd, generateGradientColor(rootColor, node.color, node.x, horizon, node.x, yEnd))
+                addVerticalEdge(node.x, horizon, yEnd, generateGradientColor(rootColor, node.color, node.x, horizon, node.x, yEnd), node.edgeStrokeWidth)
             } else {
                 const node = branch[startEra]
                 const sib = views.nodes.branches[branchID-1][startEra]
                 const yEnd = node.y - this.nodeRadius - this.nodeTextLineHeight
                 const yStart = node.y
-                addVerticalEdge(node.x, yStart, yEnd, node.color)
-                addHorizontalEdge(node.x, sib.x, yEnd, generateGradientColor(node.color, sib.color, node.x, yEnd, sib.x, yEnd))
+                addVerticalEdge(node.x, yStart, yEnd, node.color, node.edgeStrokeWidth)
+                addHorizontalEdge(node.x, sib.x, yEnd, generateGradientColor(node.color, sib.color, node.x, yEnd, sib.x, yEnd), node.edgeStrokeWidth)
             }
         })
         
@@ -294,16 +300,13 @@ export default class MRTViewer extends React.Component {
             }
         }
 
-        const extendedBottomY = views.nodes.branches.map(branch => branch[branch.length-1]).reduce((prev, node) => {
-            let centerY = node.y
-            node.pins.forEach(pin => {
-                prev = Math.max(prev, centerY + (pin.fullTextPieces.length - 1) * this.nodeTextLineHeight * 2 + pin.abstractPieces.length * this.nodeTextSecondaryLineHeight + this.nodeTextLineHeight * 2)
-                centerY += pin.textPieces.length * this.nodeTextLineHeight
-            })
-            return prev
-        }, _height)
+        
+        const extendedBottomY = views.nodes.branches.map(branch => branch[branch.length-1]).reduce((prev, node) =>
+            Math.max(prev, _.max(node.pins.map(pin => 
+                pin.y + 2 * (pin.fullTextPieces.length * node.lineHeight + pin.abstractPieces.length * node.secondaryLineHeight)
+            )) || 0), _height)
 
-        const renderNodes = lodash.flattenDeep(views.nodes.branches).sort((a, b) => (a.eraID === b.eraID) ? (b.branchID - a.branchID) : (b.eraID - a.eraID))
+        const renderNodes = _.flattenDeep(views.nodes.branches).sort((a, b) => (a.eraID === b.eraID) ? (b.branchID - a.branchID) : (b.eraID - a.eraID))
         renderNodes.push(views.nodes.root)
 
         const _width = this.nodeWidth * dataView.branches.length
@@ -329,8 +332,6 @@ export default class MRTViewer extends React.Component {
             const x = views.nodes.branches[idx*2][eras.length-1].x
             return generateGradientColor(chroma(color).luminance(0.5), "white", x, _height, x, _height+extendedHeight)
         })
-
-        console.log(views)
 
         return <svg className="mrt" id={this.props.id} width="100%" viewBox={`0 0 ${_width} ${_height+extendedHeight}`}>
             {views.defs}
@@ -368,7 +369,7 @@ export default class MRTViewer extends React.Component {
                     if (_branch.length === 0 && _sibBranch.length === 0) return <text key={idx}/>
                     const fontSize = this.nodeTextFontSize * 2
                     const y = ((_branch.length === 0 || (_sibBranch.length > 0 && _sibBranch[0].eraID <= _branch[0].eraID)) ?
-                        (_sibBranch[0].y - this.nodeRadius - this.nodeTextLineHeight) :
+                        (_sibBranch[0].y - this.nodeRadius - this.nodeTextLineHeight / 2) :
                         (_branch[0].y - this.nodeTextLineHeight)) - fontSize / 2
                     const x = branch[0].x + this.nodeRadius + this.nodeTextLeadingMargin
                     const color = chroma(branchColors[idx]).darken(2)
@@ -421,7 +422,8 @@ export default class MRTViewer extends React.Component {
                       editButtonMarginTop={this.nodeEditButtonMarginTop}
                       scaleOrigin={(node.clusterID === numClusters - 1) ? "right" : ((node.branchID === numBranches - 3) ? "middle" : "left")}
                       linksVisibility={this.state.linksVisibility}
-                      onSwitchLinksVisibility={(id) => this.onSwitchLinksVisibility(id)}/>)}
+                      onSwitchLinksVisibility={(id) => this.onSwitchLinksVisibility(id)}
+                      lang={this.props.lang}/>)}
             </g>
             {
                 clusterLabelTexts.map((texts, idx) => {
