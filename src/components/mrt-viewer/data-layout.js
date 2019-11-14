@@ -23,10 +23,10 @@ export default class DataLayout {
         this.bottomY = this.grid[this.nrows-1].reduce((prev, cell) => 
             Math.max(prev, cell.pins.length > 0
                 ? _.max(cell.pins.map(pin => 
-                    pin.y + (pin.fullTextPieces.length - 1) * this.config.CellTextLineHeight * 2 + pin.abstractPieces.length * this.config.CellTextSecondaryLineHeight + this.config.CellTextLineHeight * 2
+                    pin.y + ((pin.fullTextPieces.length - 1) * this.config.CellTextLineHeight + pin.abstractPieces.length * this.config.CellTextSecondaryLineHeight) * 2
                 ))
                 : 0
-        ), this.gradientY + this.clusterLabelsHeight)
+        ), this.gradientY + this.clusterLabelsHeight + this.config.BottomLabelTextLineHeight * 3)
         this.clusterBottomLabels = this.__placeClusterBottomLabels(this.gradientY + this.clusterLabelsHeight, this.clusterWords)
         this.clusterTopLabels = this.__placeClusterTopLabels(this.gridT, this.clusterNames)
         this._width = this.config.CellWidth * this.ncols

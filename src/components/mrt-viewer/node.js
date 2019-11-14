@@ -16,19 +16,20 @@ export class NodeText extends React.Component {
 
     constructor(props) {
         super(props)
-        this.state = { expand: null }
+        this.state = { focusPin: null }
     }
 
-    onHover(hover) {
-        if (!hover && this.state.expand !== null) this.setState({expand: null})
+    onFocus(focusPin) {
+        this.setState({focusPin})
+        if (this.props.onFocus) this.props.onFocus(focusPin)
     }
 
     render() {
         this.config = this.props.config
         const iconSize = this.config.EditIconSize
         const texts = this.props.pins.map((pin, _idx) => {
-            const isFocus = this.state.expand === pin
-            const collapseHandler = () => this.setState({expand: (isFocus ? null : pin)})
+            const isFocus = this.state.focusPin === pin
+            const collapseHandler = () => this.onFocus(isFocus ? null : pin)
             const textPieces = isFocus ? pin.fullTextPieces : pin.textPieces
             const abstractHeight = pin.abstractPieces.length * this.props.secondaryLineHeight
             const iconY = (textPieces.length - 1) * this.props.lineHeight + this.props.editButtonMarginTop + isFocus * abstractHeight
@@ -43,12 +44,12 @@ export class NodeText extends React.Component {
             const isUp = pin.edits && pin.edits.rate > 0
             const isDown = pin.edits && pin.edits.rate < 0
             const transformOriginX = (this.props.scaleOrigin === "left") ? 0 : (this.props.scaleOrigin === "middle" ? (textWidth / 2) : textWidth)
+            const x = pin.x+this.props.textLeadingMargin + this.props.radius, y = pin.y
             return (
                 <g className="paper-view-group-outer"
                     key={_idx}
-                    onMouseOver={() => this.onHover(true)}
-                    onMouseLeave={() => this.onHover(false)}
-                    transform={`translate(${pin.x+this.props.textLeadingMargin + this.props.radius}, ${pin.y})`}>
+                    onMouseLeave={() => this.setState({ focusPin: false })}
+                    transform={`translate(${x}, ${y})`}>
                     <g className="paper-view-group-inner" style={{transformOrigin: `${transformOriginX}px ${-this.props.lineHeight}px`}}>
                         <rect className="paper-text-background" x={-this.props.lineHeight} y={-this.props.lineHeight * 2.5}
                             width={textWidth+2*this.props.lineHeight} height={this.props.lineHeight * 4 + iconY + iconSize}

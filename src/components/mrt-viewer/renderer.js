@@ -1,7 +1,7 @@
 import React from 'react'
 import _ from 'lodash'
 import randomstring from 'randomstring'
-import { NodeText, CellText } from './node'
+import { NodeText } from './node'
 import { ReactComponent as Logo } from '../logo.svg'
 
 const EDITBUTTONMARGINTOP = 10
@@ -57,7 +57,7 @@ export class Renderer extends React.Component {
             editable={typeof(cell.clusterID) !== "undefined"}
             editButtonMarginTop={EDITBUTTONMARGINTOP}
             scaleOrigin={(cell.branchID >= ncols - 2) ? "right" : ((cell.branchID === ncols - 3) ? "middle" : "left")}
-            onExpand={(focusPaper) => this.setState({ focusPaper })}/>
+            onFocus={(focusPaper) => this.setState({ focusPaper })}/>
     }
 
     renderTexts(grid, onEdit) {
@@ -164,13 +164,19 @@ export class Renderer extends React.Component {
     }
 
     renderLinks(links) {
-        if (!this.state.focusPaper) return
-        const paths = [...(links.references[this.state.focusPaper.id] || []), ...(links.citations[this.state.focusPaper.id] || [])]
-        return paths.map((path, idx) => {
-            return <path key={idx} d={path.d}
-                strokeWidth={this.config.CellLinkStroke} stroke={this.state.focusPaper.cell.color} fill="transparent"
-                strokeDasharray={this.config.CellLinkStrokeArray}/>
-        })
+        const ref_links = _.map(links.references, links => links.map((path, idx) =>
+            <path key={idx} d={path.d}
+                strokeWidth={this.config.CellLinkStroke} stroke={path.src.cell.color} fill="transparent"
+                strokeDasharray={this.config.CellLinkStrokeArray}
+                opacity={this.state.focusPaper === path.src ? 1 : 0}/>
+        ))
+        const cit_links = _.map(links.citations, links => links.map((path, idx) =>
+            <path key={idx} d={path.d}
+                strokeWidth={this.config.CellLinkStroke} stroke={path.src.cell.color} fill="transparent"
+                strokeDasharray={this.config.CellLinkStrokeArray}
+                opacity={this.state.focusPaper === path.src ? 1 : 0}/>
+        ))
+        return [...ref_links, ...cit_links]
     }
 
     render() {
@@ -248,14 +254,14 @@ export class Renderer extends React.Component {
                 {renderedHeader}
                 {renderedClusterLabels}
                 {renderedEras}
-                {renderedEdges} 
+                {renderedEdges}
+                {renderedLinks}
                 {renderedOrbments}
                 <g className="mrt-node-text-container">
                     {renderedTexts}
                 </g>
                 {this.renderOrbment(root)}
                 {this.renderText(root, ncols, onEdit)}
-                {renderedLinks}
                 {renderedClusterSelectionLabels}
                 {renderAuthors}
             </svg>

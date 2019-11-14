@@ -29,7 +29,7 @@
 
 
     "HorizonMarginTop": 20,
-    "HorizonMarginBottom": 20,
+    "HorizonMarginBottom": 40,
 
     "DisableTextBranchSpan": false,
     "DisableTextClusterSpan": false,
