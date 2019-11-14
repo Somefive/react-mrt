@@ -1,25 +1,27 @@
 {
   "files": {
-    "main.css": "/react-mrt/static/css/main.23eb6f41.chunk.css",
-    "main.js": "/react-mrt/static/js/main.12e885ec.chunk.js",
-    "main.js.map": "/react-mrt/static/js/main.12e885ec.chunk.js.map",
+    "main.css": "/react-mrt/static/css/main.126f90c2.chunk.css",
+    "main.js": "/react-mrt/static/js/main.5621f7dc.chunk.js",
+    "main.js.map": "/react-mrt/static/js/main.5621f7dc.chunk.js.map",
     "runtime-main.js": "/react-mrt/static/js/runtime-main.714b5461.js",
     "runtime-main.js.map": "/react-mrt/static/js/runtime-main.714b5461.js.map",
-    "static/js/2.89ca6794.chunk.js": "/react-mrt/static/js/2.89ca6794.chunk.js",
-    "static/js/2.89ca6794.chunk.js.map": "/react-mrt/static/js/2.89ca6794.chunk.js.map",
+    "static/js/2.6fb37194.chunk.js": "/react-mrt/static/js/2.6fb37194.chunk.js",
+    "static/js/2.6fb37194.chunk.js.map": "/react-mrt/static/js/2.6fb37194.chunk.js.map",
     "index.html": "/react-mrt/index.html",
-    "precache-manifest.a1e54f7b228b74ad76548abd43e3ebb2.js": "/react-mrt/precache-manifest.a1e54f7b228b74ad76548abd43e3ebb2.js",
+    "precache-manifest.b6405dbbe1e172c79b00c29608116d52.js": "/react-mrt/precache-manifest.b6405dbbe1e172c79b00c29608116d52.js",
     "service-worker.js": "/react-mrt/service-worker.js",
-    "static/css/main.23eb6f41.chunk.css.map": "/react-mrt/static/css/main.23eb6f41.chunk.css.map",
+    "static/css/main.126f90c2.chunk.css.map": "/react-mrt/static/css/main.126f90c2.chunk.css.map",
+    "static/media/arrows-alt.svg": "/react-mrt/static/media/arrows-alt.29e619b5.svg",
     "static/media/dislike.svg": "/react-mrt/static/media/dislike.d77318fe.svg",
     "static/media/like.svg": "/react-mrt/static/media/like.eb23c40d.svg",
     "static/media/logo.7ecb0366.svg": "/react-mrt/static/media/logo.7ecb0366.svg",
-    "static/media/pull-request.svg": "/react-mrt/static/media/pull-request.f02c9417.svg"
+    "static/media/pull-request.svg": "/react-mrt/static/media/pull-request.f02c9417.svg",
+    "static/media/shrink.svg": "/react-mrt/static/media/shrink.f45eb514.svg"
   },
   "entrypoints": [
     "static/js/runtime-main.714b5461.js",
-    "static/js/2.89ca6794.chunk.js",
-    "static/css/main.23eb6f41.chunk.css",
-    "static/js/main.12e885ec.chunk.js"
+    "static/js/2.6fb37194.chunk.js",
+    "static/css/main.126f90c2.chunk.css",
+    "static/js/main.5621f7dc.chunk.js"
   ]
 }
