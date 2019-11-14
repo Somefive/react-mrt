@@ -49,10 +49,6 @@ export class NodeText extends React.Component {
         this.state = { expand: -1 }
     }
 
-    onEdit(action, source) {
-        if (this.props.onEdit) this.props.onEdit(action, source)
-    }
-
     onHover(hover) {
         if (!hover && this.state.expand !== -1) this.setState({expand: -1})
     }
@@ -63,7 +59,7 @@ export class NodeText extends React.Component {
         let textLines = 0
         const iconSize = this.props.lineHeight * 1.25
         const texts = this.props.pins.map((pin, _idx) => {
-            baseY = textLines * this.props.lineHeight
+            baseY = (textLines + _idx / 2) * this.props.lineHeight
             const isFocus = this.state.expand === _idx
             const collapseHandler = () => this.setState({expand: isFocus ? -1 : _idx})
             const textPieces = isFocus ? pin.fullTextPieces : pin.textPieces
@@ -72,7 +68,7 @@ export class NodeText extends React.Component {
             const textWidth = isFocus ? this.props.fullTextWidth : this.props.textWidth
             const generateEditIcon = (T, dx, fill, action) => <g transform={`translate(${textWidth-iconSize*dx}, ${iconY})`}>
                 <g className="paper-edit-icon" style={{transformOrigin: `${iconSize/2}px ${iconSize/2}px`}}
-                    onClick={action === "collapse" ? collapseHandler : (() => this.onEdit(action, pin))}>
+                    onClick={action === "link-switch" ? () => this.props.onSwitchLinksVisibility(pin.id) : (() => this.props.onEdit(action, pin))}>
                     <T className="paper-edit-icon" fill={fill} width={iconSize} height={iconSize}/>
                     <rect className="paper-edit-icon" width={iconSize} height={iconSize} fill="transparent"/>
                 </g>
@@ -81,12 +77,12 @@ export class NodeText extends React.Component {
             const isDown = pin.edits && pin.edits.rate < 0
             const transformOriginX = (this.props.scaleOrigin === "left") ? 0 : (this.props.scaleOrigin === "middle" ? (textWidth / 2) : textWidth)
             return (
-                <g className="paper-view-group-outer"
+                <g
                     key={_idx}
-                    onMouseOver={() => this.onHover(true)}
-                    onMouseLeave={() => this.onHover(false)}
                     transform={`translate(${this.props.textLeadingMargin + this.props.radius}, ${baseY})`}>
-                    <g className="paper-view-group-inner" style={{transformOrigin: `${transformOriginX}px ${-this.props.lineHeight}px`}}>
+                    <g className="paper-view-group-inner" style={{transformOrigin: `${transformOriginX}px ${-this.props.lineHeight}px`}}
+                        onMouseOver={() => this.onHover(true)}
+                        onMouseLeave={() => this.onHover(false)}>
                         <rect className="paper-text-background" x={-this.props.lineHeight} y={-this.props.lineHeight * 2.5}
                             width={textWidth+2*this.props.lineHeight} height={this.props.lineHeight * 4 + iconY + iconSize}
                             fill="white" filter="url(#blur-filter)"/>
@@ -104,7 +100,7 @@ export class NodeText extends React.Component {
                             {this.props.editable && generateEditIcon(IconExchange, 6, ExchangeColor, "to-exchange")}
                             {generateEditIcon(isUp ? IconThumbsUpSolid : IconThumbsUp, 4.5, ThumbUpColor, isUp ? "thumb-delete" : "thumb-up")}
                             {generateEditIcon(isDown ? IconThumbsDownSolid : IconThumbsDown, 3, ThumbDownColor, isDown ? "thumb-delete" : "thumb-down")}
-                            {pin.abstractPieces.length > 0 && generateEditIcon(isFocus ? IconCaretUp : IconCaretDown, 1.5, CaretColor, "collapse")}
+                            {pin.abstractPieces.length > 0 && generateEditIcon(this.props.linksVisibility[pin.id] ? IconCaretUp : IconCaretDown, 1.5, CaretColor, "link-switch")}
                         </g>
                     </g>
                 </g>
@@ -115,5 +111,47 @@ export class NodeText extends React.Component {
                 {texts.reverse()}
             </g>
         )
+    }
+}
+
+export class NodeLinks extends React.Component {
+
+    generateLinkPath(source, target) {
+        const x1 = 0, y1 = 0, x2 = target.x - source.x, y2 = target.y - source.y
+        const mx = x1 - this.props.radius - this.props.nodePaddingLeft
+        let d = `M ${x1} ${y1}`
+        if (y1 === y2) d += ` L ${x2} ${y2}`
+        else d += ` C ${mx} ${y1}, ${mx} ${y1}, ${mx} ${(y1+y2)/2} S ${mx} ${y2}, ${x2} ${y2}`
+        return d
+    }
+
+    generateArrowPath(source, target, forward) {
+        const x = target.x - source.x, y = target.y - source.y
+        const nx = (x >= 0) ? (x - this.props.radius) : (x + this.props.radius)
+        const uy = y - this.props.radius / 2, by = y + this.props.radius / 2
+        if (forward) {
+            const nnx = (x >= 0) ? (x - this.props.radius * 1.2) : (x + this.props.radius * 1.2)
+            return `M ${x} ${y} L ${nnx} ${uy} L ${nx} ${y} L ${nnx} ${by} L ${x} ${y}`
+        } else {
+            const nnx = (x >= 0) ? (x + this.props.radius * 0.2) : (x - this.props.radius * 0.2)
+            return `M ${nx} ${y} L ${nnx} ${uy} L ${x} ${y} L ${nnx} ${by} L ${nx} ${y}`
+        }
+    }
+
+    render() {
+        let textColor = chroma(this.props.node.color).darken()
+        const links = this.props.node.pins.map((pin, _idx) => {
+            return (this.props.linksVisibility[pin.id] && 
+            <g key={pin.id} transform={`translate(${pin.x}, ${pin.y})`}>
+                <circle cx="0" cy="0" r={0.5 * this.props.lineHeight} fill={textColor}/>
+                {[...pin.references, ...pin.citations].map((id, idx) => this.props.nodesLookup[id] && 
+                <g key={idx}>
+                    <path d={this.generateLinkPath(pin, this.props.nodesLookup[id])} strokeWidth={2} stroke={textColor} strokeDasharray={10} fill="transparent"/>
+                    <path d={this.generateArrowPath(pin, this.props.nodesLookup[id], pin.references.indexOf(id) >= 0)} fill={textColor}/>
+                </g>
+                )}
+            </g>)
+        })
+        return <g>{links}</g>
     }
 }

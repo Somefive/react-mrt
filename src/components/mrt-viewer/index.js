@@ -1,10 +1,11 @@
 import React from 'react'
-import { NodeCircle, NodeText } from './node'
+import { NodeCircle, NodeText, NodeLinks } from './node'
 import randomstring from 'randomstring'
 import chroma from 'chroma-js'
 import lodash from 'lodash'
 import './index.css'
 import { ReactComponent as Logo } from '../logo.svg'
+import { pipelineTopicExpression } from '@babel/types'
 
 export default class MRTViewer extends React.Component {
 
@@ -41,22 +42,34 @@ export default class MRTViewer extends React.Component {
         this.nodeOffsetY = this.nodePaddingTop + this.nodeRadius
         
         this.nodeWidth = this.nodePaddingLeft + 2 * this.nodeRadius + this.nodeTextLeadingMargin + this.nodeTextWidth + this.nodePaddingRight
-        this.nodeTextLines = (node) => node.pins.reduce((prev, pin) => prev + pin.textPieces.length, 0)
-        this.nodeHeight = (lines) => this.nodePaddingTop + this.nodeRadius + Math.max(this.nodeRadius, (lines-1) * this.nodeTextLineHeight) + this.nodePaddingBottom
+        // this.nodeTextLines = (node) => node.pins.reduce((prev, pin) => prev + pin.textPieces.length, 0)
+        this.nodeHeight = (node) => {
+            const actualLines = node.pins.reduce((prev, pin) => prev + pin.textPieces.length, -1) + (node.pins.length - 1) / 2
+            return this.nodePaddingTop + this.nodeRadius + Math.max(this.nodeRadius, actualLines * this.nodeTextLineHeight) + this.nodePaddingBottom
+        }
 
-        this.state = {userEdits: this.props.userEdits || {}, toExchange: null, focusEraIndex: -1}
+        this.state = {toExchange: null, focusEraIndex: -1, linksVisibility: {}}
+    }
+
+    onSwitchLinksVisibility(id) {
+        const linksVisibility = this.state.linksVisibility
+        linksVisibility[id] = !(linksVisibility[id] === true)
+        console.log(linksVisibility)
+        this.setState({linksVisibility})
     }
 
     render() {
 
         this._data = this.props.data
+        console.log(this._data)
 
         const extract = (paper) => {
             const id = paper["paper_id"]
             const year = paper["paper_year"]
             const venue = paper["paper_venue"].trim()
             const title = paper["paper_title"].trim()
-            const citations = paper["paper_citations"]
+            const citations = paper["citations"]
+            const references = paper["references"]
             let prefix = `${year}`
             const venue_year = /^(19|20)\d{2}\b/.exec(venue)
             if (venue_year == null && venue.length > 0) {
@@ -66,7 +79,7 @@ export default class MRTViewer extends React.Component {
             }
             const text = `[${prefix}] ${title}`.replace('\t', ' ').replace('\n', ' ')
             const abstract = paper["paper_abstract"] ? paper["paper_abstract"].trim().replace('\t', ' ') : ""
-            return {id, year, venue, title, citations, text, abstract}
+            return {id, year, venue, title, citations, references, text, abstract}
         }
         this.data = {
             root: extract(this._data.root),
@@ -77,7 +90,7 @@ export default class MRTViewer extends React.Component {
             this.data.branches.push(branch[1].map(extract))
         })
         this.data.branches.forEach(branch => branch.sort((a, b) => {
-            return a.year === b.year ? (b.citations - a.citations) : (b.year - a.year)
+            return a.year === b.year ? (b.citations.length - a.citations.length) : (b.year - a.year)
         }))
         this.clusterNames = this.props.data.clusterNames.map(name => name.split(' ').map(lodash.capitalize).join(' '))
 
@@ -90,25 +103,23 @@ export default class MRTViewer extends React.Component {
         this.nodeTextSecondaryFontSize = 16 + this.nodeFontExtraSize
         this.nodeTextLineHeight = 20 + this.nodeFontExtraSize
         this.nodeTextSecondaryLineHeight = 18 + this.nodeFontExtraSize
-        this.nodeTextFold = (text, span) => {
-            const textLength = Math.floor(((span - 1) * this.nodeWidth + this.nodeTextWidth) / (this.nodeTextFontSize * this.averageFontWidthRatio))
+        this.nodeTextCustomFold = (text, span, fontSize) => {
+            const textLength = Math.floor(((span - 1) * this.nodeWidth + this.nodeTextWidth) / (fontSize * this.averageFontWidthRatio))
             return (text.match(new RegExp(`([^\\n]{1,${textLength}})(\\s|$)`, 'g')) || []).filter(line => line.length > 0)
         }
-        this.nodeTextSecondaryFold = (text, span) => {
-            const textLength = Math.floor(((span - 1) * this.nodeWidth + this.nodeTextWidth) / (this.nodeTextSecondaryFontSize * this.averageFontWidthRatio))
-            return (text.match(new RegExp(`([^\\n]{1,${textLength}})(\\s|$)`, 'g')) || []).filter(line => line.length > 0)
-        }
+        this.nodeTextFold = (text, span) => this.nodeTextCustomFold(text, span, this.nodeTextFontSize)
+        this.nodeTextSecondaryFold = (text, span) => this.nodeTextCustomFold(text, span, this.nodeTextSecondaryFontSize)
 
         // initialize dataView (filter subBranch is hideSubBranch is enabled)
         let dataView = {root: {...this.data.root}, branches: this.data.branches.map(() => [])}
         this.data.branches.forEach((branch, idx) => branch.forEach(paper => {
             const isSub = idx % 2 === 1
-            const edits = this.state.userEdits[paper.id]
+            const edits = this.props.userEdits[paper.id]
             const clusterID = edits ? edits.clusterID : Math.floor(idx / 2)
             const branchID = clusterID * 2 + isSub
             if (!this.hideSubBranch || !isSub) dataView.branches[branchID].push({...paper, isSub, edits, clusterID, branchID})
         }))
-        dataView.branches.forEach(branch => branch.sort((a, b) => (a.year === b.year) ? (b.citations - a.citations) : (b.year - a.year)))
+        dataView.branches.forEach(branch => branch.sort((a, b) => (a.year === b.year) ? (b.citations.length - a.citations.length) : (b.year - a.year)))
 
         // calculate eras according to density of paper
         let eras = []
@@ -159,16 +170,20 @@ export default class MRTViewer extends React.Component {
             y: this.nodeOffsetY,
             color: rootColor,
             pins: [{...dataView.root, 
-                textPieces: this.nodeTextFold(dataView.root.text, 2), 
-                fullTextPieces: this.nodeTextFold(dataView.root.text, this.nodeFullSpan),
-                abstractPieces: this.nodeTextSecondaryFold(dataView.root.abstract, this.nodeFullSpan),
-                edits: this.state.userEdits[dataView.root.id]
+                textPieces: this.nodeTextCustomFold(dataView.root.text, 3, this.nodeTextFontSize * 1.5), 
+                fullTextPieces: this.nodeTextCustomFold(dataView.root.text, 3, this.nodeTextFontSize * 1.5),
+                abstractPieces: this.nodeTextCustomFold(dataView.root.abstract, 3, this.nodeTextSecondaryFontSize * 1.5),
+                edits: this.props.userEdits[dataView.root.id]
             }],
-            span: 2,
-            fullSpan: this.nodeFullSpan,
+            span: 3,
+            fullSpan: 3,
+            fontSize: this.nodeTextFontSize * 1.5,
+            secondaryFontSize: this.nodeTextSecondaryFontSize * 1.5,
+            lineHeight: this.nodeTextLineHeight * 1.5,
+            secondaryLineHeight: this.nodeTextSecondaryLineHeight * 1.5,
         }
-        views.nodes.root.lines = this.nodeTextLines(views.nodes.root)
-        views.nodes.root.height = this.nodeHeight(views.nodes.root.lines)
+        // views.nodes.root.lines = this.nodeTextLines(views.nodes.root)
+        views.nodes.root.height = this.nodeHeight(views.nodes.root)
 
         views.nodes.branches = dataView.branches.map((branch, branchID) => eras.map((era, eraID) => { return {
             x: this.nodeWidth * branchID + this.nodeOffsetX,
@@ -179,6 +194,10 @@ export default class MRTViewer extends React.Component {
             eraID,
             clusterID: Math.floor(branchID / 2),
             branchID,
+            fontSize: this.nodeTextFontSize,
+            secondaryFontSize: this.nodeTextSecondaryFontSize,
+            lineHeight: this.nodeTextLineHeight,
+            secondaryLineHeight: this.nodeTextSecondaryLineHeight,
         }}))
         
         views.nodes.branches.forEach((branch, branchID) => branch.forEach((node, eraID) => {
@@ -191,8 +210,8 @@ export default class MRTViewer extends React.Component {
                 pin.fullTextPieces = this.nodeTextFold(pin.text, node.fullSpan)
                 pin.abstractPieces = this.nodeTextSecondaryFold(pin.abstract, node.fullSpan)
             })
-            node.lines = this.nodeTextLines(node)
-            node.height = this.nodeHeight(node.lines)
+            // node.lines = this.nodeTextLines(node)
+            node.height = this.nodeHeight(node)
         }))
 
         const horizon = views.nodes.root.height + this.horizonMarginTop
@@ -203,6 +222,14 @@ export default class MRTViewer extends React.Component {
             _height += eraHeight
             return eraHeight
         })
+
+        const nodesLookup = {}
+        views.nodes.branches.forEach(branch => branch.forEach(node => node.pins.forEach((pin, idx) => {
+            pin.x = node.x
+            pin.y = node.y + node.pins.slice(0, idx).reduce((prev, pin) => prev + (pin.textPieces.length + 0.5) * this.nodeTextLineHeight, 0)
+            nodesLookup[pin.id] = pin
+        })))
+        console.log(nodesLookup)
 
         {
             const node = views.nodes.root, nodeLeft = views.nodes.branches[0][0], nodeRight = views.nodes.branches[numBranches - 2][0]
@@ -225,7 +252,7 @@ export default class MRTViewer extends React.Component {
                 const yStart = (shrinkFlag && node.pins.length === 0 && ((branchID > 0 && sib.pins.length > 0) || (eraID === endEra))) ? (node.y - this.nodeRadius - this.nodeTextLineHeight) : node.y
                 node = branch[eraID-1]
                 sib = branchID > 0 ? views.nodes.branches[branchID-1][eraID-1] : null
-                const yEnd = (shrinkFlag && node.pins.length === 0 && branchID > 0 && sib.pins.length > 0) ? (node.y - this.nodeOffsetY + this.nodeHeight(this.nodeTextLines(sib)) - this.nodePaddingBottom + this.nodeTextLineHeight) : node.y
+                const yEnd = (shrinkFlag && node.pins.length === 0 && branchID > 0 && sib.pins.length > 0) ? (node.y - this.nodeOffsetY + this.nodeHeight(sib) - this.nodePaddingBottom + this.nodeTextLineHeight) : node.y
                 addVerticalEdge(node.x, yStart, yEnd, node.color)
             }
             if (branchID % 2 === 0) {
@@ -244,26 +271,26 @@ export default class MRTViewer extends React.Component {
         })
         
         const onEdit = (action, source, param) => {
-            const _state = {...this.state}
-            if (!_state.userEdits[source.id] && (action === "thumb-up" || action === "thumb-down" || action === "exchange")) {
-                _state.userEdits[source.id] = {rate: 0, clusterID: source.clusterID}
+            const userEdits = this.props.userEdits
+            if (!userEdits[source.id] && (action === "thumb-up" || action === "thumb-down" || action === "exchange")) {
+                userEdits[source.id] = {rate: 0, clusterID: source.clusterID}
             }
-            if (action === "thumb-up" && _state.userEdits[source.id].rate <= 0) {
-                _state.userEdits[source.id].rate = 1
-                this.setState(_state)
-            } else if (action === "thumb-down" && _state.userEdits[source.id].rate >= 0) {
-                _state.userEdits[source.id].rate = -1
-                this.setState(_state)
-            } else if (action === "thumb-delete" && _state.userEdits[source.id] && _state.userEdits[source.id].rate !== 0) {
-                _state.userEdits[source.id].rate = 0
-                this.setState(_state)
-            } else if (action === "to-exchange" && _state.toExchange === null) {
-                _state.toExchange = source
-                this.setState(_state)
+            if (action === "thumb-up" && userEdits[source.id].rate <= 0) {
+                userEdits[source.id].rate = 1
+                this.props.onEditChange(userEdits)
+            } else if (action === "thumb-down" && userEdits[source.id].rate >= 0) {
+                userEdits[source.id].rate = -1
+                this.props.onEditChange(userEdits)
+            } else if (action === "thumb-delete" && userEdits[source.id] && userEdits[source.id].rate !== 0) {
+                userEdits[source.id].rate = 0
+                this.props.onEditChange(userEdits)
+            } else if (action === "to-exchange" && this.state.toExchange === null) {
+                this.setState({toExchange: source})
+                this.props.onEditChange(userEdits)
             } else if (action === "exchange") {
-                _state.userEdits[source.id].clusterID = param
-                _state.toExchange = null
-                this.setState(_state)
+                userEdits[source.id].clusterID = param
+                this.setState({toExchange: null})
+                this.props.onEditChange(userEdits)
             }
         }
 
@@ -302,6 +329,8 @@ export default class MRTViewer extends React.Component {
             const x = views.nodes.branches[idx*2][eras.length-1].x
             return generateGradientColor(chroma(color).luminance(0.5), "white", x, _height, x, _height+extendedHeight)
         })
+
+        console.log(views)
 
         return <svg className="mrt" id={this.props.id} width="100%" viewBox={`0 0 ${_width} ${_height+extendedHeight}`}>
             {views.defs}
@@ -359,25 +388,40 @@ export default class MRTViewer extends React.Component {
                                 })   
                             }/>
             )}
+            <g className="mrt-links">
+            {renderNodes.map((node, idx) => node.pins.length > 0 && node !== views.nodes.root &&
+                <NodeLinks key={idx}
+                    linksVisibility={this.state.linksVisibility}
+                    node={node}
+                    nodesLookup={nodesLookup}
+                    nodePaddingLeft={this.nodePaddingLeft}
+                    radius={this.nodeRadius}
+                    lineHeight={this.nodeTextLineHeight}
+                />)
+            }
+            </g>
             <g className="mrt-node-text-container">
             {renderNodes.map((node, idx) => node.pins.length > 0 &&
                 <NodeText key={idx}
+                      node={node}
                       pins={node.pins} 
                       x={node.x} y={node.y}
                       radius={this.nodeRadius}
-                      lineHeight={this.nodeTextLineHeight}
-                      secondaryLineHeight={this.nodeTextSecondaryLineHeight}
+                      lineHeight={node.lineHeight}
+                      secondaryLineHeight={node.secondaryLineHeight}
                       textWidth={(node.span - 1) * this.nodeWidth + this.nodeTextWidth}
                       fullTextWidth={(node.fullSpan - 1) * this.nodeWidth + this.nodeTextWidth}
                       color={node.color}
-                      fontSize={this.nodeTextFontSize}
-                      secondaryFontSize={this.nodeTextSecondaryFontSize}
+                      fontSize={node.fontSize}
+                      secondaryFontSize={node.secondaryFontSize}
                       strokeWidth={this.strokeWidth}
                       onEdit={onEdit}
                       textLeadingMargin={this.nodeTextLeadingMargin}
                       editable={typeof(node.clusterID) !== "undefined"}
                       editButtonMarginTop={this.nodeEditButtonMarginTop}
-                      scaleOrigin={(node.clusterID === numClusters - 1) ? "right" : ((node.branchID === numBranches - 3) ? "middle" : "left")}/>)}
+                      scaleOrigin={(node.clusterID === numClusters - 1) ? "right" : ((node.branchID === numBranches - 3) ? "middle" : "left")}
+                      linksVisibility={this.state.linksVisibility}
+                      onSwitchLinksVisibility={(id) => this.onSwitchLinksVisibility(id)}/>)}
             </g>
             {
                 clusterLabelTexts.map((texts, idx) => {
