@@ -50,9 +50,9 @@ export default class MRTViewer extends React.Component {
         this.state = {toExchange: null, focusEraIndex: -1, linksVisibility: {}}
     }
 
-    onSwitchLinksVisibility(id) {
+    onSwitchLinksVisibility(id, visible) {
         const linksVisibility = this.state.linksVisibility
-        linksVisibility[id] = !(linksVisibility[id] === true)
+        linksVisibility[id] = visible
         this.setState({linksVisibility})
     }
 
@@ -98,7 +98,7 @@ export default class MRTViewer extends React.Component {
 
         const importance = this.props.data.importance
         const maxImportance = _.max(importance), minImportance = _.min(importance)
-        const clusterStrokeWidth = importance.map((i) => ((i - minImportance) / (maxImportance - minImportance) + 1) / 2 * this.strokeWidth)
+        const clusterStrokeWidth = importance.map((i) => ((i - minImportance) / (maxImportance - minImportance) * 4 + 1) / 2 * this.strokeWidth)
 
         // initialize dataView (filter subBranch is hideSubBranch is enabled)
         let dataView = {root: extract(this.props.data.root), branches: _.range(0, 2 * this.props.data.branches.length).map(() => [])}
@@ -420,8 +420,9 @@ export default class MRTViewer extends React.Component {
                       editButtonMarginTop={this.nodeEditButtonMarginTop}
                       scaleOrigin={(node.clusterID === numClusters - 1) ? "right" : ((node.branchID === numBranches - 3) ? "middle" : "left")}
                       linksVisibility={this.state.linksVisibility}
-                      onSwitchLinksVisibility={(id) => this.onSwitchLinksVisibility(id)}
-                      lang={this.props.lang}/>)}
+                      onSwitchLinksVisibility={(id, visible) => this.onSwitchLinksVisibility(id, visible)}
+                      lang={this.props.lang}
+                      onCardOpen={this.props.onCardOpen}/>)}
             </g>
             {
                 clusterLabelTexts.map((texts, idx) => {

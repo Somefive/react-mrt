@@ -3,6 +3,9 @@ import MRTViewer from './mrt-viewer'
 import './index.css'
 import svgLib from 'save-svg-as-png'
 import { Toolbox } from './toolbox/index'
+// import MRTCard from './mrt-card'
+import 'antd/dist/antd.css'
+import _ from 'lodash'
 
 export default class MRT extends React.Component {
     
@@ -14,6 +17,7 @@ export default class MRT extends React.Component {
             hideSubBranch: false,
             disableTextClusterSpan: false,
             fontExtraSize: 0,
+            // cardVisibility: {}
         }
         this.generated = false
     }
@@ -45,6 +49,13 @@ export default class MRT extends React.Component {
         reader.readAsText(e.target.files[0])
     }
 
+    // onCardSet(key, value) {
+    //     const cardVisibility = this.state.cardVisibility
+    //     if (value === null) delete cardVisibility[key]
+    //     else cardVisibility[key] = value
+    //     this.setState({cardVisibility})
+    // }
+
     render() {
         return (
             <div className="mrt-container" style={{width: `${this.state.viewerScale}%`}}>
@@ -62,7 +73,11 @@ export default class MRT extends React.Component {
                     fontExtraSize={this.state.fontExtraSize}
                     authors={this.props.authors}
                     onEditChange={this.props.onEditChange}
+                    onCardOpen={(pin) => this.onCardSet(pin.id, pin)}
                     lang={this.props.lang}/>
+                {/* {_.map(this.state.cardVisibility, (value, key) => 
+                    <MRTCard key={key} paper={value} onCardClose={() => this.onCardSet(key, null)}/>
+                )} */}
             </div>
         )
     }

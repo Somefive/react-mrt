@@ -4,7 +4,7 @@ import { ReactComponent as IconThumbsDown } from '@ant-design/icons-svg/inline-s
 import { ReactComponent as IconThumbsUpSolid } from '@ant-design/icons-svg/inline-svg/fill/like.svg'
 import { ReactComponent as IconThumbsDownSolid } from '@ant-design/icons-svg/inline-svg/fill/dislike.svg'
 import { ReactComponent as IconExchange } from '@ant-design/icons-svg/inline-svg/outline/pull-request.svg'
-import { ReactComponent as IconShareAlt } from '@ant-design/icons-svg/inline-svg/outline/share-alt.svg'
+import { ReactComponent as IconPushPin } from '@ant-design/icons-svg/inline-svg/outline/pushpin.svg'
 import { ReactComponent as IconStar } from '@ant-design/icons-svg/inline-svg/fill/star.svg'
 import chroma from 'chroma-js'
 import './node.css'
@@ -21,23 +21,20 @@ const AbstractColor = chroma("grey").luminance(0.1)
 
 export class NodeCircle extends React.Component {
 
-    constructor(props) {
-        super(props)
-        this.state = {hover: false}
-    }
-
-    onHover(hover) {
-        this.setState({hover})
-        if (this.props.onHover) this.props.onHover(hover)
-    }
-    
     render() {
+        const level = this.props.node.pins.reduce((prev, pin) => Math.max(prev, pin.level || 0), 0)
+        const r = this.props.radius
+        const dy = r * (level / 1.75 - 0.75)
+        const dx = Math.sqrt(r * r - dy * dy)
+        const y = this.props.node.y - dy, x1 = this.props.node.x - dx, x2 = this.props.node.x + dx
         return (
-            <circle className="era-node-circle" cx={this.props.node.x} cy={this.props.node.y} r={this.props.radius}
-                onMouseOver={() => { this.onHover(true) }}
-                onMouseLeave={() => { this.onHover(false) }}
-                stroke={this.props.node.color} strokeWidth={this.props.strokeWidth}
-                fill={this.state.hover ? this.props.node.color : "white"}/>
+            <g onMouseEnter={() => { this.props.onHover(true) }} onMouseLeave={() => { this.props.onHover(false) }}>
+                {level > 0 && <path d={`M ${x1} ${y} A ${r} ${r} 0 ${level >= 2 ? 1 : 0} 0 ${x2} ${y}`} fill={this.props.node.color} stroke={this.props.node.color} strokeWidth={this.props.strokeWidth}/>}
+                {level > 0 && <path d={`M ${x1} ${y} A ${r} ${r} 0 ${level >= 2 ? 0 : 1} 1 ${x2} ${y}`} fill="white" stroke={this.props.node.color} strokeWidth={this.props.strokeWidth}/>}
+                {level === 0 && <circle className="era-node-circle" cx={this.props.node.x} cy={this.props.node.y} r={this.props.radius}
+                    stroke={this.props.node.color} strokeWidth={this.props.strokeWidth}
+                    fill="white"/>}
+            </g>
         )
     }
 
@@ -47,11 +44,12 @@ export class NodeText extends React.Component {
 
     constructor(props) {
         super(props)
-        this.state = { expand: -1 }
+        this.state = { expand: -1, pinned: {} }
     }
 
-    onHover(hover) {
-        if (!hover && this.state.expand !== -1) this.setState({expand: -1})
+    onHover(idx, enter) {
+        this.setState({expand: enter ? idx : -1})
+        if (enter || !this.state.pinned[idx]) this.props.onSwitchLinksVisibility(this.props.node.pins[idx].id, enter)
     }
 
     render() {
@@ -63,13 +61,19 @@ export class NodeText extends React.Component {
         const texts = this.props.pins.map((pin, _idx) => {
             const isFocus = this.state.expand === _idx
             const collapseHandler = () => this.setState({expand: isFocus ? -1 : _idx})
+            const pinLinkHandler = () => {
+                const pinned = this.state.pinned
+                pinned[_idx] = !pinned[_idx]
+                this.setState({pinned})
+            }
+            // const collapseHandler = () => this.props.onCardOpen(pin)
             const textPieces = isFocus ? pin.fullTextPieces : pin.textPieces
             const abstractHeight = pin.abstractPieces.length * this.props.secondaryLineHeight
             const iconY = (textPieces.length - 1) * this.props.lineHeight + this.props.editButtonMarginTop + isFocus * abstractHeight
             const textWidth = isFocus ? this.props.fullTextWidth : this.props.textWidth
             const generateEditIcon = (T, dx, fill, action, text) => <g transform={`translate(${textWidth-iconSize*dx}, ${iconY})`}>
                 <g className="paper-edit-icon" style={{transformOrigin: `${iconSize/2}px ${iconSize/2}px`}}
-                    onClick={action === "link-switch" ? () => this.props.onSwitchLinksVisibility(pin.id) : (() => this.props.onEdit(action, pin))}>
+                    onClick={action === "pin-link" ? (() => pinLinkHandler()) : (() => this.props.onEdit(action, pin))}>
                     <T className="paper-edit-icon" fill={fill} width={iconSize} height={iconSize}/>
                     <rect className="paper-edit-icon" width={iconSize} height={iconSize} fill="transparent"/>
                     <text textAnchor="middle" x={iconSize/2} y={iconSize+this.props.secondaryLineHeight/2} fill={fill} fontSize={this.props.secondaryLineHeight/2}>{t(text)}</text>
@@ -81,8 +85,8 @@ export class NodeText extends React.Component {
             return (
                 <g key={_idx} transform={`translate(${this.props.textLeadingMargin + this.props.radius}, ${pin.y - this.props.node.y})`}>
                     <g className="paper-view-group-inner" style={{transformOrigin: `${transformOriginX}px ${-this.props.lineHeight}px`}}
-                        onMouseOver={() => this.onHover(true)}
-                        onMouseLeave={() => this.onHover(false)}>
+                        onMouseEnter={() => this.onHover(_idx, true)}
+                        onMouseLeave={() => this.onHover(_idx, false)}>
                         <rect className="paper-text-background" x={-this.props.lineHeight} y={-this.props.lineHeight * 2.5}
                             width={textWidth+2*this.props.lineHeight} height={this.props.lineHeight * 4 + iconY + iconSize}
                             fill="white" filter="url(#blur-filter)"/>
@@ -98,7 +102,7 @@ export class NodeText extends React.Component {
                             {this.props.editable && generateEditIcon(IconExchange, 6, ExchangeColor, "to-exchange", "Move")}
                             {generateEditIcon(isUp ? IconThumbsUpSolid : IconThumbsUp, 4.5, ThumbUpColor, isUp ? "thumb-delete" : "thumb-up", "Like")}
                             {generateEditIcon(isDown ? IconThumbsDownSolid : IconThumbsDown, 3, ThumbDownColor, isDown ? "thumb-delete" : "thumb-down", "Dislike")}
-                            {this.props.editable && (pin.references.length > 0 || pin.citations.length > 0) && generateEditIcon(IconShareAlt, 1.5, this.props.linksVisibility[pin.id] ? HideLinkColor : DisplayLinkColor, "link-switch", "Citation")}
+                            {this.props.editable && (pin.references.length > 0 || pin.citations.length > 0) && generateEditIcon(IconPushPin, 1.5, this.state.pinned[_idx] ? HideLinkColor : DisplayLinkColor, "pin-link", "Citation")}
                             {pin.level &&
                             <g transform={`translate(0, ${iconY})`}>
                                 <rect className="paper-edit-icon" width={iconSize*pin.level} height={iconSize} fill="transparent"/>
