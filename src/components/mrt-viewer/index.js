@@ -86,7 +86,7 @@ export default class MRTViewer extends React.Component {
         this.nodeFontExtraSize = this.props.fontExtraSize || 0
         this.nodeTextFontSize = 20 + this.nodeFontExtraSize
         this.nodeTextSecondaryFontSize = 16 + this.nodeFontExtraSize
-        this.nodeTextLineHeight = 20 + this.nodeFontExtraSize
+        this.nodeTextLineHeight = 22 + this.nodeFontExtraSize
         this.nodeTextSecondaryLineHeight = 18 + this.nodeFontExtraSize
         this.nodeTextCustomFold = (text, span, fontSize) => {
             const textLength = Math.floor(((span - 1) * this.nodeWidth + this.nodeTextWidth) / (fontSize * this.averageFontWidthRatio))

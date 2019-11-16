@@ -3,8 +3,14 @@ import QRCode from 'qrcode'
 import './toolbox.css'
 import Tool from './tool'
 import TooltipTextTranslation from './tooltip-text-translation.json'
+import Helper from './helper'
+import { Modal } from 'antd'
 
 export class Toolbox extends React.Component {
+    constructor(props) {
+        super(props)
+        this.state = { helperVisible: false }
+    }
 
     render() {
         setTimeout(() => {
@@ -18,6 +24,9 @@ export class Toolbox extends React.Component {
                 <div className="toolgroup horizontal">
                     <div className="toolgroup secondary vertical">
                         <Tool type="heart" theme={this.props.like ? "filled" : "twoTone"} color="red" tooltipText={t(this.props.like ? "Dislike" : "Like")} primary onClick={() => this.props.onLike()}/>
+                    </div>
+                    <div className="toolgroup secondary vertical">
+                        <Tool className="toolgroup" type="question-circle" theme="outlined" color="yellow" tooltipText={t("Guide")} primary onClick={() => this.setState({helperVisible: true})}/>
                     </div>
                     <div className="toolgroup secondary vertical">
                         <Tool type="share-alt" theme="outlined" color="green" tooltipText={t("Share")} primary/>
@@ -55,6 +64,9 @@ export class Toolbox extends React.Component {
                         <Tool className="toolgroup" type="appstore" theme="outlined" color="purple" tooltipText={t("Toolbox")} primary/>
                     </div>
                 </div>
+                <Modal title={t("Guide")} visible={this.state.helperVisible} onCancel={() => this.setState({helperVisible: false})} footer={null} width={"50%"} bodyStyle={{padding: "1rem"}}>
+                    <Helper lang={this.props.lang}/>
+                </Modal>
             </div>
         )
     }
