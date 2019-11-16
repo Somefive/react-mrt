@@ -55,7 +55,6 @@ export class NodeText extends React.Component {
     onCollapse(idx) {
         const enter = this.state.expand !== idx
         this.setState({expand: enter ? idx : -1})
-        if (enter || !this.state.pinned[idx]) this.props.onSwitchLinksVisibility(this.props.node.pins[idx].id, enter)
     }
 
     render() {
