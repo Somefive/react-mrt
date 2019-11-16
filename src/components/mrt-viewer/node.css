@@ -22,7 +22,7 @@
 }
 
 .paper-view-group-inner {
-    transition: transform .05s;
+    transition: transform .5s;
     opacity: 1;
 }
 

@@ -22,6 +22,7 @@
 }
 
 .tooltip .tooltip-text {
+    margin-top: 0.15rem;
     font-size: 0.6rem;
     visibility: hidden;
     display: inline-block;
@@ -34,7 +35,7 @@
     left: 50%;
     transform: translate(-50%, -85%);
 }
-  
+
 .tooltip:hover .tooltip-text {
     visibility: visible;
 }

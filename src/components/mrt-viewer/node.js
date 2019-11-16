@@ -44,10 +44,16 @@ export class NodeText extends React.Component {
 
     constructor(props) {
         super(props)
-        this.state = { expand: -1, pinned: {} }
+        this.state = { expand: -1, pinned: {}, focus: -1 }
     }
 
     onHover(idx, enter) {
+        this.setState({expand: enter ? this.state.expand : -1, focus: enter ? idx: -1})
+        if (enter || !this.state.pinned[idx]) this.props.onSwitchLinksVisibility(this.props.node.pins[idx].id, enter)
+    }
+
+    onCollapse(idx) {
+        const enter = this.state.expand !== idx
         this.setState({expand: enter ? idx : -1})
         if (enter || !this.state.pinned[idx]) this.props.onSwitchLinksVisibility(this.props.node.pins[idx].id, enter)
     }
@@ -60,7 +66,7 @@ export class NodeText extends React.Component {
         const iconSize = this.props.lineHeight * 1.25
         const texts = this.props.pins.map((pin, _idx) => {
             const isFocus = this.state.expand === _idx
-            const collapseHandler = () => this.setState({expand: isFocus ? -1 : _idx})
+            const collapseHandler = () => this.onCollapse(_idx)
             const pinLinkHandler = () => {
                 const pinned = this.state.pinned
                 pinned[_idx] = !pinned[_idx]
@@ -97,7 +103,7 @@ export class NodeText extends React.Component {
                             <text className="paper-abstract-inner" fontSize={this.props.secondaryFontSize} fill={AbstractColor}>
                                 {pin.abstractPieces.map((_text, idx) => <tspan key={idx} x="0" y={textPieces.length * this.props.lineHeight + idx * this.props.secondaryLineHeight}>{_text}</tspan>)}
                             </text>}
-                        {isFocus &&
+                        {this.state.focus === _idx &&
                         <g className="paper-edit-icon-group">
                             {this.props.editable && generateEditIcon(IconExchange, 6, ExchangeColor, "to-exchange", "Move")}
                             {generateEditIcon(isUp ? IconThumbsUpSolid : IconThumbsUp, 4.5, ThumbUpColor, isUp ? "thumb-delete" : "thumb-up", "Like")}
