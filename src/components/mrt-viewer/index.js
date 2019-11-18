@@ -62,9 +62,9 @@ export default class MRTViewer extends React.Component {
             const year = paper["paper_year"]
             const venue = paper["paper_venue"].trim()
             const title = paper["paper_title"].trim()
-            const citations = paper["citations"]
-            const references = paper["references"]
-            const score = paper["score"]
+            const citations = paper["citations"] || []
+            const references = paper["references"] || []
+            const score = paper["score"] || paper["paper_citations"] || 0
             let prefix = `${year}`
             const venue_year = /^(19|20)\d{2}\b/.exec(venue)
             if (venue_year == null && venue.length > 0) {
@@ -98,7 +98,9 @@ export default class MRTViewer extends React.Component {
 
         const importance = this.props.data.importance
         const maxImportance = _.max(importance), minImportance = _.min(importance)
-        const clusterStrokeWidth = importance.map((i) => ((i - minImportance) / (maxImportance - minImportance) * 4 + 1) / 2 * this.strokeWidth)
+        const clusterStrokeWidth = importance ?
+            importance.map((i) => ((i - minImportance) / (maxImportance - minImportance) * 4 + 1) / 2 * this.strokeWidth) :
+            this.clusterNames.map(() => this.strokeWidth)
 
         // initialize dataView (filter subBranch is hideSubBranch is enabled)
         let dataView = {root: extract(this.props.data.root), branches: _.range(0, 2 * this.props.data.branches.length).map(() => [])}
