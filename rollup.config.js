@@ -6,6 +6,7 @@ import resolve from 'rollup-plugin-node-resolve'
 import json from 'rollup-plugin-json'
 import images from 'rollup-plugin-image-files'
 import svgr from '@svgr/rollup'
+import svg from 'rollup-plugin-svg'
 
 import pkg from './package.json'
 
@@ -26,6 +27,7 @@ export default {
   plugins: [
     external(),
     postcss(),
+    svg(),
     images(),
     svgr(),
     json(),
