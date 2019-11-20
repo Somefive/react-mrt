@@ -43,8 +43,7 @@
 
 .mrt-modal.ant-modal {
     width: 50% !important;
-    top: 50% !important;
-    transform: translate(0, -50%) !important;
+    top: 10% !important;
 }
 
 .mrt-modal .slick-slide {
