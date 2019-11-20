@@ -4,7 +4,6 @@ import './mrt.css'
 import svgLib from 'save-svg-as-png'
 import { Toolbox } from './toolbox/index'
 // import MRTCard from './mrt-card'
-import 'antd/dist/antd.css'
 // import _ from 'lodash'
 
 export default class MRT extends React.Component {

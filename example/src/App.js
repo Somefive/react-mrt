@@ -2,6 +2,7 @@ import React from 'react'
 import { MRT } from 'react-mrt'
 import './App.css'
 import sample_data from './sample.json'
+import 'antd/dist/antd.css'
 
 class App extends React.Component {
   
