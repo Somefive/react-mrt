@@ -69,11 +69,21 @@ export class Toolbox extends React.Component {
                         <Tool className="toolgroup" type="appstore" theme="outlined" color="purple" tooltipText={t("Toolbox")} primary/>
                     </div>
                 </div>
-                <Modal className="mrt-modal" title={t("Guide")} visible={this.state.helperVisible} onCancel={() => this.setState({helperVisible: false})} footer={null} width={"auto"} bodyStyle={{padding: "1rem"}}>
-                    <Helper lang={this.props.lang}/>
-                </Modal>
+                <HelperModal lang={this.props.lang} onCancel={() => this.setState({helperVisible: false})} visible={this.state.helperVisible}/>
             </div>
         )
     }
+}
 
+export class HelperModal extends React.Component {
+    render() {
+        const lang = this.props.lang || "en"
+        const translation = TooltipTextTranslation[lang]
+        const t = (text) => (translation && translation[text.toLowerCase()]) ? translation[text.toLowerCase()] : text
+        return (
+            <Modal className="mrt-modal" title={t("Guide")} visible={this.props.visible} onCancel={this.props.onCancel} footer={null} width={"auto"} bodyStyle={{padding: "1rem"}}>
+                <Helper lang={this.props.lang}/>
+            </Modal>
+        )
+    }
 }
