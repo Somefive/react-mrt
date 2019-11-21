@@ -177,7 +177,8 @@ export default class MRTViewer extends React.Component {
                 textPieces: this.nodeTextCustomFold(dataView.root.text, 3, this.nodeTextFontSize * 1.5), 
                 fullTextPieces: this.nodeTextCustomFold(dataView.root.text, 3, this.nodeTextFontSize * 1.5),
                 abstractPieces: this.nodeTextCustomFold(dataView.root.abstract, 3, this.nodeTextSecondaryFontSize * 1.5),
-                edits: this.props.userEdits[dataView.root.id]
+                edits: this.props.userEdits[dataView.root.id],
+                node: views.nodes.root,
             }],
             span: 3,
             fullSpan: 3,
@@ -217,6 +218,7 @@ export default class MRTViewer extends React.Component {
                 pin.textPieces = this.nodeTextFold(pin.text, node.span)
                 pin.fullTextPieces = this.nodeTextFold(pin.text, node.fullSpan)
                 pin.abstractPieces = this.nodeTextSecondaryFold(pin.abstract, node.fullSpan)
+                pin.node = node
             })
             node.height = this.nodeHeight(node)
         }))

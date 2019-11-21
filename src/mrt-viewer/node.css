@@ -65,3 +65,25 @@
 .era-node-circle {
     transition: fill .5s;
 }
+
+.mrt-link-path {
+    animation: animate-frame 1.5s linear forwards;
+    opacity: 0;
+}
+
+@keyframes animate-frame {
+    to {
+        opacity: 1;
+        stroke-dashoffset: 0;
+    }
+}
+
+.mrt-link-dot {
+    animation: animate-frame 5s linear forwards infinite;
+}
+
+.mrt-link-arrow {
+    animation: animate-frame .5s linear forwards;
+    animation-delay: 1s;
+    opacity: 0;
+}

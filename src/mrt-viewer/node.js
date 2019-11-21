@@ -133,12 +133,19 @@ export class NodeText extends React.Component {
 
 export class NodeLinks extends React.Component {
 
-    generateLinkPath(source, target) {
-        const x1 = source.x, y1 = source.y, x2 = target.x, y2 = target.y
+    generateLinkPath(source, target, reverse) {
+        let x1 = source.x, y1 = source.y, x2 = target.x, y2 = target.y
         const mx = x1 - this.props.radius - this.props.nodePaddingLeft
+        if (reverse) {
+            x1 = target.x
+            y1 = target.y
+            x2 = source.x
+            y2 = source.y
+        }
         let d = `M ${x1} ${y1}`
         if (y1 === y2) d += ` L ${x2} ${y2}`
-        else d += ` C ${mx} ${y1}, ${mx} ${y1}, ${mx} ${(y1+y2)/2} S ${mx} ${y2}, ${x2} ${y2}`
+        else if (!reverse) d += ` L ${mx} ${y1} L ${mx} ${(y1+y2)/2} C ${mx} ${y2}, ${mx} ${y2}, ${x2} ${y2}`
+        else d += ` C ${mx} ${y1}, ${mx} ${y1}, ${mx} ${(y1+y2)/2} L ${mx} ${y2} L ${x2} ${y2}`
         return d
     }
 
@@ -155,6 +162,10 @@ export class NodeLinks extends React.Component {
         }
     }
 
+    estimateLinkLength(source, target) {
+        return 2 * (Math.abs(source.x - target.x) + Math.abs(source.y - target.y))
+    }
+
     render() {
         const textColor = this.props.node.textColor
         const links = this.props.node.pins.map((pin, _idx) => {
@@ -163,8 +174,12 @@ export class NodeLinks extends React.Component {
                 <circle cx={pin.x} cy={pin.y} r={0.5 * this.props.lineHeight} fill={textColor}/>
                 {[...pin.references, ...pin.citations].map((id, idx) => this.props.nodesLookup[id] && 
                 <g key={idx}>
-                    <path d={this.generateLinkPath(pin, this.props.nodesLookup[id])} strokeWidth={2} stroke={textColor} strokeDasharray={10} fill="transparent"/>
-                    <path d={this.generateArrowPath(pin, this.props.nodesLookup[id], pin.references.indexOf(id) >= 0)} fill={textColor}/>
+                    <circle cx={this.props.nodesLookup[id].x} cy={this.props.nodesLookup[id].y} r={5} fill={this.props.nodesLookup[id].node.color}/>
+                    <path className="mrt-link-path" d={this.generateLinkPath(pin, this.props.nodesLookup[id], idx >= pin.references.length)} strokeWidth={3} stroke={textColor} fill="transparent"
+                        strokeDasharray={this.estimateLinkLength(pin, this.props.nodesLookup[id])} strokeDashoffset={this.estimateLinkLength(pin, this.props.nodesLookup[id])}/>
+                    <path className="mrt-link-dot" d={this.generateLinkPath(pin, this.props.nodesLookup[id], idx >= pin.references.length)} strokeWidth={10} stroke={textColor} fill="transparent"
+                        strokeDasharray={`10 ${this.estimateLinkLength(pin, this.props.nodesLookup[id])}`} strokeDashoffset={this.estimateLinkLength(pin, this.props.nodesLookup[id])}/>
+                    <path className="mrt-link-arrow" d={this.generateArrowPath(pin, this.props.nodesLookup[id], pin.references.indexOf(id) >= 0)} fill={textColor}/>
                 </g>
                 )}
             </g>)
