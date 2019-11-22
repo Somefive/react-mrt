@@ -47,13 +47,19 @@ export default class MRTViewer extends React.Component {
             return this.nodePaddingTop + this.nodeRadius + Math.max(this.nodeRadius, pinsHeight) + this.nodePaddingBottom
         }
 
-        this.state = {toExchange: null, focusEraIndex: -1, linksVisibility: {}}
+        this.state = {toExchange: null, focusEraIndex: -1, linksVisibility: {}, focusedPaperID: -1}
     }
 
     onSwitchLinksVisibility(id, visible) {
         const linksVisibility = this.state.linksVisibility
         linksVisibility[id] = visible
         this.setState({linksVisibility})
+    }
+
+    onPaperFocus(id, enter, pinned) {
+        const linksVisibility = this.state.linksVisibility
+        linksVisibility[id] = enter || pinned
+        this.setState({linksVisibility, focusedPaperID: enter ? id : -1})
     }
 
     render() {
@@ -151,9 +157,9 @@ export default class MRTViewer extends React.Component {
         const branchColors = dataView.branches.map((_, branchID) => chroma(clusterColors[Math.floor(branchID / 2)]).luminance(branchID % 2 === 0 ? 0.25 : 0.5))
         const branchTextColors = branchColors.map(color => chroma(color).darken())
         let views = {defs: [], nodes: {}, edges: []}
-        const addEdge = (x1, y1, x2, y2, color, strokeWidth) => views.edges.push(<line key={views.edges.length} x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth={strokeWidth} stroke={color}/>)
-        const addVerticalEdge = (x, y1, y2, color, strokeWidth) => addEdge(x, y1, x, y2, color, strokeWidth)
-        const addHorizontalEdge = (x1, x2, y, color, strokeWidth) => addEdge(x1, y, x2, y, color, strokeWidth)
+        const addEdge = (x1, y1, x2, y2, color, strokeWidth, opacity) => views.edges.push(<line style={{opacity}} key={views.edges.length} x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth={strokeWidth} stroke={color}/>)
+        const addVerticalEdge = (x, y1, y2, color, strokeWidth, opacity) => addEdge(x, y1, x, y2, color, strokeWidth, opacity)
+        const addHorizontalEdge = (x1, x2, y, color, strokeWidth, opacity) => addEdge(x1, y, x2, y, color, strokeWidth, opacity)
         const generateGradientColor = (from, to, x1, y1, x2, y2) => {
             const colorID = randomstring.generate(8)
             views.defs.push(
@@ -241,8 +247,8 @@ export default class MRTViewer extends React.Component {
 
         {
             const node = views.nodes.root, nodeLeft = views.nodes.branches[0][0], nodeRight = views.nodes.branches[numBranches - 2][0]
-            addVerticalEdge(node.x, node.y, horizon, rootColor, this.strokeWidth)
-            addHorizontalEdge(nodeLeft.x, nodeRight.x, horizon, rootColor, this.strokeWidth)
+            addVerticalEdge(node.x, node.y, horizon, rootColor, this.strokeWidth, 1)
+            addHorizontalEdge(nodeLeft.x, nodeRight.x, horizon, rootColor, this.strokeWidth, 1)
         }
         views.nodes.branches.forEach((branch, branchID) => {
             const _branch = branch.filter(node => node.pins.length > 0)
@@ -254,6 +260,7 @@ export default class MRTViewer extends React.Component {
                 if (_nextBranch.length > 0) endEra = Math.max(endEra, _nextBranch[0].eraID)
             }
             const shrinkFlag = !this.disableTextBranchSpan && (!(this.disableTextClusterSpan && branchID % 2 === 0))
+            const opacity = (nodesLookup[this.state.focusedPaperID] && nodesLookup[this.state.focusedPaperID].clusterID !== Math.floor(branchID / 2)) ? 0.25 : 1
             for (let eraID = startEra + 1; eraID <= endEra; eraID++) {
                 let node = branch[eraID]
                 let sib = branchID > 0 ? views.nodes.branches[branchID-1][eraID] : null
@@ -261,20 +268,20 @@ export default class MRTViewer extends React.Component {
                 node = branch[eraID-1]
                 sib = branchID > 0 ? views.nodes.branches[branchID-1][eraID-1] : null
                 const yEnd = (shrinkFlag && node.pins.length === 0 && branchID > 0 && sib.pins.length > 0) ? (node.y - this.nodeOffsetY + sib.height - this.nodePaddingBottom + this.nodeTextLineHeight) : node.y
-                addVerticalEdge(node.x, yStart, yEnd, node.color, node.edgeStrokeWidth)
+                addVerticalEdge(node.x, yStart, yEnd, node.color, node.edgeStrokeWidth, opacity)
             }
             if (branchID % 2 === 0) {
                 const node = branch[0]
                 const sib = branchID > 0 ? views.nodes.branches[branchID-1][0] : null
                 const yEnd = (shrinkFlag && node.pins.length === 0 && branchID > 0 && sib.pins.length > 0) ? (node.y - this.nodeRadius - this.nodeTextLineHeight) : node.y
-                addVerticalEdge(node.x, horizon, yEnd, generateGradientColor(rootColor, node.color, node.x, horizon, node.x, yEnd), node.edgeStrokeWidth)
+                addVerticalEdge(node.x, horizon, yEnd, generateGradientColor(rootColor, node.color, node.x, horizon, node.x, yEnd), node.edgeStrokeWidth, opacity)
             } else {
                 const node = branch[startEra]
                 const sib = views.nodes.branches[branchID-1][startEra]
                 const yEnd = node.y - this.nodeRadius - this.nodeTextLineHeight
                 const yStart = node.y
-                addVerticalEdge(node.x, yStart, yEnd, node.color, node.edgeStrokeWidth)
-                addHorizontalEdge(node.x, sib.x, yEnd, generateGradientColor(node.color, sib.color, node.x, yEnd, sib.x, yEnd), node.edgeStrokeWidth)
+                addVerticalEdge(node.x, yStart, yEnd, node.color, node.edgeStrokeWidth, opacity)
+                addHorizontalEdge(node.x, sib.x, yEnd, generateGradientColor(node.color, sib.color, node.x, yEnd, sib.x, yEnd), node.edgeStrokeWidth, opacity)
             }
         })
         
@@ -335,6 +342,9 @@ export default class MRTViewer extends React.Component {
             return generateGradientColor(chroma(color).luminance(0.5), "white", x, _height, x, _height+extendedHeight)
         })
 
+        let highlightedPaper = nodesLookup[this.state.focusedPaperID] ? [nodesLookup[this.state.focusedPaperID].id, ...nodesLookup[this.state.focusedPaperID].citations, ...nodesLookup[this.state.focusedPaperID].references] : _.keys(nodesLookup)
+        highlightedPaper.push(views.nodes.root.pins[0].id)
+
         return <svg className="mrt" id={this.props.id} width="100%" viewBox={`0 0 ${_width} ${_height+extendedHeight}`}>
             {views.defs}
             <filter id="blur-filter">
@@ -375,7 +385,9 @@ export default class MRTViewer extends React.Component {
                         (_branch[0].y - this.nodeTextLineHeight)) - fontSize / 2
                     const x = branch[0].x + this.nodeRadius + this.nodeTextLeadingMargin
                     const color = chroma(branchColors[idx]).darken(2)
-                    return <text key={idx} x={x} y={y} fill={color} fontSize={fontSize}>{this.clusterNames[Math.floor(idx / 2)]}</text>
+                    const clusterID = Math.floor(idx / 2)
+                    const opacity = (nodesLookup[this.state.focusedPaperID] && nodesLookup[this.state.focusedPaperID].clusterID !== clusterID) ? 0.25 : 1
+                    return <text key={idx} x={x} y={y} fill={color} fontSize={fontSize} style={{opacity}}>{this.clusterNames[clusterID]}</text>
                 })
             }
             {views.edges}
@@ -388,7 +400,7 @@ export default class MRTViewer extends React.Component {
                             onHover={(hover) => 
                                 this.setState({...this.state,
                                     focusEraIndex: hover ? node.eraID : -1
-                                })   
+                                })
                             }/>
             )}
             <g className="mrt-links">
@@ -424,9 +436,11 @@ export default class MRTViewer extends React.Component {
                       editButtonMarginTop={this.nodeEditButtonMarginTop}
                       scaleOrigin={(node.clusterID === numClusters - 1) ? "right" : ((node.branchID === numBranches - 3) ? "middle" : "left")}
                       linksVisibility={this.state.linksVisibility}
-                      onSwitchLinksVisibility={(id, visible) => this.onSwitchLinksVisibility(id, visible)}
+                      onFocus={(id, enter, pinned) => this.onPaperFocus(id, enter, pinned)}
+                    //   onSwitchLinksVisibility={(id, visible) => this.onSwitchLinksVisibility(id, visible)}
                       lang={this.props.lang}
-                      onCardOpen={this.props.onCardOpen}/>)}
+                      onCardOpen={this.props.onCardOpen}
+                      highlightedPaper={highlightedPaper}/>)}
             </g>
             {
                 clusterLabelTexts.map((texts, idx) => {
