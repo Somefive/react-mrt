@@ -16,7 +16,9 @@
     "test": "cross-env CI=1 react-scripts test --env=jsdom",
     "test:watch": "react-scripts test --env=jsdom",
     "build": "rollup -c",
-    "start": "rollup -c -w",
+    "build-watch": "rollup -c -w",
+    "start-example": "cd example && npm run start",
+    "start": "concurrently --kill-others \"npm run build-watch\" \"npm run start-example\"",
     "prepare": "npm run build",
     "predeploy": "cd example && npm install && npm run build",
     "deploy": "gh-pages -d example/build"
@@ -35,6 +37,8 @@
   "devDependencies": {
     "@ant-design/icons-svg": "^4.0.0-alpha.0",
     "@svgr/rollup": "^2.4.1",
+    "@types/react": "^16.9.13",
+    "@types/react-dom": "^16.9.4",
     "babel-core": "^6.26.3",
     "babel-eslint": "^8.2.5",
     "babel-plugin-external-helpers": "^6.22.0",
@@ -42,16 +46,9 @@
     "babel-preset-react": "^6.24.1",
     "babel-preset-stage-0": "^6.24.1",
     "chroma-js": "^2.1.0",
+    "concurrently": "^5.0.0",
     "cross-env": "^5.1.4",
     "crypto": "^1.0.1",
-    "eslint": "^5.0.1",
-    "eslint-config-standard": "^11.0.0",
-    "eslint-config-standard-react": "^6.0.0",
-    "eslint-plugin-import": "^2.13.0",
-    "eslint-plugin-node": "^7.0.1",
-    "eslint-plugin-promise": "^4.0.0",
-    "eslint-plugin-react": "^7.10.0",
-    "eslint-plugin-standard": "^3.1.0",
     "fs": "0.0.1-security",
     "gh-pages": "^1.2.0",
     "qrcode": "^1.4.4",
@@ -68,8 +65,10 @@
     "rollup-plugin-peer-deps-external": "^2.2.0",
     "rollup-plugin-postcss": "^2.0.3",
     "rollup-plugin-svg": "^2.0.0",
+    "rollup-plugin-typescript2": "^0.25.2",
     "rollup-plugin-url": "^1.4.0",
-    "save-svg-as-png": "^1.4.14"
+    "save-svg-as-png": "^1.4.14",
+    "typescript": "^3.7.2"
   },
   "files": [
     "dist"

@@ -4,7 +4,6 @@ import randomstring from 'randomstring'
 import chroma from 'chroma-js'
 import './index.css'
 import { ReactComponent as Logo } from '../logo.svg'
-import _ from 'lodash'
 
 export default class MRTViewer extends React.Component {
 

@@ -6,11 +6,12 @@ import resolve from 'rollup-plugin-node-resolve'
 import json from 'rollup-plugin-json'
 import svgr from '@svgr/rollup'
 import svg from 'rollup-plugin-svg'
+import typescript from 'rollup-plugin-typescript2'
 
 import pkg from './package.json'
 
 export default {
-  input: 'src/index.js',
+  input: 'src/index.ts',
   output: [
     {
       file: pkg.main,
@@ -24,6 +25,10 @@ export default {
     }
   ],
   plugins: [
+    typescript({
+        'objectHashIgnoreUnknownHack': true,
+        'useTsconfigDeclarationDir': true
+    }),
     external(),
     postcss(),
     svg(),
