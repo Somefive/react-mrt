@@ -49,7 +49,8 @@ export class NodeText extends React.Component {
 
     onHover(idx, enter) {
         this.setState({expand: enter ? this.state.expand : -1, focus: enter ? idx: -1})
-        if (enter || !this.state.pinned[idx]) this.props.onSwitchLinksVisibility(this.props.node.pins[idx].id, enter)
+        this.props.onFocus(this.props.node.pins[idx].id, enter, this.state.pinned[idx])
+        // if (enter || !this.state.pinned[idx]) this.props.onSwitchLinksVisibility(this.props.node.pins[idx].id, enter)
     }
 
     onCollapse(idx) {
@@ -64,6 +65,7 @@ export class NodeText extends React.Component {
         let textColor = this.props.node.textColor
         const iconSize = this.props.lineHeight * 1.25
         const texts = this.props.pins.map((pin, _idx) => {
+            const isHighlighted = this.props.highlightedPaper.indexOf(pin.id) >= 0
             const isFocus = this.state.expand === _idx
             const collapseHandler = () => this.onCollapse(_idx)
             const pinLinkHandler = () => {
@@ -88,7 +90,8 @@ export class NodeText extends React.Component {
             const isDown = pin.edits && pin.edits.rate < 0
             const transformOriginX = (this.props.scaleOrigin === "left") ? 0 : (this.props.scaleOrigin === "middle" ? (textWidth / 2) : textWidth)
             return (
-                <g key={_idx} transform={`translate(${this.props.textLeadingMargin + this.props.radius}, ${pin.y - this.props.node.y})`}>
+                <g key={_idx} transform={`translate(${this.props.textLeadingMargin + this.props.radius}, ${pin.y - this.props.node.y})`}
+                    style={{opacity: isHighlighted ? 1 : 0.25}}>
                     <g className="paper-view-group-inner" style={{transformOrigin: `${transformOriginX}px ${-this.props.lineHeight}px`}}
                         onMouseEnter={() => this.onHover(_idx, true)}
                         onMouseLeave={() => this.onHover(_idx, false)}>

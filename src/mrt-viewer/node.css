@@ -49,17 +49,17 @@
     transform: scale(2);
 }
 
-.mrt-node-text-container:hover .paper-view-group-inner:hover text {
+/* .mrt-node-text-container:hover .paper-view-group-inner:hover text {
     opacity: 1;
-}
+} */
 
 /* .era-node-text-group:hover .paper-view-group-inner {
     transform: scale(0.5);   
 } */
 
-.mrt-node-text-container:hover .paper-view-group-inner text {
+/* .mrt-node-text-container:hover .paper-view-group-inner text {
     opacity: 0.25;
-}
+} */
 
 
 .era-node-circle {
