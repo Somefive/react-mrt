@@ -3,6 +3,7 @@ import MRTViewer from './mrt-viewer'
 import './mrt.css'
 import svgLib from 'save-svg-as-png'
 import { Toolbox } from './toolbox'
+import ReactDOM from 'react-dom';
 
 interface IProps {
     data: any;
@@ -24,8 +25,7 @@ interface IState {
 }
 
 export default class MRT extends React.Component<IProps, IState> {
-    private _generated: boolean;
-    private _mrtViewer: SVGSVGElement;
+    private _mrtViewer: MRTViewer | null;
     
     constructor(props: IProps) {
         super(props)
@@ -34,20 +34,24 @@ export default class MRT extends React.Component<IProps, IState> {
             viewerScale: 100,
             hideSubBranch: false,
             disableTextClusterSpan: false,
-            fontExtraSize: 0,
-            // cardVisibility: {}
+            fontExtraSize: 0
         }
-        this._generated = false
     }
 
     private capture(full: boolean) {
-        if (full)
-            svgLib.saveSvgAsPng(this._mrtViewer, `master-reading-tree.png`)
-        else {
-            const srcWidth = this._mrtViewer.viewBox.baseVal.width
-            const outputWidth = document.body.clientWidth
-            svgLib.saveSvgAsPng(this._mrtViewer, `master-reading-tree-snapshot.png`, {scale: outputWidth / srcWidth})
+        if(this._mrtViewer) {
+            let mrtDom: SVGSVGElement = ReactDOM.findDOMNode(this._mrtViewer) as SVGSVGElement;
+            if(mrtDom) {
+                if (full)
+                svgLib.saveSvgAsPng(mrtDom, `master-reading-tree.png`)
+            else {
+                const srcWidth = mrtDom.viewBox.baseVal.width
+                const outputWidth = document.body.clientWidth
+                svgLib.saveSvgAsPng(mrtDom, `master-reading-tree-snapshot.png`, {scale: outputWidth / srcWidth})
+            }
+            }
         }
+        
     }
 
     private zoom(larger: boolean) {
@@ -83,7 +87,7 @@ export default class MRT extends React.Component<IProps, IState> {
                     zoom={(larger: boolean) => this.zoom(larger)}
                     capture={(full: boolean) => this.capture(full)}
                 />
-                <MRTViewer ref={(e) => this._mrtViewer = e as any as SVGSVGElement} data={this.props.data} userEdits={userEdits} 
+                <MRTViewer ref={(e) => this._mrtViewer = e} data={this.props.data} userEdits={userEdits} 
                     hideSubBranch={this.state.hideSubBranch} disableTextClusterSpan={this.state.disableTextClusterSpan}
                     fontExtraSize={this.state.fontExtraSize}
                     authors={authors}
