@@ -1,8 +1,8 @@
 import React from 'react'
-import MRTViewer from './mrt-viewer'
+import MRTViewer from './components/mrt-viewer'
 import './mrt.css'
 import svgLib from 'save-svg-as-png'
-import { Toolbox } from './toolbox'
+import { Toolbox } from './components/toolbox'
 import ReactDOM from 'react-dom';
 
 interface IProps {
@@ -51,7 +51,6 @@ export default class MRT extends React.Component<IProps, IState> {
             }
             }
         }
-        
     }
 
     private zoom(larger: boolean) {
@@ -76,6 +75,7 @@ export default class MRT extends React.Component<IProps, IState> {
         const userEdits: any = this.props.userEdits || {};
         const authors: string[] = this.props.authors || [];
         const like: boolean = this.props.like || false;
+        console.log("data: ", this.props.data);
         return (
             <div className="mrt-container" style={{width: `${this.state.viewerScale}%`}}>
                 <Toolbox lang={lang}

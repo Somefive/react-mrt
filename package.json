@@ -37,6 +37,7 @@
   "devDependencies": {
     "@ant-design/icons-svg": "^4.0.0-alpha.0",
     "@svgr/rollup": "^2.4.1",
+    "@types/chroma-js": "^1.4.3",
     "@types/react": "^16.9.13",
     "@types/react-dom": "^16.9.4",
     "babel-core": "^6.26.3",
@@ -51,6 +52,7 @@
     "crypto": "^1.0.1",
     "fs": "0.0.1-security",
     "gh-pages": "^1.2.0",
+    "less": "^3.10.3",
     "qrcode": "^1.4.4",
     "randomstring": "^1.1.5",
     "react": "^16.4.1",

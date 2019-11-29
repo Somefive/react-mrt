@@ -3,7 +3,7 @@ import { NodeCircle, NodeText, NodeLinks } from './node'
 import randomstring from 'randomstring'
 import chroma from 'chroma-js'
 import './index.css'
-import { ReactComponent as Logo } from '../logo.svg'
+import { ReactComponent as Logo } from '../../logo.svg'
 
 export default class MRTViewer extends React.Component {
 
