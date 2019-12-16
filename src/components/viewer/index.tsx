@@ -3,7 +3,7 @@ import './index.less';
 import { IMRTTree, IMRTBlock, IMRTNode } from '../../model/mrtTree';
 import chroma from 'chroma-js';
 import { calcTextHeight } from '../../utils/text';
-import { IClusterInfo } from '../../model/mrtRender';
+import { IClusterInfo, ILineInfo } from '../../model/mrtRender';
 
 interface IState {
     inited: boolean;
@@ -24,7 +24,13 @@ export default class MRTViewer extends React.Component<IProps, IState> {
     private _globalWidth: number;
     private _globalHeight: number;
 
+    private _defaultLineWidth: number;
+    private _defaultCircleRadius: number; 
+    private _circleMarginTop: number;
+    private _branchPaddingTop: number;
+
     private _rootHeightTotal: number;
+    private _rootTextHeight: number;
     private _rootNodeTextWidth: number;
     private _rootNodeGap: number;
     private _rootNodeMarginBottom: number;
@@ -33,8 +39,12 @@ export default class MRTViewer extends React.Component<IProps, IState> {
 
     private _minBranchWidth: number;
     private _branchNormalWidth: number;
+    private _branchLineMarginLeft: number;
     private _minClusterLevel: number;
+    private _clusterColors: string[];
+
     private _clusterInfos: IClusterInfo[];
+    private _lineInfos: ILineInfo[];
 
     constructor(props: IProps) {
         super(props);
@@ -51,14 +61,56 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this._globalMarginTop = 26;
         this._globalHeight = 1500;
 
+        this._branchLineMarginLeft = 14;
+        this._defaultLineWidth = 2;
+        this._defaultCircleRadius = 4;
+        this._circleMarginTop = 8;
+        this._branchPaddingTop = 20;
+
         this._rootNodeGap = 6;
+        this._rootTextHeight = 0;
         this._rootNodeTextWidth = 250;
         this._rootNodeFontSize = 14;
         this._rootNodeLineHeight = 4 + this._rootNodeFontSize;
         this._rootNodeMarginBottom = 10;
 
+        this._clusterColors = [];
+        this._lineInfos = [];
+
         this.handleResize = this.handleResize.bind(this);
         this.handleDoubleClickCluster = this.handleDoubleClickCluster.bind(this);
+        this.mapLine = this.mapLine.bind(this);
+
+        this.initData();
+    }
+
+    private initData() {
+        const data: IMRTTree = this.props.data;
+        let clusterNum: number = data.root.children.length;
+
+        this._rootTextHeight = this.calcNodesHeight(data.root, this._rootNodeTextWidth, this._rootNodeFontSize, this._rootNodeLineHeight, this._rootNodeGap, this._rootNodeMarginBottom);
+        this._rootHeightTotal = this._rootTextHeight + this._globalMarginTop;
+        this._branchNormalWidth = Math.max(this._parentWidth / this.props.data.root.children.length/this._minClusterLevel, this._minBranchWidth);
+
+        this._clusterColors = chroma.cubehelix().start(200).rotations(3).gamma(0.7).lightness([0.2, 0.6]).scale().correctLightness().colors(clusterNum);
+        this._clusterInfos = [];
+        this._globalWidth = 0;
+        for(let i:number=0; i < clusterNum; ++i) {
+            let block: IMRTBlock = data.root.children[i];
+            let levelMax: number = this.getBranchNum(block);
+            let level: number = this._minClusterLevel;
+            let width: number = this._branchNormalWidth * level;
+            let cluster: IClusterInfo = {
+                level,
+                width,
+                levelMax,
+                bgColor: chroma(this._clusterColors[i]).luminance(0.8).hex(),
+                x: this._globalWidth,
+                y: this._rootHeightTotal
+            }
+            this._globalWidth += width;
+            this._clusterInfos.push(cluster);
+        }
     }
 
     private handleResize() {
@@ -73,17 +125,9 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         let cluster: IClusterInfo = this._clusterInfos[index];
         if(cluster.levelMax > this._minClusterLevel) {
             let level: number = cluster.levelMax == cluster.level ? this._minClusterLevel : cluster.levelMax;
-            let width: number = this._branchNormalWidth * level;
             cluster.level = level;
-            let widthChange: number = width - cluster.width;
-            cluster.width = width;
-
-            for(let i:number=index+1; i < this._clusterInfos.length; ++i) {
-                this._clusterInfos[i].startX += widthChange;
-            }
-            this._globalWidth += widthChange;
         }
-
+        this.calc();
         this.forceUpdate();
     }
 
@@ -116,46 +160,63 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         const data: IMRTTree = this.props.data;
         let clusterNum: number = data.root.children.length;
 
-        let rootTextHeight: number = this.calcNodesHeight(data.root, this._rootNodeTextWidth, this._rootNodeFontSize, this._rootNodeLineHeight, this._rootNodeGap, this._rootNodeMarginBottom);
-        this._rootHeightTotal = rootTextHeight + this._globalMarginTop;
         this._branchNormalWidth = Math.max(this._parentWidth / this.props.data.root.children.length/this._minClusterLevel, this._minBranchWidth);
 
-        if(!this._clusterInfos || this._clusterInfos.length != data.root.children.length) {
-            //初始化branchInfos
-            let clusterColors: string[] = chroma.cubehelix().start(200).rotations(3).gamma(0.7).lightness([0.2, 0.6]).scale().correctLightness().colors(clusterNum);
-            this._clusterInfos = [];
-            this._globalWidth = 0;
-            for(let i:number=0; i < clusterNum; ++i) {
-                let block: IMRTBlock = data.root.children[i];
-                let levelMax: number = this.getBranchNum(block);
-                let level: number = this._minClusterLevel;
-                let width: number = this._branchNormalWidth * level;
-                let cluster: IClusterInfo = {
-                    level,
-                    width,
-                    levelMax,
-                    bgColor: chroma(clusterColors[i]).luminance(0.8).hex(),
-                    startX: this._globalWidth,
-                    startY: this._rootHeightTotal
-                }
-                this._globalWidth += width;
-                this._clusterInfos.push(cluster);
-            }
-        }else {
-            //更新branchInfos
-            this._globalWidth = 0;
-            for(let i:number=0; i < data.root.children.length; ++i) {
-                let block: IMRTBlock = data.root.children[i];
-                let cluster: IClusterInfo = this._clusterInfos[i];
-                let levelMax: number = this.getBranchNum(block);
-                let width: number = this._branchNormalWidth * cluster.level;
-                cluster.width = width;
-                cluster.levelMax = levelMax;
-                cluster.startX = this._globalWidth;
-                cluster.startY = this._rootHeightTotal;
-                this._globalWidth += width;
-            }
+        this._globalWidth = 0;
+        for(let i:number=0; i < clusterNum; ++i) {
+            let cluster: IClusterInfo = this._clusterInfos[i];
+            let width: number = this._branchNormalWidth * cluster.level;
+            cluster.width = width;
+            cluster.x = this._globalWidth;
+            this._globalWidth += width;
         }
+        //line
+        this._lineInfos.length = 0;
+        this._lineInfos.push({
+            key: "root_line",
+            x1: this._globalWidth/2,
+            y1: this._globalMarginTop,
+            x2: this._globalWidth/2,
+            y2: this._rootHeightTotal,
+            stroke: this._rootLineColor,
+            strokeWidth: this._defaultLineWidth,
+            opacity: 1
+        });
+        let totalBridgeWidth: number = this._globalWidth - this._clusterInfos[this._clusterInfos.length-1].width;
+        this._lineInfos.push({
+            key: "bridge_line",
+            x1: this._branchLineMarginLeft,
+            y1: this._rootHeightTotal,
+            x2: this._branchLineMarginLeft + totalBridgeWidth,
+            y2: this._rootHeightTotal,
+            stroke: this._rootLineColor,
+            strokeWidth: this._defaultLineWidth,
+            opacity: 1
+        });
+        for(let i:number=0; i < clusterNum; ++i) {
+            let cluster: IClusterInfo = this._clusterInfos[i];
+            let block: IMRTBlock = data.root.children[i];
+            this._lineInfos.push({
+                key: `${i}_0_line`,
+                x1: cluster.x + this._branchLineMarginLeft,
+                y1: cluster.y,
+                x2: cluster.x + this._branchLineMarginLeft,
+                y2: this._globalHeight,
+                stroke: this._clusterColors[i],
+                strokeWidth: this._defaultLineWidth,
+                opacity: 1
+            })
+        }
+    }
+
+    private mapLine(value: ILineInfo): JSX.Element {
+        return <line key={value.key}
+                    x1={value.x1} 
+                    x2={value.x2} 
+                    y1={value.y1} 
+                    y2={value.y2} 
+                    stroke={value.stroke} 
+                    strokeWidth={value.strokeWidth} />;
     }
 
     public componentDidUpdate(preProps: IProps) {
@@ -206,11 +267,14 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                                         return <rect key={index} 
                                                     onDoubleClick={() => this.handleDoubleClickCluster(index)}
                                                     fill={value.bgColor} 
-                                                    x={value.startX} 
-                                                    y={value.startY} 
+                                                    x={value.x} 
+                                                    y={value.y} 
                                                     width={value.width} 
                                                     height={this._globalHeight} />
                                     })
+                                }
+                                {
+                                    this._lineInfos.map(this.mapLine)
                                 }
                             </svg>
                         </div>
