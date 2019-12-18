@@ -1,14 +1,14 @@
 import * as React from 'react';
 import './mrt.css';
 import MRTViewer from '../viewer';
-import { IMRTTree } from '../../model/mrtTree';
+import { IMRTData } from '../../model/mrtTree';
 
 interface IState {
 
 }
 
 interface IProps {
-    data: IMRTTree;
+    data: IMRTData;
     like?: boolean;
     lang?: string;
     userEdits?: any;
@@ -29,7 +29,7 @@ export default class MRT extends React.Component<IProps, IState> {
 
     public render() {
         console.log("data: ", this.props.data);
-        const data: IMRTTree = this.props.data;
+        const data: IMRTData = this.props.data;
         return (
             <div className='_mrt'>
                 <MRTViewer data={data}></MRTViewer>

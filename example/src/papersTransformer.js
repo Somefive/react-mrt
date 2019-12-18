@@ -3,80 +3,57 @@ import { defaultPaperNode } from 'react-mrt';
 
 export default class PapersTransformer {
     static transform(data) {
-        let tree = {};
-        let root = tree.root = {
+        let mrtData = {
+            blocks: [],
+            columns: []
+        };
+        let root = mrtData.root = {
             nodes: [this.toPaperNode(data.root)],
-            children: []
         };
         let eras = this.calcEars(data);
-        let blen = data.branches.length;
-        for(let b=0; b < blen; ++b) {
-            let branch = data.branches[b];
-            let cluster = {
-                name: b < data.clusterNames.length ? data.clusterNames[b] : "",
-                weight: b < data.importance.length ? data.importance[b] : 0,
-                nodes: [],
-                children: []
-            };
-            let subClusters = [];
-            for(let sub of branch) {
-                sub.sort((a, b) => (a.paper_year === b.paper_year) ? (b.paper_citations.length - a.paper_citations.length) : (b.paper_year - a.paper_year));
-                sub.reduce((prev, current) => {
+        let clusterLen = data.branches.length;
+        for(let cIndex=0; cIndex < clusterLen; ++cIndex) {
+            let cluster = data.branches[cIndex];
+            let columnLen = cluster.length;
+            for(let columnIndex=0; columnIndex < columnLen; ++columnIndex) {
+                let columnData = cluster[columnIndex];
+                let blocks = [];
+                columnData.sort((a, b) => (a.paper_year === b.paper_year) ? (b.paper_citations.length - a.paper_citations.length) : (b.paper_year - a.paper_year));
+                columnData.reduce((prev, current) => {
                     let node = this.toPaperNode(current);
                     for(let e=0; e < eras.length; ++e) {
                         let era = eras[e];
                         if(node.year >= era.from && node.year <= era.to) {
-                            let rank = e;
-                            if(prev && prev.rank === rank) {
+                            let row = e;
+                            if(prev && prev.row === row) {
                                 prev.nodes.push(node);
                                 return prev;
                             }else {
-                                let newCluster = {
-                                    rank,
+                                let block = {
+                                    clusterIndex: cIndex,
+                                    column: columnIndex,
+                                    row,
                                     nodes: [node],
-                                    children: []
                                 }
-                                if(prev) {
-                                    prev.next = newCluster;
-                                }else {
-                                    subClusters.push(newCluster);
-                                }
-                                return newCluster;
+                                blocks.push(block);
+                                return block;
                             }
                         }
                     }
                     return null;
                 }, undefined);
-            }
-            for(let s=0; s < subClusters.length; ++s) {
-                let sub = subClusters[s];
-                if(s === 0) {
-                    cluster.children.push(sub);
-                }else {
-                    let first = subClusters[0];
-                    if(first.rank >= sub.rank) {
-                        cluster.children.push(sub);
-                    }else {
-                        this.insertCluster(first, sub);
-                    }
+                mrtData.blocks.push(...blocks);
+                let column = {
+                    clusterIndex: cIndex,
+                    index: columnIndex,
+                    rowStart: blocks[0].row,
+                    columnStart: 0
                 }
+                mrtData.columns.push(column);
             }
-            root.children.push(cluster);
         }
     
-        return tree;
-    }
-
-    static insertCluster(start, child) {
-        if(!start.next) {
-            start.children.push(child);
-        }else {
-            if(start.next.rank >= child.rank) {
-                start.children.push(child);
-            }else {
-                return this.insertCluster(start.next, child);
-            }
-        }
+        return mrtData;
     }
     
     static calcEars(data) {

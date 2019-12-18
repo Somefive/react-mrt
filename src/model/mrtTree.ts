@@ -9,19 +9,29 @@ interface IMRTNode {
 
 interface IMRTBlock {
     name: string;
-    rank: number;
+    clusterIndex: number;
+    column: number;
+    row: number;
     weight: number;
     nodes: IMRTNode[];
-    next: IMRTBlock;
-    children: IMRTBlock[];
 }
 
-interface IMRTTree {
+interface IMRTColumn {
+    clusterIndex: number;
+    index: number;
+    rowStart: number;
+    columnStart: number;
+}
+
+interface IMRTData {
     root: IMRTBlock;
+    blocks: IMRTBlock[];
+    columns: IMRTColumn[];
 }
 
 export {
     IMRTNode,
     IMRTBlock,
-    IMRTTree
+    IMRTData,
+    IMRTColumn
 }

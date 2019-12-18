@@ -1,16 +1,16 @@
 import * as React from 'react';
 import './index.less';
-import { IMRTTree, IMRTBlock, IMRTNode } from '../../model/mrtTree';
+import { IMRTBlock, IMRTNode, IMRTData, IMRTColumn } from '../../model/mrtTree';
 import chroma from 'chroma-js';
 import { calcTextHeight } from '../../utils/text';
-import { IClusterInfo, ILineInfo } from '../../model/mrtRender';
+import { IClusterInfo, ILineInfo, IColumnInfo, IGrid, IGridCell, ICircleInfo, IRowInfo, IBlockInfo } from '../../model/mrtRender';
 
 interface IState {
     inited: boolean;
 }
 
 interface IProps {
-    data: IMRTTree;
+    data: IMRTData;
 }
 
 export default class MRTViewer extends React.Component<IProps, IState> {
@@ -27,7 +27,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
     private _defaultLineWidth: number;
     private _defaultCircleRadius: number; 
     private _circleMarginTop: number;
-    private _branchPaddingTop: number;
+    private _columnPaddingTop: number;
 
     private _rootHeightTotal: number;
     private _rootTextHeight: number;
@@ -37,14 +37,29 @@ export default class MRTViewer extends React.Component<IProps, IState> {
     private _rootNodeFontSize: number;
     private _rootNodeLineHeight: number;
 
-    private _minBranchWidth: number;
-    private _branchNormalWidth: number;
-    private _branchLineMarginLeft: number;
+    private _minColumnWidth: number;
+    private _columnNormalWidth: number;
+    private _columnTextWidthRatio: number;
+    private _columnTextExtendRatio: number;
+    private _columnLineMarginLeft: number;
     private _minClusterLevel: number;
+
+    private _rowPaddingTop: number;
+    private _rowPaddingBottom: number;
+
+    private _nodeGap: number;
+    private _fontSize: number;
+    private _lineHeight: number;
+    private _nodeMarginLeft: number;
+
+    private _clusterIndexes: number[];
     private _clusterColors: string[];
+    private _grid: IGrid;
 
     private _clusterInfos: IClusterInfo[];
     private _lineInfos: ILineInfo[];
+    private _circleInfos: ICircleInfo[];
+    private _blockInfos: IBlockInfo[];
 
     constructor(props: IProps) {
         super(props);
@@ -56,16 +71,30 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this._rootLineColor = root.hex();
         this._rootBgColor = root.luminance(0.9).hex();
 
-        this._minBranchWidth = 90;
-        this._minClusterLevel = 1;
-        this._globalMarginTop = 26;
-        this._globalHeight = 1500;
+        this._parentWidth = 0;
+        this._parentHeight = 0;
 
-        this._branchLineMarginLeft = 14;
+        this._minColumnWidth = 90;
+        this._minClusterLevel = 2;
+        this._globalMarginTop = 26;
+        this._globalHeight = 2500;
+
+        this._columnLineMarginLeft = 14;
         this._defaultLineWidth = 2;
-        this._defaultCircleRadius = 4;
-        this._circleMarginTop = 8;
-        this._branchPaddingTop = 20;
+        this._defaultCircleRadius = 9;
+        this._circleMarginTop = 20;
+        this._columnPaddingTop = 30;
+
+        this._columnTextWidthRatio = 0.8;
+        this._columnTextExtendRatio = 1.6;
+
+        this._rowPaddingTop = 10;
+        this._rowPaddingBottom = 10;
+
+        this._nodeGap = 4;
+        this._fontSize = 12;
+        this._lineHeight = 4 + this._fontSize;
+        this._nodeMarginLeft = 20;
 
         this._rootNodeGap = 6;
         this._rootTextHeight = 0;
@@ -76,39 +105,44 @@ export default class MRTViewer extends React.Component<IProps, IState> {
 
         this._clusterColors = [];
         this._lineInfos = [];
+        this._circleInfos = [];
+        this._blockInfos = [];
 
         this.handleResize = this.handleResize.bind(this);
         this.handleDoubleClickCluster = this.handleDoubleClickCluster.bind(this);
         this.mapLine = this.mapLine.bind(this);
+        this.mapCircle = this.mapCircle.bind(this);
+        this.mapBlock = this.mapBlock.bind(this);
 
         this.initData();
     }
 
     private initData() {
-        const data: IMRTTree = this.props.data;
-        let clusterNum: number = data.root.children.length;
-
-        this._rootTextHeight = this.calcNodesHeight(data.root, this._rootNodeTextWidth, this._rootNodeFontSize, this._rootNodeLineHeight, this._rootNodeGap, this._rootNodeMarginBottom);
+        const data: IMRTData = this.props.data;
+        this._clusterIndexes = [];
+        for(let block of data.blocks) {
+            if(this._clusterIndexes.indexOf(block.clusterIndex) < 0) {
+                this._clusterIndexes.push(block.clusterIndex);
+            }
+        }
+        let clusterNum: number = this._clusterIndexes.length;
+        this._rootTextHeight = this.calcNodesHeight(data.root, this._rootNodeTextWidth, this._rootNodeFontSize, this._rootNodeLineHeight, this._rootNodeGap) + this._rootNodeMarginBottom;
         this._rootHeightTotal = this._rootTextHeight + this._globalMarginTop;
-        this._branchNormalWidth = Math.max(this._parentWidth / this.props.data.root.children.length/this._minClusterLevel, this._minBranchWidth);
 
         this._clusterColors = chroma.cubehelix().start(200).rotations(3).gamma(0.7).lightness([0.2, 0.6]).scale().correctLightness().colors(clusterNum);
         this._clusterInfos = [];
-        this._globalWidth = 0;
         for(let i:number=0; i < clusterNum; ++i) {
-            let block: IMRTBlock = data.root.children[i];
-            let levelMax: number = this.getBranchNum(block);
+            let levelMax: number = data.blocks.reduce((pre, current) => {return (current.clusterIndex == i && current.column > pre) ? current.column : pre}, 0) + 1;
             let level: number = this._minClusterLevel;
-            let width: number = this._branchNormalWidth * level;
             let cluster: IClusterInfo = {
                 level,
-                width,
+                width: 0,
                 levelMax,
                 bgColor: chroma(this._clusterColors[i]).luminance(0.8).hex(),
-                x: this._globalWidth,
-                y: this._rootHeightTotal
+                x: 0,
+                y: this._rootHeightTotal,
+                levelInfos: []
             }
-            this._globalWidth += width;
             this._clusterInfos.push(cluster);
         }
     }
@@ -131,45 +165,95 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this.forceUpdate();
     }
 
-    private getBranchNum(block: IMRTBlock, sum: number=1): number {
-        if(block.next) {
-            sum = this.getBranchNum(block.next, sum);
-        }
-        if(block.children && block.children.length) {
-            for(let child of block.children) {
-                sum = this.getBranchNum(child, sum);
-            }
-            return sum += block.children.length;
-        }else {
-            return sum;
-        }
-    }
-
-    private calcNodesHeight(block: IMRTBlock, width: number, fontSize: number, lineHeight: number, gap: number, marginBottom: number): number {
+    private calcNodesHeight(block: IMRTBlock, width: number, fontSize: number, lineHeight: number, gap: number): number {
         let h: number = 0;
         if(block.nodes && block.nodes.length) {
             h = block.nodes.reduce((pre, cur, index): number => {
                 return pre + calcTextHeight(cur.name, width, fontSize, lineHeight) + (index > 0 ? gap : 0);
             }, h);
         }
-        h += marginBottom;
         return h;
     }
 
     private calc() {
-        const data: IMRTTree = this.props.data;
-        let clusterNum: number = data.root.children.length;
+        let startTime: number = new Date().getTime();
+        const data: IMRTData = this.props.data;
+        this._grid = {
+            rowNum: 0,
+            columnInfos: [],
+            rowInfos: [],
+            cells: []
+        }
+        let clusterNum: number = this._clusterIndexes.length;
 
-        this._branchNormalWidth = Math.max(this._parentWidth / this.props.data.root.children.length/this._minClusterLevel, this._minBranchWidth);
+        this._columnNormalWidth = Math.max(this._parentWidth / clusterNum/this._minClusterLevel, this._minColumnWidth);
 
         this._globalWidth = 0;
         for(let i:number=0; i < clusterNum; ++i) {
             let cluster: IClusterInfo = this._clusterInfos[i];
-            let width: number = this._branchNormalWidth * cluster.level;
+            let width: number = this._columnNormalWidth * cluster.level;
             cluster.width = width;
             cluster.x = this._globalWidth;
             this._globalWidth += width;
         }
+        
+        let liveBlocks: IMRTBlock[] = [];
+        let rowMax: number = 0;
+        for(let block of data.blocks) {
+            let clusterInfo: IClusterInfo = this._clusterInfos[block.clusterIndex];
+            if(block.column < clusterInfo.level) {
+                liveBlocks.push(block);
+                if(block.row > rowMax) rowMax = block.row;
+            }
+        }
+
+        this._grid.rowNum = rowMax + 1;
+        for(let c:number=0; c < clusterNum; ++c) {
+            let clusterInfo: IClusterInfo = this._clusterInfos[c];
+            for(let column:number=0; column < clusterInfo.level; ++ column) {
+                let mrtColumn: IMRTColumn | null = this.getMRTColumn(c, column, data.columns);
+                if(mrtColumn) {
+                    this._grid.columnInfos.push({
+                        clusterIndex: c,
+                        indexInCluster: column,
+                        startRow: mrtColumn.rowStart,
+                        startColumn: this.getColumnIndexByIndexInCluster(c, mrtColumn.columnStart, this._grid.columnInfos)
+                    })
+                }
+                for(let row:number=0; row <= rowMax; ++row) {
+                    let block: IMRTBlock | null = this.getBlock(c, column, row, liveBlocks);
+                    let cell: IGridCell = {
+                        block,
+                        textWidth: 0
+                    }
+                    this._grid.cells.push(cell);
+                }
+            }
+        }
+        this._globalHeight = this._rootHeightTotal + this._columnPaddingTop;
+        for(let row:number=0; row < this._grid.rowNum; ++row) {
+            let rowHeight: number = 0;
+            for(let column: number=0; column < this._grid.columnInfos.length; ++column) {
+                let cell: IGridCell = this._grid.cells[column * this._grid.rowNum + row];
+                if(cell.block) {
+                    let rightCell: IGridCell | null = column+1 < this._grid.columnInfos.length ? this._grid.cells[(column+1) * this._grid.rowNum + row] : null;
+                    if(rightCell && rightCell.block) {
+                        cell.textWidth = this._columnNormalWidth * this._columnTextWidthRatio;
+                    }else {
+                        cell.textWidth = this._columnNormalWidth * this._columnTextExtendRatio;
+                    }
+                    let height: number = this.calcNodesHeight(cell.block, cell.textWidth, this._fontSize, this._lineHeight, this._nodeGap) + this._rowPaddingTop + this._rowPaddingBottom;
+                    rowHeight = rowHeight < height ? height : rowHeight;
+                }
+            }
+            this._grid.rowInfos.push({
+                height: rowHeight
+            })
+            this._globalHeight += rowHeight;
+        }
+
+        console.log(this._grid);
+
         //line
         this._lineInfos.length = 0;
         this._lineInfos.push({
@@ -185,28 +269,127 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         let totalBridgeWidth: number = this._globalWidth - this._clusterInfos[this._clusterInfos.length-1].width;
         this._lineInfos.push({
             key: "bridge_line",
-            x1: this._branchLineMarginLeft,
+            x1: this._columnLineMarginLeft,
             y1: this._rootHeightTotal,
-            x2: this._branchLineMarginLeft + totalBridgeWidth,
+            x2: this._columnLineMarginLeft + totalBridgeWidth,
             y2: this._rootHeightTotal,
             stroke: this._rootLineColor,
             strokeWidth: this._defaultLineWidth,
             opacity: 1
         });
-        for(let i:number=0; i < clusterNum; ++i) {
-            let cluster: IClusterInfo = this._clusterInfos[i];
-            let block: IMRTBlock = data.root.children[i];
+        for(let i:number=0; i < this._grid.columnInfos.length; ++i) {
+            let column: IColumnInfo = this._grid.columnInfos[i];
+            let startX: number = this._columnNormalWidth * i + this._columnLineMarginLeft;
+            let startY: number = this._rootHeightTotal;
+            if(column.indexInCluster > 0) {
+                startY += this.getOffsetY(column.startRow);
+                this._lineInfos.push({
+                    key: `${i}_link_line`,
+                    x1: column.startColumn * this._columnNormalWidth + this._columnLineMarginLeft,
+                    y1: startY,
+                    x2: i * this._columnNormalWidth + this._columnLineMarginLeft,
+                    y2: startY,
+                    stroke: this._clusterColors[column.clusterIndex],
+                    strokeWidth: this._defaultLineWidth,
+                    opacity: 1
+                })
+            }
             this._lineInfos.push({
-                key: `${i}_0_line`,
-                x1: cluster.x + this._branchLineMarginLeft,
-                y1: cluster.y,
-                x2: cluster.x + this._branchLineMarginLeft,
+                key: `${i}_line`,
+                x1: startX,
+                y1: startY,
+                x2: startX,
                 y2: this._globalHeight,
-                stroke: this._clusterColors[i],
+                stroke: this._clusterColors[column.clusterIndex],
                 strokeWidth: this._defaultLineWidth,
                 opacity: 1
             })
         }
+
+        //circle / blocks
+        this._circleInfos = [];
+        this._blockInfos = [];
+        this._circleInfos.push({
+            key: "root_circle",
+            cx: this._globalWidth/2,
+            cy: this._globalMarginTop + this._defaultCircleRadius,
+            r: this._defaultCircleRadius,
+            stroke: this._rootLineColor,
+            fill: this._rootBgColor
+        })
+        this._blockInfos.push({
+            key: "root_block",
+            nodes: data.root.nodes,
+            x: this._globalWidth / 2 + this._nodeMarginLeft,
+            y: this._globalMarginTop,
+            width: this._rootNodeTextWidth,
+            fontSize: this._rootNodeFontSize
+        })
+        for(let column: number=0; column < this._grid.columnInfos.length; ++column) {
+            for(let row: number=0; row < this._grid.rowNum; ++row) {
+                let cell: IGridCell = this._grid.cells[column * this._grid.rowNum + row];
+                if(cell.block) {
+                    let columnInfo: IColumnInfo = this._grid.columnInfos[column];
+                    this._circleInfos.push({
+                        key: `${column}_${row}_circle`,
+                        cx: column * this._columnNormalWidth + this._columnLineMarginLeft,
+                        cy: this._rootHeightTotal + this._circleMarginTop + this.getOffsetY(row),
+                        r: this._defaultCircleRadius,
+                        stroke: this._clusterColors[columnInfo.clusterIndex],
+                        fill: this._clusterInfos[columnInfo.clusterIndex].bgColor
+                    })
+                    this._blockInfos.push({
+                        key: `${column}_${row}_block`,
+                        nodes: cell.block.nodes,
+                        x: column * this._columnNormalWidth + this._columnLineMarginLeft + this._nodeMarginLeft,
+                        y: this.getOffsetY(row) + this._rootHeightTotal + this._circleMarginTop - this._defaultCircleRadius,
+                        width: cell.textWidth,
+                        fontSize: this._fontSize
+                    })
+                }
+            }
+        }
+
+        console.log("Calc time: ", (new Date().getTime() - startTime));
+    }
+
+    private getColumnIndexByIndexInCluster(cluster: number, index: number, columns: IColumnInfo[]): number {
+        let result: number = 0;
+        columns.forEach((value: IColumnInfo) => {
+            if(value.clusterIndex == cluster && value.indexInCluster == index) {
+                return result;
+            }else {
+                result += 1;
+            }
+        })
+        return result;
+    }
+
+    private getOffsetY(start: number): number {
+        let offset: number = 0;
+        for(let i:number=0; i < start; ++i) {
+            offset += this._grid.rowInfos[i].height;
+        }
+        offset += this._columnPaddingTop;
+        return offset;
+    }
+
+    private getMRTColumn(cluster: number, index: number, columns: IMRTColumn[]): IMRTColumn | null {
+        for(let column of columns) {
+            if(column.clusterIndex == cluster && column.index == index) {
+                return column;
+            }
+        }
+        return null;
+    }
+
+    private getBlock(cluster: number, column: number, row: number, blocks: IMRTBlock[]): IMRTBlock | null {
+        for(let block of blocks) {
+            if(block.clusterIndex == cluster && block.column == column && block.row == row) {
+                return block;
+            }
+        }
+        return null;
     }
 
     private mapLine(value: ILineInfo): JSX.Element {
@@ -217,6 +400,31 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                     y2={value.y2} 
                     stroke={value.stroke} 
                     strokeWidth={value.strokeWidth} />;
+    }
+
+    private mapCircle(value: ICircleInfo): JSX.Element {
+        return <circle key={value.key}
+                    cx={value.cx} 
+                    cy={value.cy} 
+                    r={value.r} 
+                    stroke={value.stroke} 
+                    fill={value.fill} />
+    }
+
+    private mapBlock(block: IBlockInfo): JSX.Element {
+        return (
+            <div key={block.key} style={{position: "absolute", left: block.x, top: block.y, width: `${block.width}px`}}>
+                {
+                    block.nodes.map((node: IMRTNode, index: number) => {
+                        return (
+                            <div key={node.id} style={{fontSize: `${block.fontSize}px`, lineHeight: `${this._lineHeight}px`, width: "100%", marginTop: (index == 0 ? 0 : `${this._nodeGap}`), textAlign: "left"}}>
+                                {node.name}
+                            </div>
+                        )
+                    })
+                }
+            </div>
+        )
     }
 
     public componentDidUpdate(preProps: IProps) {
@@ -231,23 +439,6 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         window.addEventListener("resize", this.handleResize);
 
         this.setState({inited: true});
-    }
-
-    private calcText(block: IMRTBlock): void {
-        if(block.nodes) {
-            for(let node of block.nodes) {
-                // console.log("CalcTextHeight: ", node.name, calcTextHeight(node.name, 200, 16, 20));
-                calcTextHeight(node.name, 200, 16, 20);
-            }
-            if(block.next) {
-                this.calcText(block.next);
-            }
-            if(block.children) {
-                for(let child of block.children) {
-                    this.calcText(child);
-                }
-            }
-        }
     }
 
     public componentWillUnmount() {
@@ -276,7 +467,15 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                                 {
                                     this._lineInfos.map(this.mapLine)
                                 }
+                                {
+                                    this._circleInfos.map(this.mapCircle)
+                                }
                             </svg>
+                            <div>
+                                {
+                                    this._blockInfos.map(this.mapBlock)
+                                }
+                            </div>
                         </div>
                     ) : null
                 }
