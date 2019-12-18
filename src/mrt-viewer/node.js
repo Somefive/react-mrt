@@ -91,8 +91,10 @@ export class NodeText extends React.Component {
             }
             // const collapseHandler = () => this.props.onCardOpen(pin)
             const textPieces = isFocus ? pin.fullTextPieces : pin.textPieces
+            const authorsPieces = isFocus ? pin.fullAuthorsPieces : pin.authorsPieces
+            const authorsHeight = authorsPieces.length === 0 ? 0 : (authorsPieces.length + 0.3) * this.props.secondaryLineHeight
             const abstractHeight = pin.abstractPieces.length * this.props.secondaryLineHeight
-            const iconY = (textPieces.length - 1) * this.props.lineHeight + this.props.editButtonMarginTop + isFocus * abstractHeight
+            const iconY = (textPieces.length - 1) * this.props.lineHeight + authorsHeight + this.props.editButtonMarginTop + isFocus * abstractHeight
             const textWidth = isFocus ? this.props.fullTextWidth : this.props.textWidth
             const generateEditIcon = (T, dx, fill, action, text) => <g transform={`translate(${textWidth-iconSize*dx}, ${iconY})`}>
                 <g className="paper-edit-icon" style={{transformOrigin: `${iconSize/2}px ${iconSize/2}px`}}
@@ -120,9 +122,13 @@ export class NodeText extends React.Component {
                         <text className="paper-text" fontSize={this.props.fontSize} fill={textColor} onClick={collapseHandler}>
                             {textPieces.map((_text, idx) => <tspan key={idx} x="0" y={idx * this.props.lineHeight}>{_text}</tspan>)}
                         </text>
+                        {this.state.focus === _idx &&
+                        <text className="paper-authors" fontSize={this.props.secondaryFontSize} fill={textColor}>
+                            {authorsPieces.map((_text, idx) => <tspan key={idx} x="0" y={textPieces.length * this.props.lineHeight + (idx + 0.15) * this.props.secondaryLineHeight}>{_text}</tspan>)}
+                        </text>}
                         {isFocus && 
                             <text className="paper-abstract-inner" fontSize={this.props.secondaryFontSize} fill={AbstractColor}>
-                                {pin.abstractPieces.map((_text, idx) => <tspan key={idx} x="0" y={textPieces.length * this.props.lineHeight + idx * this.props.secondaryLineHeight}>{_text}</tspan>)}
+                                {pin.abstractPieces.map((_text, idx) => <tspan key={idx} x="0" y={textPieces.length * this.props.lineHeight + authorsHeight + idx * this.props.secondaryLineHeight}>{_text}</tspan>)}
                             </text>}
                         {this.state.focus === _idx &&
                         <g className="paper-edit-icon-group">

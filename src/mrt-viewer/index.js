@@ -68,6 +68,7 @@ export default class MRTViewer extends React.Component {
             const year = paper["paper_year"]
             const venue = paper["paper_venue"].trim()
             const title = paper["paper_title"].trim()
+            const authors = (paper["paper_authors"] || []).join(', ')
             const citations = paper["citations"] || []
             const references = paper["references"] || []
             const score = paper["score"] || paper["paper_citations"] || 0
@@ -80,7 +81,7 @@ export default class MRTViewer extends React.Component {
             }
             const text = `[${prefix}] ${title}`.replace('\t', ' ').replace('\n', ' ')
             const abstract = paper["paper_abstract"] ? paper["paper_abstract"].trim().replace('\t', ' ') : ""
-            return {id, year, venue, title, citations, references, text, abstract, score}
+            return {id, year, venue, title, authors, citations, references, text, abstract, score}
         }
 
         this.clusterNames = this.props.data.clusterNames.map(name => name.split(' ').map(_.capitalize).join(' '))
@@ -97,6 +98,10 @@ export default class MRTViewer extends React.Component {
         this.nodeTextCustomFold = (text, span, fontSize) => {
             const textLength = Math.floor(((span - 1) * this.nodeWidth + this.nodeTextWidth) / (fontSize * this.averageFontWidthRatio))
             return (text.match(new RegExp(`([^\\n]{1,${textLength}})(\\s|$)`, 'g')) || []).filter(line => line.length > 0)
+        }
+        this.nodeAuthorCustomFold = (text, span, fontSize) => {
+            const textLength = Math.floor(((span - 1) * this.nodeWidth + this.nodeTextWidth) / (fontSize * this.averageFontWidthRatio))
+            return (text.match(new RegExp(`([^\\n]{1,${textLength}})(,\\s|$)`, 'g')) || []).filter(line => line.length > 0)
         }
         this.nodeTextFold = (text, span) => this.nodeTextCustomFold(text, span, this.nodeTextFontSize)
         this.nodeTextSecondaryFold = (text, span) => this.nodeTextCustomFold(text, span, this.nodeTextSecondaryFontSize)
@@ -182,6 +187,8 @@ export default class MRTViewer extends React.Component {
             pins: [{...dataView.root, 
                 textPieces: this.nodeTextCustomFold(dataView.root.text, 3, this.nodeTextFontSize * 1.5), 
                 fullTextPieces: this.nodeTextCustomFold(dataView.root.text, 3, this.nodeTextFontSize * 1.5),
+                authorsPieces: this.nodeAuthorCustomFold(dataView.root.authors, 3, this.nodeTextSecondaryFontSize * 1.5),
+                fullAuthorsPieces: this.nodeAuthorCustomFold(dataView.root.authors, 3, this.nodeTextSecondaryFontSize * 1.5),
                 abstractPieces: this.nodeTextCustomFold(dataView.root.abstract, 3, this.nodeTextSecondaryFontSize * 1.5),
                 edits: this.props.userEdits[dataView.root.id],
                 node: views.nodes.root,
@@ -223,6 +230,8 @@ export default class MRTViewer extends React.Component {
             node.pins.forEach(pin => {
                 pin.textPieces = this.nodeTextFold(pin.text, node.span)
                 pin.fullTextPieces = this.nodeTextFold(pin.text, node.fullSpan)
+                pin.authorsPieces = this.nodeAuthorCustomFold(pin.authors, node.span, this.nodeTextSecondaryFontSize)
+                pin.fullAuthorsPieces = this.nodeAuthorCustomFold(pin.authors, node.fullSpan, this.nodeTextSecondaryFontSize)
                 pin.abstractPieces = this.nodeTextSecondaryFold(pin.abstract, node.fullSpan)
                 pin.node = node
             })
