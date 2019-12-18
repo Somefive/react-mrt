@@ -17,6 +17,7 @@ class App extends React.Component {
         <MRT data={this.state.data} authors={["Somefive", "Rainatum"]} onLoadJson={(data) => this.setState({data})}
           onLike={() => this.setState({like: !this.state.like})} like={this.state.like}
           onEditChange={(edits) => this.setState({userEdits: edits})} userEdits={this.state.userEdits}
+          onHit={(id, action) => console.log('onHit', id, action)}
           lang="en"/>
       </div>
     );

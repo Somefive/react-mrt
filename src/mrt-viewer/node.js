@@ -45,9 +45,17 @@ export class NodeText extends React.Component {
     constructor(props) {
         super(props)
         this.state = { expand: -1, pinned: {}, focus: -1 }
+        this.hover_timer = null
     }
 
     onHover(idx, enter) {
+        if (enter && this.state.focus != idx) {
+            if (this.hover_timer) clearInterval(this.hover_timer)
+            this.hover_timer = setInterval(() => this.onHit(this.props.pins[idx].id, 'hover'), 3000)
+        } else if (!enter && this.state.focus == idx) {
+            if (this.hover_timer) clearInterval(this.hover_timer)
+            this.hover_timer = null
+        }
         this.setState({expand: enter ? this.state.expand : -1, focus: enter ? idx: -1})
         this.props.onFocus(this.props.node.pins[idx].id, enter, this.state.pinned[idx])
         // if (enter || !this.state.pinned[idx]) this.props.onSwitchLinksVisibility(this.props.node.pins[idx].id, enter)
@@ -56,6 +64,10 @@ export class NodeText extends React.Component {
     onCollapse(idx) {
         const enter = this.state.expand !== idx
         this.setState({expand: enter ? idx : -1})
+    }
+
+    onHit(id, action) {
+        this.props.onHit(id, action)
     }
 
     render() {
@@ -67,10 +79,14 @@ export class NodeText extends React.Component {
         const texts = this.props.pins.map((pin, _idx) => {
             const isHighlighted = this.props.highlightedPaper.indexOf(pin.id) >= 0
             const isFocus = this.state.expand === _idx
-            const collapseHandler = () => this.onCollapse(_idx)
+            const collapseHandler = () => {
+                if (this.state.expand !== _idx) this.onHit(pin.id, 'collapse')
+                this.onCollapse(_idx)
+            }
             const pinLinkHandler = () => {
                 const pinned = this.state.pinned
                 pinned[_idx] = !pinned[_idx]
+                if (pinned[_idx]) this.onHit(pin.id, 'link-pin')
                 this.setState({pinned})
             }
             // const collapseHandler = () => this.props.onCardOpen(pin)
@@ -98,6 +114,9 @@ export class NodeText extends React.Component {
                         <rect className="paper-text-background" x={-this.props.lineHeight} y={-this.props.lineHeight * 2.5}
                             width={textWidth+2*this.props.lineHeight} height={this.props.lineHeight * 4 + iconY + iconSize}
                             fill="white" filter="url(#blur-filter)"/>
+                        <rect className="paper-text-placeholder" x={0} y={-this.props.lineHeight}
+                            width={textWidth} height={this.props.lineHeight * pin.textPieces.length}
+                            fill="transparent"/>
                         <text className="paper-text" fontSize={this.props.fontSize} fill={textColor} onClick={collapseHandler}>
                             {textPieces.map((_text, idx) => <tspan key={idx} x="0" y={idx * this.props.lineHeight}>{_text}</tspan>)}
                         </text>

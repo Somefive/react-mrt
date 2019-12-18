@@ -440,7 +440,8 @@ export default class MRTViewer extends React.Component {
                     //   onSwitchLinksVisibility={(id, visible) => this.onSwitchLinksVisibility(id, visible)}
                       lang={this.props.lang}
                       onCardOpen={this.props.onCardOpen}
-                      highlightedPaper={highlightedPaper}/>)}
+                      highlightedPaper={highlightedPaper}
+                      onHit={this.props.onHit}/>)}
             </g>
             {
                 clusterLabelTexts.map((texts, idx) => {

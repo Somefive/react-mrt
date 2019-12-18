@@ -73,6 +73,9 @@ export default class MRT extends React.Component {
                     authors={this.props.authors}
                     onEditChange={this.props.onEditChange}
                     onCardOpen={(pin) => this.onCardSet(pin.id, pin)}
+                    onHit={(id, action) => {
+                        if (this.props.onHit) this.props.onHit(id, action)
+                    }}
                     lang={this.props.lang}/>
                 {/* {_.map(this.state.cardVisibility, (value, key) => 
                     <MRTCard key={key} paper={value} onCardClose={() => this.onCardSet(key, null)}/>
