@@ -88,13 +88,13 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this._columnTextWidthRatio = 0.8;
         this._columnTextExtendRatio = 1.6;
 
-        this._rowPaddingTop = 10;
+        this._rowPaddingTop = 12;
         this._rowPaddingBottom = 10;
 
         this._nodeGap = 4;
-        this._fontSize = 12;
+        this._fontSize = 10;
         this._lineHeight = 4 + this._fontSize;
-        this._nodeMarginLeft = 20;
+        this._nodeMarginLeft = 14;
 
         this._rootNodeGap = 6;
         this._rootTextHeight = 0;
@@ -169,8 +169,8 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         let h: number = 0;
         if(block.nodes && block.nodes.length) {
             h = block.nodes.reduce((pre, cur, index): number => {
-                return pre + calcTextHeight(cur.name, width, fontSize, lineHeight) + (index > 0 ? gap : 0);
-            }, h);
+                return pre + calcTextHeight(cur.name, width, fontSize, lineHeight, "left") + (index > 0 ? gap : 0);
+            }, 0);
         }
         return h;
     }
@@ -224,7 +224,9 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                     let block: IMRTBlock | null = this.getBlock(c, column, row, liveBlocks);
                     let cell: IGridCell = {
                         block,
-                        textWidth: 0
+                        textWidth: 0,
+                        textHeight: 0,
+                        extend: false
                     }
                     this._grid.cells.push(cell);
                 }
@@ -237,12 +239,14 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                 let cell: IGridCell = this._grid.cells[column * this._grid.rowNum + row];
                 if(cell.block) {
                     let rightCell: IGridCell | null = column+1 < this._grid.columnInfos.length ? this._grid.cells[(column+1) * this._grid.rowNum + row] : null;
-                    if(rightCell && rightCell.block) {
+                    if(!rightCell || (rightCell && rightCell.block)) {
                         cell.textWidth = this._columnNormalWidth * this._columnTextWidthRatio;
                     }else {
                         cell.textWidth = this._columnNormalWidth * this._columnTextExtendRatio;
+                        cell.extend = true;
                     }
                     let height: number = this.calcNodesHeight(cell.block, cell.textWidth, this._fontSize, this._lineHeight, this._nodeGap) + this._rowPaddingTop + this._rowPaddingBottom;
+                    cell.textHeight = height;
                     rowHeight = rowHeight < height ? height : rowHeight;
                 }
             }
@@ -330,6 +334,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                 let cell: IGridCell = this._grid.cells[column * this._grid.rowNum + row];
                 if(cell.block) {
                     let columnInfo: IColumnInfo = this._grid.columnInfos[column];
+                    let rowInfo: IRowInfo = this._grid.rowInfos[row];
                     this._circleInfos.push({
                         key: `${column}_${row}_circle`,
                         cx: column * this._columnNormalWidth + this._columnLineMarginLeft,
@@ -338,11 +343,26 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                         stroke: this._clusterColors[columnInfo.clusterIndex],
                         fill: this._clusterInfos[columnInfo.clusterIndex].bgColor
                     })
+                    if(cell.extend) {
+                        let x1: number = (column+1) * this._columnNormalWidth + this._columnLineMarginLeft;
+                        let y1: number = this._rootHeightTotal + this.getOffsetY(row) + this._rowPaddingTop;
+                        let nextColumnInfo: IColumnInfo = this._grid.columnInfos[column+1];
+                        this._lineInfos.push({
+                            key: `${column}_${row}_mask_line`,
+                            x1,
+                            y1,
+                            x2: x1,
+                            y2: y1 + cell.textHeight,
+                            stroke: this._clusterInfos[nextColumnInfo.clusterIndex].bgColor,
+                            strokeWidth: this._defaultLineWidth + 2,
+                            opacity: 1
+                        })
+                    }
                     this._blockInfos.push({
                         key: `${column}_${row}_block`,
                         nodes: cell.block.nodes,
                         x: column * this._columnNormalWidth + this._columnLineMarginLeft + this._nodeMarginLeft,
-                        y: this.getOffsetY(row) + this._rootHeightTotal + this._circleMarginTop - this._defaultCircleRadius,
+                        y: this.getOffsetY(row) + this._rootHeightTotal + this._rowPaddingTop,
                         width: cell.textWidth,
                         fontSize: this._fontSize
                     })
@@ -417,7 +437,15 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                 {
                     block.nodes.map((node: IMRTNode, index: number) => {
                         return (
-                            <div key={node.id} style={{fontSize: `${block.fontSize}px`, lineHeight: `${this._lineHeight}px`, width: "100%", marginTop: (index == 0 ? 0 : `${this._nodeGap}`), textAlign: "left"}}>
+                            <div key={node.id} 
+                                style={{fontSize: `${block.fontSize}px`, 
+                                    lineHeight: `${this._lineHeight}px`, 
+                                    width: "100%", 
+                                    marginTop: (index == 0 ? 0 : `${this._nodeGap}`), 
+                                    textAlign: "left", 
+                                    wordWrap: "break-word", 
+                                    wordBreak: "break-word",
+                                    display: "inline-block"}}>
                                 {node.name}
                             </div>
                         )

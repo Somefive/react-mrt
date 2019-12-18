@@ -60,6 +60,8 @@ interface IGrid {
 interface IGridCell {
     block: IMRTBlock | null;
     textWidth: number;
+    textHeight: number;
+    extend: boolean;
 }
 
 export {

@@ -1,11 +1,11 @@
 
 let calcSpan: HTMLSpanElement;
 
-function calcTextHeight(text: string, width: number, fontSize: number, lineHeight: number, fontFamily?: string): number {
+function calcTextHeight(text: string, width: number, fontSize: number, lineHeight: number, textAlign?: string, fontFamily?: string): number {
     if(!calcSpan) {
         calcSpan = document.createElement("span");
         calcSpan.style.wordWrap = "break-word";
-        calcSpan.style.wordBreak = "break-all";
+        calcSpan.style.wordBreak = "break-word";
         calcSpan.style.display = "inline-block";
         calcSpan.style.visibility = "hidden";
         document.body.appendChild(calcSpan);
@@ -14,6 +14,7 @@ function calcTextHeight(text: string, width: number, fontSize: number, lineHeigh
     calcSpan.style.fontSize = `${fontSize}px`;
     calcSpan.style.lineHeight = `${lineHeight}px`;
     if(fontFamily) calcSpan.style.fontFamily = fontFamily;
+    if(textAlign) calcSpan.style.textAlign = textAlign;
     
     calcSpan.innerText = text;
     return calcSpan.offsetHeight;
