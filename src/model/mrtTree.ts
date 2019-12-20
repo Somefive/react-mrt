@@ -5,6 +5,8 @@ interface IMRTNode {
     name: string;
     link_in: string[];
     link_out: string[];
+    offsetY?: number;
+    textHeight?: number;
 }
 
 interface IMRTBlock {
@@ -23,15 +25,22 @@ interface IMRTColumn {
     columnStart: number;
 }
 
+interface IMRTCluster {
+    name: string;
+    value: number;
+}
+
 interface IMRTData {
     root: IMRTBlock;
     blocks: IMRTBlock[];
     columns: IMRTColumn[];
+    clusters: IMRTCluster[];
 }
 
 export {
     IMRTNode,
     IMRTBlock,
     IMRTData,
-    IMRTColumn
+    IMRTColumn,
+    IMRTCluster
 }

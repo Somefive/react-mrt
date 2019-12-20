@@ -5,14 +5,20 @@ export default class PapersTransformer {
     static transform(data) {
         let mrtData = {
             blocks: [],
-            columns: []
+            columns: [],
+            clusters: []
         };
-        let root = mrtData.root = {
+        mrtData.root = {
             nodes: [this.toPaperNode(data.root)],
         };
+        
         let eras = this.calcEars(data);
         let clusterLen = data.branches.length;
         for(let cIndex=0; cIndex < clusterLen; ++cIndex) {
+            mrtData.clusters.push({
+                name: data.clusterNames[cIndex],
+                value: data.importance[cIndex]
+            })
             let cluster = data.branches[cIndex];
             let columnLen = cluster.length;
             for(let columnIndex=0; columnIndex < columnLen; ++columnIndex) {
@@ -62,7 +68,7 @@ export default class PapersTransformer {
         let _to = years[0];
         let _cnt = 1;
         let eraMinSize = this.EraMinRatio * years.length;
-        let lastEraMinSize = this.lastEraRatio * years.length;
+        let lastEraMinSize = 0.14 * years.length;
         for (let i = 1; i < years.length; i++) {
             if (years[i] === years[i-1] || _cnt < eraMinSize || i > years.length - lastEraMinSize) {
                 _cnt += 1;

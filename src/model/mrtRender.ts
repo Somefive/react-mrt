@@ -1,6 +1,8 @@
 import { IMRTBlock, IMRTNode } from "./mrtTree";
 
 interface IClusterInfo {
+    name: string, 
+    value?: number,
     level: number;
     x: number;
     y: number;
@@ -34,6 +36,7 @@ interface ILineInfo {
 
 interface ICircleInfo {
     key: string;
+    row: number;
     cx: number;
     cy: number;
     r: number;
@@ -47,7 +50,20 @@ interface IBlockInfo {
     x: number;
     y: number;
     width: number;
+    color: string;
     fontSize: number;
+    lineHeight: number;
+    fontWeight?: number | "-moz-initial" | "inherit" | "initial" | "revert" | "unset" | "normal" | "bold" | "bolder" | "lighter";
+}
+
+interface ITextInfo {
+    key: string;
+    text: string;
+    fontSize: number;
+    color: string;
+    x: number;
+    y: number;
+    width?: number;
 }
 
 interface IGrid {
@@ -64,6 +80,16 @@ interface IGridCell {
     extend: boolean;
 }
 
+interface IHighlightRow {
+    row: number;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    opacity: number;
+    fill: string;
+}
+
 export {
     IClusterInfo,
     ILineInfo,
@@ -72,5 +98,7 @@ export {
     IGrid,
     IGridCell,
     ICircleInfo,
-    IBlockInfo
+    IBlockInfo,
+    ITextInfo,
+    IHighlightRow
 }

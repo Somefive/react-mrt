@@ -2516,12 +2516,12 @@
         ]
     ],
     "clusterNames": [
-        "language inference",
-        "neural network",
-        "machine reading",
-        "deep architecture",
-        "word representation",
-        "entity recognition"
+        "Language Inference",
+        "Neural Network",
+        "Machine Reading",
+        "Deep Architecture",
+        "Word Representation",
+        "Entity Recognition"
     ],
     "importance": [
         0.4016602345810814,
