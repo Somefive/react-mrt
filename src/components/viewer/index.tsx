@@ -3,11 +3,13 @@ import './index.less';
 import { IMRTBlock, IMRTNode, IMRTData, IMRTColumn } from '../../model/mrtTree';
 import chroma from 'chroma-js';
 import { calcTextHeight } from '../../utils/text';
-import { IClusterInfo, ILineInfo, IColumnInfo, IGrid, IGridCell, ICircleInfo, IRowInfo, IBlockInfo, ITextInfo, IHighlightRow } from '../../model/mrtRender';
+import { IClusterInfo, ILineInfo, IColumnInfo, IGrid, IGridCell, ICircleInfo, IRowInfo, IBlockInfo, ITextInfo, IHighlightRow, ICardData, IPos } from '../../model/mrtRender';
+import PaperCard from '../card/paper/paperCard';
 
 interface IState {
     inited: boolean;
     highlightRow: IHighlightRow | null;
+    cardDatas: ICardData[];
 }
 
 interface IProps {
@@ -75,9 +77,9 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         super(props);
         this.state = {
             inited: false,
-            highlightRow: null
+            highlightRow: null,
+            cardDatas: []
         }
-
         let root: chroma.Color = chroma.scale()(0.5);
         this._rootLineColor = root.hex();
         this._rootBgColor = root.luminance(0.9).hex();
@@ -119,8 +121,8 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this._rootNodeTextWidth = 350;
         this._rootNodeFontSize = 12;
         this._rootNodeLineHeight = 4 + this._rootNodeFontSize;
-        this._rootNodeMarginBottom = 10;
-        this._rootBlockMarginTop = -4;
+        this._rootNodeMarginBottom = 20;
+        this._rootBlockMarginTop = -2;
 
         this._clusterColors = [];
         this._lineInfos = [];
@@ -137,6 +139,8 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this.mapClusterBg = this.mapClusterBg.bind(this);
         this.handleHighlightRow = this.handleHighlightRow.bind(this);
         this.handleCancelHighlightRow = this.handleCancelHighlightRow.bind(this);
+        this.handleCardClose = this.handleCardClose.bind(this);
+        this.dieAllCards = this.dieAllCards.bind(this);
 
         this.initData();
     }
@@ -624,7 +628,51 @@ export default class MRTViewer extends React.Component<IProps, IState> {
 
     private handleNodeMouseOver(e: React.MouseEvent, node: IMRTNode):void {
         let div: HTMLDivElement = e.target as HTMLDivElement;
-        console.log(node);
+
+        let cardDatas: ICardData[] = [...this.state.cardDatas];
+        if(!cardDatas.find(value => value.node.id == node.id)) {
+            cardDatas.forEach(value => value.die = true);
+            let pos: IPos = this.getBlockPosByNode(node);
+            let left: number = pos.left;
+            let top: number = pos.top + node.offsetY!;
+            cardDatas.push({
+                left,
+                top,
+                node,
+                nodeDiv: div,
+                die: false
+            });
+            this.setState({cardDatas});
+        }
+    }
+
+    private getBlockPosByNode(node: IMRTNode): IPos {
+        for(let block of this._blockInfos) {
+            for(let n of block.nodes) {
+                if(n.id == node.id) {
+                    return {left: block.x, top: block.y};
+                }
+            }
+        }
+        return {left: 0, top: 0};
+    }
+
+    private dieAllCards(): void {
+        if(this.state.cardDatas.length) {
+            let cardDatas: ICardData[] = [...this.state.cardDatas];
+            cardDatas.forEach(value => value.die = true);
+            this.setState({cardDatas});
+        }
+    }
+
+    private handleCardClose(node: IMRTNode): void {
+        let datas: ICardData[] = [...this.state.cardDatas];
+        for(let i=datas.length-1; i >= 0; --i) {
+            if(datas[i].node.id == node.id) {
+                datas.splice(i, 1);
+            }
+        }
+        this.setState({cardDatas: datas});
     }
 
     public componentDidUpdate(preProps: IProps) {
@@ -646,13 +694,13 @@ export default class MRTViewer extends React.Component<IProps, IState> {
     }
 
     public render() {
-        const { inited, highlightRow } = this.state;
+        const { inited, highlightRow, cardDatas } = this.state;
         return (
             <div className='_mrtviewer' ref={(e) => {this._viewer = e!;}} style={{backgroundColor: this._rootBgColor}}>
                 {
                     inited ? (
                         <div className='_mrtview_canvas' style={{width: `${this._globalWidth}px`, height: `${this._globalHeight}px`}}>
-                            <svg className='_mrtviewer_bg' width={this._globalWidth} height={this._globalHeight}>
+                            <svg className='_mrtviewer_bg' width={this._globalWidth} height={this._globalHeight} onMouseOver={this.dieAllCards}>
                                 {
                                     this._clusterInfos.map(this.mapClusterBg)
                                 }
@@ -661,7 +709,12 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                                 }
                                 {
                                     highlightRow ? (
-                                        <rect x={highlightRow.x} y={highlightRow.y} width={highlightRow.width} height={highlightRow.height} fill={highlightRow.fill} opacity={highlightRow.opacity}></rect>
+                                        <rect x={highlightRow.x} 
+                                            y={highlightRow.y} 
+                                            width={highlightRow.width} 
+                                            height={highlightRow.height} 
+                                            fill={highlightRow.fill} 
+                                            opacity={highlightRow.opacity}></rect>
                                     ) : null
                                 }
                                 {
@@ -674,6 +727,17 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                             <div>
                                 {
                                     this._blockInfos.map(this.mapBlock)
+                                }
+                                {
+                                    cardDatas.map((cardData: ICardData) => {
+                                        return  <PaperCard key={`${cardData.node.id}_card`} 
+                                            left={cardData.left} 
+                                            top={cardData.top} 
+                                            node={cardData.node} 
+                                            nodeDiv={cardData.nodeDiv} 
+                                            die={cardData.die} 
+                                            onClose={this.handleCardClose}/>
+                                    })
                                 }
                             </div>
                         </div>

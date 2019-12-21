@@ -9,6 +9,10 @@ interface IPaperNode extends IMRTNode {
      */
     title: string;
     /**
+     * 摘要
+     */
+    abstract: string;
+    /**
      * 论文发表年份
      */
     year: number;
@@ -33,6 +37,7 @@ const defaultPaperNode: IPaperNode = {
     link_in: [],
     link_out: [],
     title: "",
+    abstract: "",
     year: 2000,
     venue: "",
     citations: 0,

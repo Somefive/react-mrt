@@ -90,6 +90,19 @@ interface IHighlightRow {
     fill: string;
 }
 
+interface ICardData {
+    left: number;
+    top: number;
+    node: IMRTNode;
+    nodeDiv: HTMLDivElement;
+    die: boolean;
+}
+
+interface IPos {
+    left: number;
+    top: number;
+}
+
 export {
     IClusterInfo,
     ILineInfo,
@@ -100,5 +113,7 @@ export {
     ICircleInfo,
     IBlockInfo,
     ITextInfo,
-    IHighlightRow
+    IHighlightRow,
+    ICardData,
+    IPos
 }

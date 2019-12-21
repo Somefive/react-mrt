@@ -87,6 +87,7 @@ export default class PapersTransformer {
         node.id = input.paper_id;
         node.link_out = input.references;
         node.year = input.paper_year;
+        node.abstract = input.paper_abstract;
         node.venue = input.paper_venue.trim();
         node.citations = input.paper_citations;
         node.score = input.score;

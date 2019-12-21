@@ -29,7 +29,7 @@ export default class MRT extends React.Component<IProps, IState> {
 
     public render() {
         console.log("data: ", this.props.data);
-        const data: IMRTData = this.props.data;
+        const {data} = this.props;
         return (
             <div className='_mrt'>
                 <MRTViewer data={data}></MRTViewer>

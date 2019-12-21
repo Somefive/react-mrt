@@ -1,3 +1,4 @@
+import { ComponentClass } from "react";
 
 interface IMRTNode {
     type: string;
