@@ -5,12 +5,15 @@ interface IPersonNode extends IMRTNode {
      * 照片
      */
     avatar: string;
+    /**
+     * H-index
+     */
     hindex: number;
     gindex: number;
     /**
-     * 浏览量
+     * 引用数
      */
-    viewed: number;
+    citations: number;
     /**
      * 从属
      */
@@ -19,6 +22,10 @@ interface IPersonNode extends IMRTNode {
      * 职位
      */
     position: string;
+    /**
+     * 标签
+     */
+    tags: string[];
 }
 
 const defaultPersonNode: IPersonNode = {
@@ -30,9 +37,10 @@ const defaultPersonNode: IPersonNode = {
     avatar: "",
     hindex: 0,
     gindex: 0,
-    viewed: 0,
+    citations: 0,
     affiliation: "",
-    position: ""
+    position: "",
+    tags: []
 }
 
 export {

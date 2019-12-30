@@ -1,15 +1,18 @@
 import * as React from 'react';
 import './index.less';
-import { IMRTBlock, IMRTNode, IMRTData, IMRTColumn } from '../../model/mrtTree';
+import { IMRTBlock, IMRTNode, IMRTData, IMRTColumn, IMRTCluster } from '../../model/mrtTree';
 import chroma from 'chroma-js';
 import { calcTextHeight } from '../../utils/text';
-import { IClusterInfo, ILineInfo, IColumnInfo, IGrid, IGridCell, ICircleInfo, IRowInfo, IBlockInfo, ITextInfo, IHighlightRow, ICardData, IPos } from '../../model/mrtRender';
+import { IClusterInfo, ILineInfo, IColumnInfo, IGrid, IGridCell, ICircleInfo, IBlockInfo, ITextInfo, IHighlightRow, ICardData, IPos, ILink, ILinkNode } from '../../model/mrtRender';
 import PaperCard from '../card/paper/paperCard';
+import TextCard from '../card/text/textCard';
+import PersonCard from '../card/person/personCard';
 
 interface IState {
     inited: boolean;
     highlightRow: IHighlightRow | null;
     cardDatas: ICardData[];
+    link: ILink | null;
 }
 
 interface IProps {
@@ -20,6 +23,8 @@ export default class MRTViewer extends React.Component<IProps, IState> {
     private _viewer: HTMLDivElement;
     private _rootLineColor: string;
     private _rootBgColor: string;
+
+    private _data: IMRTData;
 
     private _parentWidth: number;
     private _parentHeight: number;
@@ -45,6 +50,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
     private _rootNodeMarginBottom: number;
     private _rootNodeFontSize: number;
     private _rootNodeLineHeight: number;
+    private _rootLineWidth: number;
 
     private _minColumnWidth: number;
     private _columnNormalWidth: number;
@@ -52,6 +58,9 @@ export default class MRTViewer extends React.Component<IProps, IState> {
     private _columnTextExtendRatio: number;
     private _columnLineMarginLeft: number;
     private _minClusterLevel: number;
+    private _linkLineMarginTop: number;
+
+    private _linkNodeRadius: number;
 
     private _rowPaddingTop: number;
     private _rowPaddingBottom: number;
@@ -78,11 +87,14 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this.state = {
             inited: false,
             highlightRow: null,
-            cardDatas: []
+            cardDatas: [],
+            link: null
         }
         let root: chroma.Color = chroma.scale()(0.5);
         this._rootLineColor = root.hex();
         this._rootBgColor = root.luminance(0.9).hex();
+
+        this._data = JSON.parse(JSON.stringify(this.props.data));
 
         this._parentWidth = 0;
         this._parentHeight = 0;
@@ -98,10 +110,11 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this._bottomNameMarginTop = 30;
 
         this._columnLineMarginLeft = 14;
-        this._defaultLineWidth = 2;
+        this._defaultLineWidth = 1;
         this._defaultCircleRadius = 9;
         this._circleMarginTop = 20;
         this._columnPaddingTop = 30;
+        this._linkLineMarginTop = 6;
 
         this._columnTextWidthRatio = 0.8;
         this._columnTextExtendRatio = 1.7;
@@ -123,6 +136,9 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this._rootNodeLineHeight = 4 + this._rootNodeFontSize;
         this._rootNodeMarginBottom = 20;
         this._rootBlockMarginTop = -2;
+        this._rootLineWidth = 2;
+
+        this._linkNodeRadius = 2;
 
         this._clusterColors = [];
         this._lineInfos = [];
@@ -141,12 +157,13 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this.handleCancelHighlightRow = this.handleCancelHighlightRow.bind(this);
         this.handleCardClose = this.handleCardClose.bind(this);
         this.dieAllCards = this.dieAllCards.bind(this);
+        this.handleMapCards = this.handleMapCards.bind(this);
 
         this.initData();
     }
 
     private initData() {
-        const data: IMRTData = this.props.data;
+        let data: IMRTData = this._data;
         this._clusterIndexes = [];
         for(let block of data.blocks) {
             if(this._clusterIndexes.indexOf(block.clusterIndex) < 0) {
@@ -168,6 +185,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                 level,
                 width: 0,
                 levelMax,
+                levelMin: level,
                 bgColor: chroma(this._clusterColors[i]).luminance(0.9).hex(),
                 x: 0,
                 y: this._rootHeightTotal,
@@ -179,7 +197,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
 
     private handleResize() {
         if(this._viewer) {
-            this._parentWidth = this._viewer.offsetWidth;
+            this._parentWidth = this._viewer.offsetWidth * 0.995;
             this._parentHeight = this._viewer.offsetHeight;
             this.calc();
         }
@@ -209,7 +227,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
 
     private calc() {
         let startTime: number = new Date().getTime();
-        const data: IMRTData = this.props.data;
+        let data: IMRTData = this._data;
         this._grid = {
             rowNum: 0,
             columnInfos: [],
@@ -218,12 +236,11 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         }
         let clusterNum: number = this._clusterIndexes.length;
 
-        this._columnNormalWidth = Math.max(this._parentWidth / clusterNum/this._minClusterLevel, this._minColumnWidth);
-
+        this._columnNormalWidth = Math.max(this._parentWidth / clusterNum / this._minClusterLevel, this._minColumnWidth);
         this._globalWidth = 0;
         for(let i:number=0; i < clusterNum; ++i) {
             let cluster: IClusterInfo = this._clusterInfos[i];
-            let width: number = this._columnNormalWidth * cluster.level;
+            let width: number = this._columnNormalWidth * Math.max(cluster.level, this._minClusterLevel);
             cluster.width = width;
             cluster.x = this._globalWidth;
             this._globalWidth += width;
@@ -244,14 +261,13 @@ export default class MRTViewer extends React.Component<IProps, IState> {
             let clusterInfo: IClusterInfo = this._clusterInfos[c];
             for(let column:number=0; column < clusterInfo.level; ++ column) {
                 let mrtColumn: IMRTColumn | null = this.getMRTColumn(c, column, data.columns);
-                if(mrtColumn) {
-                    this._grid.columnInfos.push({
-                        clusterIndex: c,
-                        indexInCluster: column,
-                        startRow: mrtColumn.rowStart,
-                        startColumn: this.getColumnIndexByIndexInCluster(c, mrtColumn.columnStart, this._grid.columnInfos)
-                    })
-                }
+                this._grid.columnInfos.push({
+                    clusterIndex: c,
+                    indexInCluster: column,
+                    visible: !!mrtColumn, 
+                    startRow: mrtColumn ? mrtColumn.rowStart : 0,
+                    startColumn: this.getColumnIndexByIndexInCluster(c, mrtColumn ? mrtColumn.columnStart : 0)
+                })
                 for(let row:number=0; row <= rowMax; ++row) {
                     let block: IMRTBlock | null = this.getBlock(c, column, row, liveBlocks);
                     let cell: IGridCell = {
@@ -298,7 +314,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
             x2: this._globalWidth/2,
             y2: this._rootHeightTotal,
             stroke: this._rootLineColor,
-            strokeWidth: this._defaultLineWidth,
+            strokeWidth: this._rootLineWidth,
             opacity: 1
         });
         let totalBridgeWidth: number = this._globalWidth - this._clusterInfos[this._clusterInfos.length-1].width;
@@ -309,37 +325,40 @@ export default class MRTViewer extends React.Component<IProps, IState> {
             x2: this._columnLineMarginLeft + totalBridgeWidth,
             y2: this._rootHeightTotal,
             stroke: this._rootLineColor,
-            strokeWidth: this._defaultLineWidth,
+            strokeWidth: this._rootLineWidth,
             opacity: 1
         });
         for(let i:number=0; i < this._grid.columnInfos.length; ++i) {
             let column: IColumnInfo = this._grid.columnInfos[i];
-            let startX: number = this._columnNormalWidth * i + this._columnLineMarginLeft;
-            let startY: number = this._rootHeightTotal;
-            if(column.indexInCluster > 0) {
-                startY += this.getRowOffsetY(column.startRow);
+            if(column.visible) {
+                let startX: number = this._columnNormalWidth * i + this._columnLineMarginLeft;
+                let startY: number = this._rootHeightTotal;
+                let cluster: IMRTCluster = data.clusters[column.clusterIndex];
+                if(column.indexInCluster > 0) {
+                    startY += this.getRowOffsetY(column.startRow) + this._linkLineMarginTop;
+                    this._lineInfos.push({
+                        key: `${i}_link_line`,
+                        x1: column.startColumn * this._columnNormalWidth + this._columnLineMarginLeft,
+                        y1: startY,
+                        x2: i * this._columnNormalWidth + this._columnLineMarginLeft,
+                        y2: startY,
+                        stroke: this._clusterColors[column.clusterIndex],
+                        strokeWidth: this._defaultLineWidth + (cluster.value || 0),
+                        opacity: 1
+                    })
+                }
+                let endY: number = this._rootHeightTotal + this.getRowOffsetY(this.getColumnLastRow(i)) + this._circleMarginTop;
                 this._lineInfos.push({
-                    key: `${i}_link_line`,
-                    x1: column.startColumn * this._columnNormalWidth + this._columnLineMarginLeft,
+                    key: `${i}_line`,
+                    x1: startX,
                     y1: startY,
-                    x2: i * this._columnNormalWidth + this._columnLineMarginLeft,
-                    y2: startY,
+                    x2: startX,
+                    y2: endY,
                     stroke: this._clusterColors[column.clusterIndex],
-                    strokeWidth: this._defaultLineWidth,
+                    strokeWidth: this._defaultLineWidth + (cluster.value || 0),
                     opacity: 1
                 })
-            }
-            let endY: number = this._rootHeightTotal + this.getRowOffsetY(this.getColumnLastRow(i)) + this._circleMarginTop;
-            this._lineInfos.push({
-                key: `${i}_line`,
-                x1: startX,
-                y1: startY,
-                x2: startX,
-                y2: endY,
-                stroke: this._clusterColors[column.clusterIndex],
-                strokeWidth: this._defaultLineWidth,
-                opacity: 1
-            })
+            }   
         }
 
         this._textInfos = [];
@@ -360,7 +379,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                 text: data.clusters[c].name,
                 fontSize: this._bottomNameFontSize,
                 color: chroma(this._clusterColors[c]).luminance(0.7).hex(),
-                x: index * this._columnNormalWidth + this._nodeMarginLeft + this._columnLineMarginLeft, 
+                x: index * this._columnNormalWidth + this._columnLineMarginLeft, 
                 y: this._globalHeight - this._bottomHeight + this._bottomNameMarginTop,
                 width: this._columnNormalWidth * this._minClusterLevel
             })
@@ -376,7 +395,8 @@ export default class MRTViewer extends React.Component<IProps, IState> {
             cy: this._globalMarginTop + this._defaultCircleRadius,
             r: this._defaultCircleRadius,
             stroke: this._rootLineColor,
-            fill: this._rootBgColor
+            fill: this._rootBgColor,
+            weight: 0
         })
         this._blockInfos.push({
             key: "root_block",
@@ -401,7 +421,8 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                         cy: this._rootHeightTotal + this._circleMarginTop + this.getRowOffsetY(row),
                         r: this._defaultCircleRadius,
                         stroke: this._clusterColors[columnInfo.clusterIndex],
-                        fill: this._clusterInfos[columnInfo.clusterIndex].bgColor
+                        fill: this._clusterInfos[columnInfo.clusterIndex].bgColor,
+                        weight: cell.block.weight || 0
                     })
                     if(cell.extend) {
                         let x1: number = (column+1) * this._columnNormalWidth + this._columnLineMarginLeft;
@@ -414,7 +435,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                             x2: x1,
                             y2: y1 + cell.textHeight,
                             stroke: this._clusterInfos[nextColumnInfo.clusterIndex].bgColor,
-                            strokeWidth: this._defaultLineWidth + 2,
+                            strokeWidth: this._defaultLineWidth + 4,
                             opacity: 1
                         })
                     }
@@ -432,7 +453,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                 }
             }
         }
-
+        this.forceUpdate();
         console.log("Calc time: ", (new Date().getTime() - startTime));
     }
 
@@ -471,16 +492,12 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         return result;
     }
 
-    private getColumnIndexByIndexInCluster(cluster: number, index: number, columns: IColumnInfo[]): number {
+    private getColumnIndexByIndexInCluster(cluster: number, index: number): number {
         let result: number = 0;
-        columns.forEach((value: IColumnInfo) => {
-            if(value.clusterIndex == cluster && value.indexInCluster == index) {
-                return result;
-            }else {
-                result += 1;
-            }
-        })
-        return result;
+        for(let c:number=0; c < cluster; ++c) {
+            result += this._clusterInfos[c].level;
+        }
+        return result + index;
     }
 
     private getRowOffsetY(row: number): number {
@@ -542,14 +559,20 @@ export default class MRTViewer extends React.Component<IProps, IState> {
     }
 
     private mapCircle(value: ICircleInfo): JSX.Element {
-        return <circle key={value.key}
-                    cx={value.cx} 
-                    cy={value.cy} 
-                    r={value.r} 
-                    stroke={value.stroke} 
-                    fill={value.fill} 
-                    onMouseOver={() => this.handleHighlightRow(value.row)} 
-                    onMouseOut={this.handleCancelHighlightRow} />
+        const weight: number = value.weight;
+        const r: number = value.r;
+        const dy = r * (weight - 0.5);
+        const dx = Math.sqrt(r * r - dy * dy);
+        const y: number = value.cy - dy;
+        const x1: number = value.cx - dx;
+        const x2: number = value.cx + dx;
+        return (
+            <g key={`${value.key}`} onMouseEnter={() => this.handleHighlightRow(value.row)} onMouseLeave={this.handleCancelHighlightRow}>
+                {weight > 0 && <path d={`M ${x1} ${y} A ${r} ${r} 0 ${weight >= 0.5 ? 1 : 0} 0 ${x2} ${y}`} fill={value.stroke} stroke={value.stroke}/>}
+                {weight > 0 && <path d={`M ${x1} ${y} A ${r} ${r} 0 ${weight >= 0.5 ? 0 : 1} 1 ${x2} ${y}`} fill="white" stroke={value.stroke}/>}
+                {weight === 0 && <circle cx={value.cx} cy={value.cy} r={r} stroke={value.stroke} fill="white"/>}
+            </g>
+        )
     }
 
     private mapText(info: ITextInfo): JSX.Element {
@@ -573,6 +596,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
             <div key={block.key} style={{position: "absolute", left: block.x, top: block.y, width: `${width}px`}}>
                 {
                     block.nodes.map((node: IMRTNode) => {
+                        node.blockKey = block.key;
                         return (
                             <div key={node.id} 
                                 style={{
@@ -581,7 +605,6 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                                     top: `${node.offsetY}px`,
                                     fontSize: `${fontSize}px`, 
                                     lineHeight: `${lineHeight}px`, 
-                                    width: "100%", 
                                     textAlign: "left", 
                                     wordWrap: "break-word",
                                     wordBreak: "break-word",
@@ -626,6 +649,85 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         </g>
     }
 
+    private generateLinkPath(source: ILinkNode, target: ILinkNode, reverse: boolean) {
+        let x1 = source.x, y1 = source.y, x2 = target.x, y2 = target.y
+        const mx = x1 - this._linkNodeRadius - this._columnLineMarginLeft;
+        if (reverse) {
+            x1 = target.x
+            y1 = target.y
+            x2 = source.x
+            y2 = source.y
+        }
+        let d = `M ${x1} ${y1}`
+        if (y1 === y2) d += ` L ${x2} ${y2}`
+        else if (!reverse) d += ` L ${mx} ${y1} L ${mx} ${(y1+y2)/2} C ${mx} ${y2}, ${mx} ${y2}, ${x2} ${y2}`
+        else d += ` C ${mx} ${y1}, ${mx} ${y1}, ${mx} ${(y1+y2)/2} L ${mx} ${y2} L ${x2} ${y2}`
+        return d
+    }
+
+    private generateArrowPath(source: ILinkNode, target: ILinkNode, forward: boolean) {
+        const x = target.x, y = target.y
+        const nx = (x >= source.x) ? (x - this._linkNodeRadius) : (x + this._linkNodeRadius)
+        const uy = y - this._linkNodeRadius / 2, by = y + this._linkNodeRadius / 2
+        if (forward) {
+            const nnx = (x >= source.x) ? (x - this._linkNodeRadius * 1.2) : (x + this._linkNodeRadius * 1.2)
+            return `M ${x} ${y} L ${nnx} ${uy} L ${nx} ${y} L ${nnx} ${by} L ${x} ${y}`
+        } else {
+            const nnx = (x >= source.x) ? (x + this._linkNodeRadius * 0.2) : (x - this._linkNodeRadius * 0.2)
+            return `M ${nx} ${y} L ${nnx} ${uy} L ${x} ${y} L ${nnx} ${by} L ${nx} ${y}`
+        }
+    }
+
+    private estimateLinkLength(source: ILinkNode, target: ILinkNode) {
+        return 2 * (Math.abs(source.x - target.x) + Math.abs(source.y - target.y))
+    }
+
+    private drawLink(link: ILink): JSX.Element {
+        const textColor = link.color;
+        return (
+        <g key={link.source.node.id}>
+            <circle cx={link.source.x} cy={link.source.y} r={6} fill={textColor}/>
+            {link.targets.map((linkNode, idx) => (
+            <g key={idx}>
+                <circle cx={linkNode.x} cy={linkNode.y} r={4} fill={link.color}/>
+                <path className="mrt-link-path" d={this.generateLinkPath(link.source, linkNode, false)} strokeWidth={2} stroke={textColor} fill="transparent"
+                    strokeDasharray={this.estimateLinkLength(link.source, linkNode)} strokeDashoffset={this.estimateLinkLength(link.source, linkNode)}/>
+                <path className="mrt-link-dot" d={this.generateLinkPath(link.source, linkNode, false)} strokeWidth={5} stroke={textColor} fill="transparent"
+                    strokeDasharray={`6 ${this.estimateLinkLength(link.source, linkNode)}`} strokeDashoffset={this.estimateLinkLength(link.source, linkNode)}/>
+                <path className="mrt-link-arrow" d={this.generateArrowPath(link.source, linkNode, true)} fill={textColor}/>
+            </g>
+            ))}
+        </g>)
+    }
+
+    private getLinkByNode(node: IMRTNode): ILink | null {
+        if(node && node.link_out && node.link_out.length) {
+            let pPos: IPos = this.getBlockPosByNode(node);
+            let link: ILink = {
+                color: this.getBlockInfoByNodeId(node.id)!.color,
+                source: {
+                    node: node,
+                    x: pPos.x - this._nodeMarginLeft,
+                    y: pPos.y + node.offsetY! + this._lineHeight/2
+                }, 
+                targets: []
+            }
+            for(let out of node.link_out) {
+                let outNode: IMRTNode | null = this.getNode(out);
+                if(outNode) {
+                    let outPos: IPos = this.getBlockPosByNode(outNode);
+                    link.targets.push({
+                        node: outNode,
+                        x: outPos.x - this._nodeMarginLeft,
+                        y: outPos.y + outNode.offsetY! + this._lineHeight/2
+                    })
+                }
+            }
+            return link;
+        }
+        return null;
+    }
+
     private handleNodeMouseOver(e: React.MouseEvent, node: IMRTNode):void {
         let div: HTMLDivElement = e.target as HTMLDivElement;
 
@@ -633,8 +735,8 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         if(!cardDatas.find(value => value.node.id == node.id)) {
             cardDatas.forEach(value => value.die = true);
             let pos: IPos = this.getBlockPosByNode(node);
-            let left: number = pos.left;
-            let top: number = pos.top + node.offsetY!;
+            let left: number = pos.x;
+            let top: number = pos.y + node.offsetY!;
             cardDatas.push({
                 left,
                 top,
@@ -642,26 +744,96 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                 nodeDiv: div,
                 die: false
             });
-            this.setState({cardDatas});
+            let link: ILink | null = this.getLinkByNode(node);
+            this.setState({cardDatas, link});
         }
+    }
+
+    private handleMapCards(cardData: ICardData): JSX.Element {
+        switch(cardData.node.type) {
+            case "paper":
+                return  <PaperCard key={`${cardData.node.id}_card`} 
+                    globalWidth={this._globalWidth}
+                    left={cardData.left} 
+                    top={cardData.top} 
+                    node={cardData.node} 
+                    nodeDiv={cardData.nodeDiv} 
+                    die={cardData.die} 
+                    onClose={this.handleCardClose}/>
+            case "text":
+                return  <TextCard key={`${cardData.node.id}_card`} 
+                    globalWidth={this._globalWidth}
+                    left={cardData.left} 
+                    top={cardData.top} 
+                    node={cardData.node} 
+                    nodeDiv={cardData.nodeDiv} 
+                    die={cardData.die} 
+                    onClose={this.handleCardClose}/>
+            case "person":
+                return  <PersonCard key={`${cardData.node.id}_card`} 
+                    globalWidth={this._globalWidth}
+                    left={cardData.left} 
+                    top={cardData.top} 
+                    node={cardData.node} 
+                    nodeDiv={cardData.nodeDiv} 
+                    die={cardData.die} 
+                    onClose={this.handleCardClose}/>
+            default:
+                return  <PaperCard key={`${cardData.node.id}_card`} 
+                    globalWidth={this._globalWidth}
+                    left={cardData.left} 
+                    top={cardData.top} 
+                    node={cardData.node} 
+                    nodeDiv={cardData.nodeDiv} 
+                    die={cardData.die} 
+                    onClose={this.handleCardClose}/>
+        }
+    }
+
+    private getNode(id: string): IMRTNode | null {
+        for(let block of this._blockInfos) {
+            for(let n of block.nodes) {
+                if(n.id == id) {
+                    return n;
+                }
+            }
+        }
+        return null;
+    }
+
+    private getBlockInfoByNodeId(id: string): IBlockInfo | null {
+        for(let block of this._blockInfos) {
+            for(let n of block.nodes) {
+                if(n.id == id) {
+                    return block;
+                }
+            }
+        }
+        return null;
     }
 
     private getBlockPosByNode(node: IMRTNode): IPos {
         for(let block of this._blockInfos) {
-            for(let n of block.nodes) {
-                if(n.id == node.id) {
-                    return {left: block.x, top: block.y};
+            if(node.blockKey) {
+                if(node.blockKey == block.key) {
+                    return {x: block.x, y: block.y};
+                }
+            }else {
+                for(let n of block.nodes) {
+                    if(n.id == node.id) {
+                        return {x: block.x, y: block.y};
+                    }
                 }
             }
         }
-        return {left: 0, top: 0};
+        return {x: 0, y: 0};
     }
 
     private dieAllCards(): void {
         if(this.state.cardDatas.length) {
             let cardDatas: ICardData[] = [...this.state.cardDatas];
             cardDatas.forEach(value => value.die = true);
-            this.setState({cardDatas});
+            this.setState({cardDatas, link: null});
         }
     }
 
@@ -676,13 +848,18 @@ export default class MRTViewer extends React.Component<IProps, IState> {
     }
 
     public componentDidUpdate(preProps: IProps) {
-        if(preProps != this.props) {
-            this.calc();
+        if(preProps.data != this.props.data) {
+            this._data = JSON.parse(JSON.stringify(this.props.data));
+            this.initData();
+            this.handleResize();
         }
     }
 
     public componentDidMount() {
         this.handleResize();
+        setTimeout(() => {
+            this.handleResize();
+        }, 100);
 
         window.addEventListener("resize", this.handleResize);
 
@@ -694,7 +871,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
     }
 
     public render() {
-        const { inited, highlightRow, cardDatas } = this.state;
+        const { inited, highlightRow, cardDatas, link } = this.state;
         return (
             <div className='_mrtviewer' ref={(e) => {this._viewer = e!;}} style={{backgroundColor: this._rootBgColor}}>
                 {
@@ -708,14 +885,14 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                                     this._lineInfos.map(this.mapLine)
                                 }
                                 {
-                                    highlightRow ? (
+                                    highlightRow && (
                                         <rect x={highlightRow.x} 
                                             y={highlightRow.y} 
                                             width={highlightRow.width} 
                                             height={highlightRow.height} 
                                             fill={highlightRow.fill} 
                                             opacity={highlightRow.opacity}></rect>
-                                    ) : null
+                                    )
                                 }
                                 {
                                     this._circleInfos.map(this.mapCircle)
@@ -723,21 +900,16 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                                 {
                                     this._textInfos.map(this.mapText)
                                 }
+                                {
+                                    link && this.drawLink(link)
+                                }
                             </svg>
                             <div>
                                 {
                                     this._blockInfos.map(this.mapBlock)
                                 }
                                 {
-                                    cardDatas.map((cardData: ICardData) => {
-                                        return  <PaperCard key={`${cardData.node.id}_card`} 
-                                            left={cardData.left} 
-                                            top={cardData.top} 
-                                            node={cardData.node} 
-                                            nodeDiv={cardData.nodeDiv} 
-                                            die={cardData.die} 
-                                            onClose={this.handleCardClose}/>
-                                    })
+                                    cardDatas.map(this.handleMapCards)
                                 }
                             </div>
                         </div>

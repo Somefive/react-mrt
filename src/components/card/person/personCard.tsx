@@ -1,32 +1,31 @@
 import * as React from 'react';
 import ICardProps from '../cardProps';
-import './paperCard.less';
-import { IPaperNode } from '../../..';
+import './personCard.less';
+import { IPersonNode } from '../../..';
+import DefaultSVG from './images/head_default.png';
 
 interface IState {
     left: number;
     top: number;
     height: number;
     unfold: boolean;
-    abstractAll: boolean;
 }
 
 interface IProps extends ICardProps {
 
 }
 
-export default class PaperCard extends React.Component<IProps, IState> {
+export default class PersonCard extends React.Component<IProps, IState> {
     private _div: HTMLDivElement;
     private _oldParent: (Node & ParentNode) | null;
     private _oldStyle: CSSStyleDeclaration;
     private _bgDiv: HTMLDivElement;
-    private _node: IPaperNode;
+    private _node: IPersonNode;
 
     private _detailsDiv: HTMLDivElement | null;
 
     private _width: number;
     private _bgColor: string;
-    private _abstractLimit: number;
 
     constructor(props: IProps) {
         super(props);
@@ -34,24 +33,20 @@ export default class PaperCard extends React.Component<IProps, IState> {
             left: this.props.left,
             top: this.props.top,
             height: 140,
-            unfold: false,
-            abstractAll: false
+            unfold: false
         }
 
         this._div = this.props.nodeDiv;
         this._oldStyle = {...this.props.nodeDiv.style};
         this._oldParent = this.props.nodeDiv.parentNode;
-        this._node = this.props.node as IPaperNode;
+        this._node = this.props.node as IPersonNode;
 
         this._div.style.zIndex = "1";
 
-        this._width = 425;
+        this._width = 380;
         this._bgColor = "#fff";
-        this._abstractLimit = 200;
 
         this.handleClose = this.handleClose.bind(this);
-        this.getAbstract = this.getAbstract.bind(this);
-        this.handleMore = this.handleMore.bind(this);
     }
 
     private handleClose(): void {
@@ -70,21 +65,6 @@ export default class PaperCard extends React.Component<IProps, IState> {
         }
     }
 
-    private getAbstract(): JSX.Element {
-        if(this._node.abstract.length < this._abstractLimit + 6 || this.state.abstractAll) {
-            return <span>{this._node.abstract}</span>;
-        }else {
-            let index: number = this._node.abstract.indexOf(" ", this._abstractLimit);
-            let short: string = this._node.abstract.substr(0, index);
-            return <span>{short}<a href='#' onClick={this.handleMore}>...more</a></span>;
-        }
-    }
-
-    private handleMore(): boolean {
-        this.setState({abstractAll: true});
-        return false;
-    }
-
     public componentDidMount(): void {
         this._div.style.left = "6px";
         this._div.style.top = "12px";
@@ -97,7 +77,7 @@ export default class PaperCard extends React.Component<IProps, IState> {
         this._div.style.cursor = "pointer";
         this._div.style.textDecoration = "underline";
         this._div.onclick = () => {
-            this.setState({unfold: !this.state.unfold, abstractAll: false});
+            this.setState({unfold: !this.state.unfold});
         }
         this._bgDiv.appendChild(this._div);
 
@@ -106,14 +86,14 @@ export default class PaperCard extends React.Component<IProps, IState> {
         this.setState({height, left});
     }
 
-    public componentDidUpdate(preProps: IProps): void {
+    public componentDidUpdate(preProps: IProps, preState: IState): void {
         if(!preProps.die && this.props.die) {
             setTimeout(() => {
                 this.handleClose();
             }, 200);
         }
-        let height: number = this._div.offsetHeight + 40 + (this._detailsDiv ? this._detailsDiv.offsetHeight : 0);
-        if(height != this.state.height) {
+        if(preState.unfold != this.state.unfold) {
+            let height: number = this._div.offsetHeight + 40 + (this._detailsDiv ? this._detailsDiv.offsetHeight : 0);
             this.setState({height});
         }
     }
@@ -126,7 +106,7 @@ export default class PaperCard extends React.Component<IProps, IState> {
         const {height, unfold, left, top} = this.state;
         const abstractOffsetY: number = this._div.offsetHeight + this._div.offsetTop + 10;
         return (
-            <div className='papercard' 
+            <div className='personcard' 
                 ref={d => this._bgDiv = d!} 
                 style={{
                     position: "absolute", 
@@ -137,11 +117,15 @@ export default class PaperCard extends React.Component<IProps, IState> {
                     backgroundColor: this._bgColor}} >
                 {
                     unfold ? (
-                        <div ref={d => this._detailsDiv = d} className='papercard_detail' style={{top: abstractOffsetY}}>
-                            { this._node.year && <div><b>Year: </b>{this._node.year}</div> }
-                            <div><b>Citations: </b>{this._node.citations || 0}</div>
-                            { this._node.venue && <div><b>Venue: </b>{this._node.venue}</div> }
-                            { this._node.abstract && <div><b>Abstract: </b>{this.getAbstract()}</div> }
+                        <div ref={d => this._detailsDiv = d} className='personcard_details' style={{top: abstractOffsetY}}>
+                            <img className='personcard_avatar' src={this._node.avatar || DefaultSVG} />
+                            <div className='personcard_profile'>
+                                <div><b>h-index: </b>{this._node.hindex}</div>
+                                <div><b>g-index: </b>{this._node.gindex}</div>
+                                { this._node.position && <div><b>Position: </b>{this._node.position}</div> }
+                                { this._node.affiliation && <div><b>Affiliation: </b>{this._node.affiliation}</div> }
+                                <div><b>Citations: </b>{this._node.citations}</div>
+                            </div>
                         </div>
                     ) : null
                 }

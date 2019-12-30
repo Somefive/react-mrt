@@ -8,6 +8,7 @@ interface IClusterInfo {
     y: number;
     width: number;
     levelMax: number;
+    levelMin: number;
     bgColor: string;
     levelInfos: IColumnInfo[];
 }
@@ -17,6 +18,7 @@ interface IColumnInfo {
     indexInCluster: number;
     startRow: number;
     startColumn: number;
+    visible: boolean;
 }
 
 interface IRowInfo {
@@ -40,6 +42,7 @@ interface ICircleInfo {
     cx: number;
     cy: number;
     r: number;
+    weight: number;
     stroke: string;
     fill: string;
 }
@@ -99,8 +102,20 @@ interface ICardData {
 }
 
 interface IPos {
-    left: number;
-    top: number;
+    x: number;
+    y: number;
+}
+
+interface ILinkNode {
+    node: IMRTNode;
+    x: number;
+    y: number;
+}
+
+interface ILink {
+    color: string;
+    source: ILinkNode;
+    targets: ILinkNode[];
 }
 
 export {
@@ -115,5 +130,7 @@ export {
     ITextInfo,
     IHighlightRow,
     ICardData,
-    IPos
+    IPos,
+    ILinkNode,
+    ILink
 }

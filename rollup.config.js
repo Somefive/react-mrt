@@ -7,6 +7,7 @@ import json from 'rollup-plugin-json'
 import svgr from '@svgr/rollup'
 import svg from 'rollup-plugin-svg'
 import typescript from 'rollup-plugin-typescript2'
+import image from  '@rollup/plugin-image'
 
 import pkg from './package.json'
 
@@ -34,6 +35,7 @@ export default {
     svg(),
     svgr(),
     json(),
+    image(),
     babel({
       exclude: 'node_modules/**',
       plugins: [ 'external-helpers' ]

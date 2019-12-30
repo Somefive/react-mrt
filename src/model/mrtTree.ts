@@ -1,12 +1,12 @@
-import { ComponentClass } from "react";
 
 interface IMRTNode {
     type: string;
     id: string;
     name: string;
-    link_in: string[];
-    link_out: string[];
+    link_in?: string[];
+    link_out?: string[];
     offsetY?: number;
+    blockKey?: string;
     textHeight?: number;
 }
 
@@ -15,7 +15,7 @@ interface IMRTBlock {
     clusterIndex: number;
     column: number;
     row: number;
-    weight: number;
+    weight?: number;
     nodes: IMRTNode[];
 }
 
@@ -28,7 +28,7 @@ interface IMRTColumn {
 
 interface IMRTCluster {
     name: string;
-    value: number;
+    value?: number;
 }
 
 interface IMRTData {

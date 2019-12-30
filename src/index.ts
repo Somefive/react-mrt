@@ -3,6 +3,7 @@ import MRT from './components/mrt/mrt';
 import { IMRTData, IMRTColumn, IMRTBlock, IMRTNode } from './model/mrtTree';
 import { IPersonNode, defaultPersonNode } from './model/nodes/personNode';
 import { IPaperNode, defaultPaperNode } from './model/nodes/paperNode';
+import { ITextNode, defaultTextNode } from './model/nodes/textNode';
 import OMRT from './mrt';
 
 export { 
@@ -15,5 +16,7 @@ export {
     IPersonNode,
     defaultPersonNode,
     IPaperNode,
-    defaultPaperNode
+    defaultPaperNode,
+    ITextNode,
+    defaultTextNode
 }

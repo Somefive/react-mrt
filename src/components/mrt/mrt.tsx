@@ -9,13 +9,6 @@ interface IState {
 
 interface IProps {
     data: IMRTData;
-    like?: boolean;
-    lang?: string;
-    userEdits?: any;
-    authors?: string[];
-    onLike: () => void;
-    onLoadJson?: (json: any) => void;
-    onEditChange?: (edits: any) => void;
 }
 
 export default class MRT extends React.Component<IProps, IState> {

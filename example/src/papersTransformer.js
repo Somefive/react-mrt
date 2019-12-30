@@ -17,7 +17,7 @@ export default class PapersTransformer {
         for(let cIndex=0; cIndex < clusterLen; ++cIndex) {
             mrtData.clusters.push({
                 name: data.clusterNames[cIndex],
-                value: data.importance[cIndex]
+                value: data.importance[cIndex] * 6
             })
             let cluster = data.branches[cIndex];
             let columnLen = cluster.length;
@@ -40,6 +40,7 @@ export default class PapersTransformer {
                                     column: columnIndex,
                                     row,
                                     nodes: [node],
+                                    weight: Math.random()
                                 }
                                 blocks.push(block);
                                 return block;

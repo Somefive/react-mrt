@@ -31,7 +31,7 @@
     }
 }
 
-.papercard {
+.personcard {
     position: absolute;
     opacity: 0.98;
     border-radius: 20px;
@@ -41,11 +41,24 @@
     animation-duration: 0.2s;
     transition: height 0.2s, left 0.2s, top 0.2s;
 
-    .papercard_detail {
+    .personcard_details {
         position: absolute;
-        text-align: left;
-        white-space: pre-wrap;
         width: 94%;
         left: 3%;
+        padding-top: 10px;
+        display: flex;
+        flex-direction: row;
+        text-align: left;
+    }
+
+    .personcard_avatar {
+        position: relative;
+        width: 84px;
+        height: 109px;
+    }
+
+    .personcard_profile {
+        flex: 1;
+        margin-left: 12px;
     }
 }
