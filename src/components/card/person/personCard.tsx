@@ -92,7 +92,7 @@ export default class PersonCard extends React.Component<IProps, IState> {
             if(!this.state.unfold) {
                 this.setState({unfold: true});
             }
-        }, 500);
+        }, 300);
     }
 
     public componentDidUpdate(preProps: IProps, preState: IState): void {

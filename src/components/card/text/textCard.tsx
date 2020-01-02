@@ -91,7 +91,7 @@ export default class TextCard extends React.Component<IProps, IState> {
             if(!this.state.unfold) {
                 this.setState({unfold: true});
             }
-        }, 500);
+        }, 300);
     }
 
     public componentDidUpdate(preProps: IProps): void {
@@ -128,7 +128,7 @@ export default class TextCard extends React.Component<IProps, IState> {
                 {
                     unfold ? (
                         <div ref={d => this._detailsDiv = d} className='textcard_detail' style={{top: abstractOffsetY}}>
-                            { this._node.description && <div>{this._node.description}</div> }
+                            { this._node.description && <div style={{maxHeight: '160px', overflowY: "scroll"}}>{this._node.description}</div> }
                         </div>
                     ) : null
                 }

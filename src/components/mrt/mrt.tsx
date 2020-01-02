@@ -27,7 +27,7 @@ export default class MRT extends React.Component<IProps, IState> {
 
         this.state = {
             canvasScale: 1,
-            fontScale: 1,
+            fontScale: props.data.columns.length <= 6 ? 1.2 : 1,
             hideSubBranch: false,
             disableTextClusterSpan: false
         }
@@ -58,6 +58,15 @@ export default class MRT extends React.Component<IProps, IState> {
 
     private handleDisableTextClusterSpan(): void {
         this.setState({disableTextClusterSpan: !this.state.disableTextClusterSpan});
+    }
+
+    public componentDidUpdate(preProps: IProps): void {
+        if(preProps.data != this.props.data) {
+            let fontScale: number = this.props.data.columns.length <= 6 ? 1.2 : 1;
+            if(fontScale != this.state.fontScale) {
+                this.setState({fontScale});
+            }
+        }
     }
 
     public render() {

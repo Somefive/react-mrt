@@ -86,6 +86,8 @@ export default class MRTViewer extends React.Component<IProps, IState> {
     private _blockInfos: IBlockInfo[];
     private _textInfos: ITextInfo[];
 
+    private _canvasMoving: boolean;
+
     constructor(props: IProps) {
         super(props);
         this.state = {
@@ -103,14 +105,14 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this._parentWidth = 0;
         this._parentHeight = 0;
 
-        this._minColumnWidth = 90;
+        this._minColumnWidth = 112;
         this._globalMarginTop = 26;
         this._globalHeight = 2500;
         this._middleHeight = 0;
         this._bottomHeight = 180;
 
         this._bottomNameFontSize = 26;
-        this._bottomNameMarginTop = 30;
+        this._bottomNameMarginTop = 20;
 
         this._columnLineMarginLeft = 14;
         this._defaultLineWidth = 1;
@@ -127,7 +129,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
 
         this._nodeGap = 2;
         this._nodeMarginLeft = 14;
-        this._clusterNameFontSize = 18;
+        this._clusterNameFontSize = 16;
 
         this._rootNodeGap = 6;
         this._rootTextHeight = 0;
@@ -144,6 +146,8 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this._blockInfos = [];
         this._textInfos = [];
 
+        this._canvasMoving = false;
+
         this.handleResize = this.handleResize.bind(this);
         this.handleDoubleClickCluster = this.handleDoubleClickCluster.bind(this);
         this.mapLine = this.mapLine.bind(this);
@@ -156,6 +160,9 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this.handleCardClose = this.handleCardClose.bind(this);
         this.dieAllCards = this.dieAllCards.bind(this);
         this.handleMapCards = this.handleMapCards.bind(this);
+        this.handleCanvasMouseDown = this.handleCanvasMouseDown.bind(this);
+        this.handleCanvasMouseMove = this.handleCanvasMouseMove.bind(this);
+        this.handleCanvasMouseUp = this.handleCanvasMouseUp.bind(this);
 
         this.initData();
     }
@@ -310,7 +317,6 @@ export default class MRTViewer extends React.Component<IProps, IState> {
             this._middleHeight += rowHeight;
         }
         this._globalHeight = this._rootHeightTotal + this._bottomHeight + this._middleHeight;
-        console.log(this._grid);
         //line
         this._lineInfos.length = 0;
         this._lineInfos.push({
@@ -353,7 +359,20 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                         opacity: 1
                     })
                 }
-                let endY: number = this._rootHeightTotal + this.getRowOffsetY(this.getColumnLastRow(i)) + this._circleMarginTop;
+                let lastRow: number = this.getColumnLastRow(i);
+                let lastStartRow: number = 0;
+                for(let s:number=i+1; s < this._grid.columnInfos.length; ++s) {
+                    let nc: IColumnInfo = this._grid.columnInfos[s];
+                    if(nc.clusterIndex == column.clusterIndex) {
+                        if(nc.visible && nc.startColumn == i) {
+                            lastStartRow = Math.max(lastStartRow, nc.startRow);
+                        }
+                    }else {
+                        break;
+                    }
+                }
+                let endY: number = lastStartRow > lastRow ? (this._rootHeightTotal + this.getRowOffsetY(lastStartRow) + this._linkLineMarginTop) : 
+                    (this._rootHeightTotal + this.getRowOffsetY(lastRow) + this._circleMarginTop);
                 this._lineInfos.push({
                     key: `${i}_line`,
                     x1: startX,
@@ -371,14 +390,15 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         // cluster names
         for(let c:number=0; c < clusterNum; ++c) {
             let index: number = this.getClusterStartColumn(c, this._grid.columnInfos);
-            let y: number = this._rootHeightTotal + this.getRowOffsetY(this.getClusterFirstRowIndex(c)) - 4;
+            let y: number = this._rootHeightTotal + this.getRowOffsetY(this.getClusterFirstRowIndex(c)) - this._clusterNameFontSize - 8;
             this._textInfos.push({
                 key: `${c}_cluster_name`,
                 text: data.clusters[c].name,
                 fontSize: this._clusterNameFontSize,
                 color: this._clusterColors[c],
                 x: index * this._columnNormalWidth + this._nodeMarginLeft + this._columnLineMarginLeft, 
-                y
+                y,
+                width: this._columnNormalWidth * this._clusterInfos[c].level - this._columnLineMarginLeft - this._nodeMarginLeft
             })
             this._textInfos.push({
                 key: `${c}_bottom_cluster_name`,
@@ -387,7 +407,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                 color: chroma(this._clusterColors[c]).luminance(0.7).hex(),
                 x: index * this._columnNormalWidth + this._columnLineMarginLeft, 
                 y: this._globalHeight - this._bottomHeight + this._bottomNameMarginTop,
-                width: this._columnNormalWidth * this._minClusterLevel
+                width: this._columnNormalWidth * this._clusterInfos[c].level - this._columnLineMarginLeft
             })
         }
 
@@ -462,6 +482,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this.forceUpdate();
         console.log("Calc time: ", (new Date().getTime() - startTime));
     }
+
 
     private getClusterFirstRowIndex(cluster: number): number {
         let result: number = this._grid.rowNum;
@@ -567,24 +588,35 @@ export default class MRTViewer extends React.Component<IProps, IState> {
     private mapCircle(value: ICircleInfo): JSX.Element {
         const weight: number = value.weight;
         const r: number = value.r;
-        const dy = r * (weight - 0.5);
+        const dy = r * (weight - 0.5)*2;
         const dx = Math.sqrt(r * r - dy * dy);
         const y: number = value.cy - dy;
         const x1: number = value.cx - dx;
         const x2: number = value.cx + dx;
         return (
             <g key={`${value.key}`} onMouseEnter={() => this.handleHighlightRow(value.row)} onMouseLeave={this.handleCancelHighlightRow}>
-                {weight > 0 && <path d={`M ${x1} ${y} A ${r} ${r} 0 ${weight >= 0.5 ? 1 : 0} 0 ${x2} ${y}`} fill={value.stroke} stroke={value.stroke}/>}
-                {weight > 0 && <path d={`M ${x1} ${y} A ${r} ${r} 0 ${weight >= 0.5 ? 0 : 1} 1 ${x2} ${y}`} fill="white" stroke={value.stroke}/>}
+                {weight > 0 && weight < 1 && <path d={`M ${x1} ${y} A ${r} ${r} 0 ${weight >= 0.5 ? 1 : 0} 0 ${x2} ${y}`} fill={value.stroke} stroke={value.stroke}/>}
+                {weight > 0 && weight < 1 && <path d={`M ${x1} ${y} A ${r} ${r} 0 ${weight >= 0.5 ? 0 : 1} 1 ${x2} ${y}`} fill="white" stroke={value.stroke}/>}
+                {weight ===1 && <circle cx={value.cx} cy={value.cy} r={r} stroke={value.stroke} fill={value.stroke}/>}
                 {weight === 0 && <circle cx={value.cx} cy={value.cy} r={r} stroke={value.stroke} fill="white"/>}
             </g>
         )
     }
 
     private mapText(info: ITextInfo): JSX.Element {
-        return <text key={info.key} fontSize={info.fontSize} fill={info.color} x={info.x} y={info.y} width={info.width || "auto"}>
-            { info.text }
-        </text>
+        return <div key={info.key} 
+                    style={{
+                        position: 'absolute',
+                        left: `${info.x}px`,
+                        top: `${info.y}px`,
+                        fontSize: `${info.fontSize}px`,
+                        lineHeight: `${info.fontSize*1.2}px`,
+                        color: `${info.color}`,
+                        width: `${info.width}px`,
+                        userSelect: 'none'
+                    }}>
+            {info.text}
+        </div>
     }
 
     private mapBlock(block: IBlockInfo): JSX.Element {
@@ -845,6 +877,22 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this.setState({cardDatas: datas});
     }
 
+    private handleCanvasMouseDown(): void {
+        this._canvasMoving = true;
+        document.addEventListener('mouseup', this.handleCanvasMouseUp);
+    }
+
+    private handleCanvasMouseMove(e: React.MouseEvent): void {
+        if(this._viewer && this._canvasMoving && this._parentWidth < this._globalWidth) {
+            this._viewer.scrollLeft -= e.movementX;
+        }
+    }
+
+    private handleCanvasMouseUp(): void {
+        this._canvasMoving = false;
+        document.removeEventListener('mouseup', this.handleCanvasMouseUp);
+    }
+
     public componentDidUpdate(preProps: IProps) {
         if(preProps.data != this.props.data) {
             this._data = JSON.parse(JSON.stringify(this.props.data));
@@ -881,8 +929,14 @@ export default class MRTViewer extends React.Component<IProps, IState> {
             <div className='_mrtviewer' ref={(e) => {this._viewer = e!;}} style={{backgroundColor: this._rootBgColor}}>
                 {
                     inited ? (
-                        <div className='_mrtview_canvas' style={{width: `${this._globalWidth}px`, height: `${this._globalHeight}px`}}>
-                            <svg className='_mrtviewer_bg' width={this._globalWidth} height={this._globalHeight} onMouseOver={this.dieAllCards}>
+                        <div className='_mrtview_canvas' 
+                            style={{width: `${this._globalWidth}px`, height: `${this._globalHeight}px`}} >
+                            <svg className='_mrtviewer_bg' 
+                                width={this._globalWidth} 
+                                height={this._globalHeight} 
+                                onMouseOver={this.dieAllCards} 
+                                onMouseDown={this.handleCanvasMouseDown} 
+                                onMouseMove={this.handleCanvasMouseMove} >
                                 {
                                     this._clusterInfos.map(this.mapClusterBg)
                                 }
@@ -903,13 +957,13 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                                     this._circleInfos.map(this.mapCircle)
                                 }
                                 {
-                                    this._textInfos.map(this.mapText)
-                                }
-                                {
                                     link && this.drawLink(link)
                                 }
                             </svg>
                             <div>
+                                {
+                                    this._textInfos.map(this.mapText)
+                                }
                                 {
                                     this._blockInfos.map(this.mapBlock)
                                 }
