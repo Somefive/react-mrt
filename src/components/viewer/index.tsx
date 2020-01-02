@@ -17,6 +17,10 @@ interface IState {
 
 interface IProps {
     data: IMRTData;
+    fontScale: number;
+    scale: number;
+    hideSubBranch: boolean;
+    disableTextClusterSpan: boolean;
 }
 
 export default class MRTViewer extends React.Component<IProps, IState> {
@@ -100,7 +104,6 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this._parentHeight = 0;
 
         this._minColumnWidth = 90;
-        this._minClusterLevel = 2;
         this._globalMarginTop = 26;
         this._globalHeight = 2500;
         this._middleHeight = 0;
@@ -123,17 +126,12 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this._rowPaddingBottom = 10;
 
         this._nodeGap = 2;
-        this._fontSize = 10;
-        this._lineHeight = 4 + this._fontSize;
         this._nodeMarginLeft = 14;
-
         this._clusterNameFontSize = 18;
 
         this._rootNodeGap = 6;
         this._rootTextHeight = 0;
         this._rootNodeTextWidth = 350;
-        this._rootNodeFontSize = 12;
-        this._rootNodeLineHeight = 4 + this._rootNodeFontSize;
         this._rootNodeMarginBottom = 20;
         this._rootBlockMarginTop = -2;
         this._rootLineWidth = 2;
@@ -163,6 +161,14 @@ export default class MRTViewer extends React.Component<IProps, IState> {
     }
 
     private initData() {
+        this._minClusterLevel = this.props.hideSubBranch ? 1 : 2;
+
+        this._rootNodeFontSize = 12 * this.props.fontScale;
+        this._rootNodeLineHeight = 4 + this._rootNodeFontSize;
+
+        this._fontSize = 10 * this.props.fontScale;
+        this._lineHeight = 4 + this._fontSize;
+
         let data: IMRTData = this._data;
         this._clusterIndexes = [];
         for(let block of data.blocks) {
@@ -197,7 +203,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
 
     private handleResize() {
         if(this._viewer) {
-            this._parentWidth = this._viewer.offsetWidth * 0.995;
+            this._parentWidth = this._viewer.offsetWidth * 0.993 * this.props.scale;
             this._parentHeight = this._viewer.offsetHeight;
             this.calc();
         }
@@ -287,7 +293,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                 let cell: IGridCell = this._grid.cells[column * this._grid.rowNum + row];
                 if(cell.block) {
                     let rightCell: IGridCell | null = column+1 < this._grid.columnInfos.length ? this._grid.cells[(column+1) * this._grid.rowNum + row] : null;
-                    if(!rightCell || (rightCell && rightCell.block)) {
+                    if(this.props.disableTextClusterSpan || !rightCell || (rightCell && rightCell.block)) {
                         cell.textWidth = this._columnNormalWidth * this._columnTextWidthRatio;
                     }else {
                         cell.textWidth = this._columnNormalWidth * this._columnTextExtendRatio;
@@ -736,7 +742,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
             cardDatas.forEach(value => value.die = true);
             let pos: IPos = this.getBlockPosByNode(node);
             let left: number = pos.x;
-            let top: number = pos.y + node.offsetY!;
+            let top: number = pos.y + node.offsetY! - this._fontSize;
             cardDatas.push({
                 left,
                 top,
@@ -751,15 +757,6 @@ export default class MRTViewer extends React.Component<IProps, IState> {
 
     private handleMapCards(cardData: ICardData): JSX.Element {
         switch(cardData.node.type) {
-            case "paper":
-                return  <PaperCard key={`${cardData.node.id}_card`} 
-                    globalWidth={this._globalWidth}
-                    left={cardData.left} 
-                    top={cardData.top} 
-                    node={cardData.node} 
-                    nodeDiv={cardData.nodeDiv} 
-                    die={cardData.die} 
-                    onClose={this.handleCardClose}/>
             case "text":
                 return  <TextCard key={`${cardData.node.id}_card`} 
                     globalWidth={this._globalWidth}
@@ -778,6 +775,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                     nodeDiv={cardData.nodeDiv} 
                     die={cardData.die} 
                     onClose={this.handleCardClose}/>
+            case "paper":
             default:
                 return  <PaperCard key={`${cardData.node.id}_card`} 
                     globalWidth={this._globalWidth}
@@ -851,6 +849,13 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         if(preProps.data != this.props.data) {
             this._data = JSON.parse(JSON.stringify(this.props.data));
             this.initData();
+            this.handleResize();
+        }else if(preProps.fontScale != this.props.fontScale || 
+            preProps.hideSubBranch != this.props.hideSubBranch) {
+            this.initData();
+            this.handleResize();
+        }else if(preProps.scale != this.props.scale || 
+            preProps.disableTextClusterSpan != this.props.disableTextClusterSpan) {
             this.handleResize();
         }
     }

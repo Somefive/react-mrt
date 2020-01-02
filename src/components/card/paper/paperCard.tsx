@@ -28,6 +28,8 @@ export default class PaperCard extends React.Component<IProps, IState> {
     private _bgColor: string;
     private _abstractLimit: number;
 
+    private _unfoldTimer: NodeJS.Timeout | null;
+
     constructor(props: IProps) {
         super(props);
         this.state = {
@@ -86,9 +88,9 @@ export default class PaperCard extends React.Component<IProps, IState> {
     }
 
     public componentDidMount(): void {
-        this._div.style.left = "6px";
+        this._div.style.left = "3%";
         this._div.style.top = "12px";
-        this._div.style.width = `${this._width-12}px`;
+        this._div.style.width = `94%`;
         this._div.style.transform = "scale(1)";
         this._div.style.animationName = "titleStart";
         this._div.style.animationDuration = "0.2s";
@@ -104,6 +106,13 @@ export default class PaperCard extends React.Component<IProps, IState> {
         let height: number = this._div.offsetHeight + 40;
         let left: number = Math.min(this.props.globalWidth - this._width, this.state.left);
         this.setState({height, left});
+
+        this._unfoldTimer = setTimeout(() => {
+            this._unfoldTimer = null;
+            if(!this.state.unfold) {
+                this.setState({unfold: true});
+            }
+        }, 500);
     }
 
     public componentDidUpdate(preProps: IProps): void {
@@ -119,6 +128,7 @@ export default class PaperCard extends React.Component<IProps, IState> {
     }
 
     public componentWillUnmount(): void {
+        clearTimeout(this._unfoldTimer!);
         this.giveBack();
     }
 
@@ -141,7 +151,7 @@ export default class PaperCard extends React.Component<IProps, IState> {
                             { this._node.year && <div><b>Year: </b>{this._node.year}</div> }
                             <div><b>Citations: </b>{this._node.citations || 0}</div>
                             { this._node.venue && <div><b>Venue: </b>{this._node.venue}</div> }
-                            { this._node.abstract && <div><b>Abstract: </b>{this.getAbstract()}</div> }
+                            { this._node.abstract && <div style={{maxHeight: '160px', overflowY: "scroll"}}><b>Abstract: </b>{this.getAbstract()}</div> }
                         </div>
                     ) : null
                 }

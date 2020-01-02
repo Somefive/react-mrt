@@ -3,13 +3,29 @@ import { Icon } from 'antd'
 import chroma from 'chroma-js'
 import './tool.css'
 
-export default class Tool extends React.Component {
+interface IProps {
+    onClick?: () => void;
+    luminance?: number;
+    primary?: boolean;
+    color: string;
+    theme?: "filled" | "outlined" | "twoTone";
+    type?: string;
+    className?: string;
+    tooltipText?: string;
+}
 
-    onClick() {
+export default class Tool extends React.Component<IProps> {
+    constructor(props: IProps) {
+        super(props);
+
+        this.onClick = this.onClick.bind(this);
+    }
+
+    private onClick() {
         if (this.props.onClick) this.props.onClick()
     }
 
-    render() {
+    public render() {
         const luminance = this.props.luminance || (this.props.primary ? 0.4 : 0.2)
         const color = chroma(this.props.color).luminance(luminance)
         const textColor = color.luminance(luminance / 2)

@@ -78,7 +78,7 @@ export default class MRT extends React.Component<IProps, IState> {
         console.log("data: ", this.props.data);
         return (
             <div className="mrt-container" style={{width: `${this.state.viewerScale}%`}}>
-                <Toolbox lang={lang}
+                {/* <Toolbox lang={lang}
                     onLike={() => this.props.onLike()} like={like}
                     onHideSubBranch={() => this.setState({hideSubBranch: !this.state.hideSubBranch})} hideSubBranch={this.state.hideSubBranch}
                     onDisableTextClusterSpan={() => this.setState({disableTextClusterSpan: !this.state.disableTextClusterSpan})} disableTextClusterSpan={this.state.disableTextClusterSpan}
@@ -86,7 +86,7 @@ export default class MRT extends React.Component<IProps, IState> {
                     scaleFont={(larger: boolean) => this.scaleFont(larger)}
                     zoom={(larger: boolean) => this.zoom(larger)}
                     capture={(full: boolean) => this.capture(full)}
-                />
+                /> */}
                 <MRTViewer ref={(e) => this._mrtViewer = e} data={this.props.data} userEdits={userEdits} 
                     hideSubBranch={this.state.hideSubBranch} disableTextClusterSpan={this.state.disableTextClusterSpan}
                     fontExtraSize={this.state.fontExtraSize}

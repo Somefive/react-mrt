@@ -27,6 +27,8 @@ export default class PersonCard extends React.Component<IProps, IState> {
     private _width: number;
     private _bgColor: string;
 
+    private _unfoldTimer: NodeJS.Timeout | null;
+
     constructor(props: IProps) {
         super(props);
         this.state = {
@@ -66,9 +68,9 @@ export default class PersonCard extends React.Component<IProps, IState> {
     }
 
     public componentDidMount(): void {
-        this._div.style.left = "6px";
+        this._div.style.left = "3%";
         this._div.style.top = "12px";
-        this._div.style.width = `${this._width-12}px`;
+        this._div.style.width = `94%`;
         this._div.style.transform = "scale(1)";
         this._div.style.animationName = "titleStart";
         this._div.style.animationDuration = "0.2s";
@@ -84,6 +86,13 @@ export default class PersonCard extends React.Component<IProps, IState> {
         let height: number = this._div.offsetHeight + 40;
         let left: number = Math.min(this.props.globalWidth - this._width, this.state.left);
         this.setState({height, left});
+
+        this._unfoldTimer = setTimeout(() => {
+            this._unfoldTimer = null;
+            if(!this.state.unfold) {
+                this.setState({unfold: true});
+            }
+        }, 500);
     }
 
     public componentDidUpdate(preProps: IProps, preState: IState): void {
@@ -99,6 +108,7 @@ export default class PersonCard extends React.Component<IProps, IState> {
     }
 
     public componentWillUnmount(): void {
+        clearTimeout(this._unfoldTimer!);
         this.giveBack();
     }
 

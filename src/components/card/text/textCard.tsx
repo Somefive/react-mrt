@@ -26,6 +26,8 @@ export default class TextCard extends React.Component<IProps, IState> {
     private _width: number;
     private _bgColor: string;
 
+    private unfoldTimer: NodeJS.Timeout | null;
+
     constructor(props: IProps) {
         super(props);
         this.state = {
@@ -34,7 +36,7 @@ export default class TextCard extends React.Component<IProps, IState> {
             height: 140,
             unfold: false
         }
-
+        this.unfoldTimer = null;
         this._div = this.props.nodeDiv;
         this._oldStyle = {...this.props.nodeDiv.style};
         this._oldParent = this.props.nodeDiv.parentNode;
@@ -65,9 +67,9 @@ export default class TextCard extends React.Component<IProps, IState> {
     }
 
     public componentDidMount(): void {
-        this._div.style.left = "6px";
+        this._div.style.left = "4%";
         this._div.style.top = "12px";
-        this._div.style.width = `${this._width-12}px`;
+        this._div.style.width = `92%`;
         this._div.style.transform = "scale(1)";
         this._div.style.animationName = "titleStart";
         this._div.style.animationDuration = "0.2s";
@@ -80,9 +82,16 @@ export default class TextCard extends React.Component<IProps, IState> {
         }
         this._bgDiv.appendChild(this._div);
 
-        let height: number = this._div.offsetHeight + 40;
+        let height: number = this._div.offsetHeight + 30;
         let left: number = Math.min(this.props.globalWidth - this._width, this.state.left);
         this.setState({height, left});
+
+        this.unfoldTimer = setTimeout(() => {
+            this.unfoldTimer = null;
+            if(!this.state.unfold) {
+                this.setState({unfold: true});
+            }
+        }, 500);
     }
 
     public componentDidUpdate(preProps: IProps): void {
@@ -92,13 +101,14 @@ export default class TextCard extends React.Component<IProps, IState> {
             }, 200);
         }
 
-        let height: number = this._div.offsetHeight + 40 + (this._detailsDiv ? this._detailsDiv.offsetHeight : 0);
+        let height: number = this._div.offsetHeight + 30 + (this._detailsDiv ? this._detailsDiv.offsetHeight : 0);
         if(height != this.state.height) {
             this.setState({height});
         }
     }
 
     public componentWillUnmount(): void {
+        clearTimeout(this.unfoldTimer!);
         this.giveBack();
     }
 
