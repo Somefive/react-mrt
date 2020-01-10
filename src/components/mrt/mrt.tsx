@@ -3,8 +3,8 @@ import './mrt.css';
 import MRTViewer from '../viewer';
 import { IMRTData } from '../../model/mrtTree';
 import { Toolbox } from '../toolbox';
-import html2canvas from 'html2canvas';
-import FileSaver from 'file-saver';
+// import html2canvas from 'html2canvas';
+// import FileSaver from 'file-saver';
 
 interface IState {
     canvasScale: number;
@@ -64,18 +64,18 @@ export default class MRT extends React.Component<IProps, IState> {
     }
 
     private handleCapture(): void {
-        if(this._mrtViewer && window) {
-            let mrtDom: HTMLDivElement = document.getElementById("_mrtview_canvas") as HTMLDivElement;
-            if(mrtDom) {
-                html2canvas(mrtDom).then((canvas: HTMLCanvasElement) => {
-                    canvas.toBlob(function(blob: Blob | null) {
-                        if(blob) {
-                            FileSaver.saveAs(blob, "master-reading-tree.png");
-                        }
-                    })
-                })
-            }
-        }
+        // if(this._mrtViewer && window) {
+        //     let mrtDom: HTMLDivElement = document.getElementById("_mrtview_canvas") as HTMLDivElement;
+        //     if(mrtDom) {
+        //         html2canvas(mrtDom).then((canvas: HTMLCanvasElement) => {
+        //             canvas.toBlob(function(blob: Blob | null) {
+        //                 if(blob) {
+        //                     FileSaver.saveAs(blob, "master-reading-tree.png");
+        //                 }
+        //             })
+        //         })
+        //     }
+        // }
     }
 
     private handleHideSubBranch(): void {

@@ -79,11 +79,11 @@ export class Toolbox extends React.Component<IProps, IState> {
                         <Tool type="zoom-in" theme="outlined" color="aquamarine" tooltipText={t("Zoom In")} onClick={() => this.props.zoom(true)}/>
                         <Tool type="zoom-out" theme="outlined" color="aquamarine" tooltipText={t("Zoom Out")} onClick={() => this.props.zoom(false)}/>
                     </div>
-                    <div className="toolgroup secondary vertical">
+                    {/* <div className="toolgroup secondary vertical">
                         <Tool type="download" theme="outlined" color="blue" tooltipText={t("Download")} primary/>
                         <Tool type="file-image" theme="twoTone" color="blue" tooltipText={t("Full Picture")} onClick={() => this.props.capture && this.props.capture()}/>
-                        {/* <Tool type="camera" theme="twoTone" color="blue" tooltipText={t("Snapshot")} onClick={() => this.props.capture && this.props.capture()}/> */}
-                    </div>
+                        <Tool type="camera" theme="twoTone" color="blue" tooltipText={t("Snapshot")} onClick={() => this.props.capture && this.props.capture()}/>
+                    </div> */}
                     <div className="toolgroup secondary vertical">
                         <Tool type="control" theme="outlined" color="teal" tooltipText={t("Control")} primary/>
                         <Tool type={`eye${this.props.hideSubBranch ? "" : "-invisible"}`} theme="twoTone" color="teal" onClick={() => this.props.onHideSubBranch()}
