@@ -13,6 +13,8 @@ interface IState {
     highlightRow: IHighlightRow | null;
     cardDatas: ICardData[];
     link: ILink | null;
+    pinLink: ILink[];
+    nodeChanging: string | null;
 }
 
 interface IProps {
@@ -21,11 +23,13 @@ interface IProps {
     scale: number;
     hideSubBranch: boolean;
     disableTextClusterSpan: boolean;
+    onEdit?: (action: string, id: string, value?: number) => void;
 }
 
 export default class MRTViewer extends React.Component<IProps, IState> {
     private _viewer: HTMLDivElement;
     private _rootLineColor: string;
+    private _rootFontColor: string;
     private _rootBgColor: string;
 
     private _data: IMRTData;
@@ -94,10 +98,13 @@ export default class MRTViewer extends React.Component<IProps, IState> {
             inited: false,
             highlightRow: null,
             cardDatas: [],
-            link: null
+            link: null,
+            pinLink: [],
+            nodeChanging: null
         }
         let root: chroma.Color = chroma.scale()(0.5);
         this._rootLineColor = root.hex();
+        this._rootFontColor = root.luminance(0.1).hex();
         this._rootBgColor = root.luminance(0.9).hex();
 
         this._data = JSON.parse(JSON.stringify(this.props.data));
@@ -106,7 +113,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this._parentHeight = 0;
 
         this._minColumnWidth = 112;
-        this._globalMarginTop = 26;
+        this._globalMarginTop = 16;
         this._globalHeight = 2500;
         this._middleHeight = 0;
         this._bottomHeight = 180;
@@ -129,7 +136,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
 
         this._nodeGap = 2;
         this._nodeMarginLeft = 14;
-        this._clusterNameFontSize = 16;
+        this._clusterNameFontSize = 18;
 
         this._rootNodeGap = 6;
         this._rootTextHeight = 0;
@@ -155,6 +162,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this.mapBlock = this.mapBlock.bind(this);
         this.mapText = this.mapText.bind(this);
         this.mapClusterBg = this.mapClusterBg.bind(this);
+        this.mapClusterMask = this.mapClusterMask.bind(this);
         this.handleHighlightRow = this.handleHighlightRow.bind(this);
         this.handleCancelHighlightRow = this.handleCancelHighlightRow.bind(this);
         this.handleCardClose = this.handleCardClose.bind(this);
@@ -163,6 +171,9 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this.handleCanvasMouseDown = this.handleCanvasMouseDown.bind(this);
         this.handleCanvasMouseMove = this.handleCanvasMouseMove.bind(this);
         this.handleCanvasMouseUp = this.handleCanvasMouseUp.bind(this);
+        this.handlePin = this.handlePin.bind(this);
+        this.drawLink = this.drawLink.bind(this);
+        this.handleNodeChanging = this.handleNodeChanging.bind(this);
 
         this.initData();
     }
@@ -210,7 +221,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
 
     private handleResize() {
         if(this._viewer) {
-            this._parentWidth = this._viewer.offsetWidth * 0.993 * this.props.scale;
+            this._parentWidth = this._viewer.offsetWidth * 0.995 * this.props.scale;
             this._parentHeight = this._viewer.offsetHeight;
             this.calc();
         }
@@ -239,7 +250,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
     }
 
     private calc() {
-        let startTime: number = new Date().getTime();
+        // let startTime: number = new Date().getTime();
         let data: IMRTData = this._data;
         this._grid = {
             rowNum: 0,
@@ -398,7 +409,8 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                 color: this._clusterColors[c],
                 x: index * this._columnNormalWidth + this._nodeMarginLeft + this._columnLineMarginLeft, 
                 y,
-                width: this._columnNormalWidth * this._clusterInfos[c].level - this._columnLineMarginLeft - this._nodeMarginLeft
+                width: this._columnNormalWidth * this._clusterInfos[c].level - this._columnLineMarginLeft - this._nodeMarginLeft,
+                fontWeight: 'normal'
             })
             this._textInfos.push({
                 key: `${c}_bottom_cluster_name`,
@@ -407,7 +419,8 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                 color: chroma(this._clusterColors[c]).luminance(0.7).hex(),
                 x: index * this._columnNormalWidth + this._columnLineMarginLeft, 
                 y: this._globalHeight - this._bottomHeight + this._bottomNameMarginTop,
-                width: this._columnNormalWidth * this._clusterInfos[c].level - this._columnLineMarginLeft
+                width: this._columnNormalWidth * this._clusterInfos[c].level - this._columnLineMarginLeft,
+                fontWeight: 'normal'
             })
         }
 
@@ -430,7 +443,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
             x: this._globalWidth / 2 + this._nodeMarginLeft,
             y: this._globalMarginTop + this._rootBlockMarginTop,
             width: this._rootNodeTextWidth,
-            color: this._rootLineColor,
+            color: this._rootFontColor,
             fontSize: this._rootNodeFontSize,
             lineHeight: this._rootNodeLineHeight, 
             fontWeight: "bold"
@@ -480,7 +493,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
             }
         }
         this.forceUpdate();
-        console.log("Calc time: ", (new Date().getTime() - startTime));
+        // console.log("Calc time: ", (new Date().getTime() - startTime));
     }
 
 
@@ -488,7 +501,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         let result: number = this._grid.rowNum;
         for(let i:number=0; i < this._grid.columnInfos.length; ++i) {
             let info: IColumnInfo = this._grid.columnInfos[i];
-            if(info.clusterIndex == cluster) {
+            if(info.clusterIndex == cluster && info.visible) {
                 if(info.startRow < result) {
                     result = info.startRow;
                 }
@@ -610,6 +623,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                         left: `${info.x}px`,
                         top: `${info.y}px`,
                         fontSize: `${info.fontSize}px`,
+                        fontWeight: info.fontWeight || 'normal',
                         lineHeight: `${info.fontSize*1.2}px`,
                         color: `${info.color}`,
                         width: `${info.width}px`,
@@ -659,6 +673,25 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                 }
             </div>
         )
+    }
+
+    private mapClusterMask(value: IClusterInfo, index: number): JSX.Element {
+        return (
+            <div key={`${index}_cluster_mask`} 
+                className='_mrtviewer_cluster_mask' 
+                style={{position: 'absolute', 
+                    left: `${value.x}px`, 
+                    top: `${value.y}px`, 
+                    width: `${value.width}px`, 
+                    height: `${this._middleHeight+this._bottomHeight}px`, 
+                    backgroundColor: chroma(this._clusterColors[index]).luminance(0.4).hex()}} 
+                onClick={() => this.handleClusterMaskChange(index)} />
+        )
+    }
+
+    private handleClusterMaskChange(index: number): void {
+        this.props.onEdit && this.props.onEdit('exchange', this.state.nodeChanging!, index);
+        this.setState({nodeChanging: null});
     }
 
     private mapClusterBg(value: IClusterInfo, index: number): JSX.Element {
@@ -728,9 +761,9 @@ export default class MRTViewer extends React.Component<IProps, IState> {
             {link.targets.map((linkNode, idx) => (
             <g key={idx}>
                 <circle cx={linkNode.x} cy={linkNode.y} r={4} fill={link.color}/>
-                <path className="mrt-link-path" d={this.generateLinkPath(link.source, linkNode, false)} strokeWidth={2} stroke={textColor} fill="transparent"
+                <path className="mrt-link-path" d={this.generateLinkPath(link.source, linkNode, false)} strokeWidth={1.4} stroke={textColor} fill="transparent"
                     strokeDasharray={this.estimateLinkLength(link.source, linkNode)} strokeDashoffset={this.estimateLinkLength(link.source, linkNode)}/>
-                <path className="mrt-link-dot" d={this.generateLinkPath(link.source, linkNode, false)} strokeWidth={5} stroke={textColor} fill="transparent"
+                <path className="mrt-link-dot" d={this.generateLinkPath(link.source, linkNode, false)} strokeWidth={4} stroke={textColor} fill="transparent"
                     strokeDasharray={`6 ${this.estimateLinkLength(link.source, linkNode)}`} strokeDashoffset={this.estimateLinkLength(link.source, linkNode)}/>
                 <path className="mrt-link-arrow" d={this.generateArrowPath(link.source, linkNode, true)} fill={textColor}/>
             </g>
@@ -742,6 +775,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         if(node && node.link_out && node.link_out.length) {
             let pPos: IPos = this.getBlockPosByNode(node);
             let link: ILink = {
+                id: node.id,
                 color: this.getBlockInfoByNodeId(node.id)!.color,
                 source: {
                     node: node,
@@ -766,6 +800,19 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         return null;
     }
 
+    private handlePin(id: string): void {
+        let links: ILink[] = [...this.state.pinLink];
+        let link: ILink | undefined = links.find(link => link.id == id);
+        if(link) {
+            links.splice(links.indexOf(link), 1);
+        }else {
+            let node: IMRTNode = this.getNode(id)!;
+            link = this.getLinkByNode(node)!;
+            links.push(link);
+        }
+        this.setState({pinLink: links});
+    }
+
     private handleNodeMouseOver(e: React.MouseEvent, node: IMRTNode):void {
         let div: HTMLDivElement = e.target as HTMLDivElement;
 
@@ -782,8 +829,12 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                 nodeDiv: div,
                 die: false
             });
-            let link: ILink | null = this.getLinkByNode(node);
-            this.setState({cardDatas, link});
+            if(!this._data.root.nodes.find(d => d.id == node.id)) {
+                let link: ILink | null = this.getLinkByNode(node);
+                this.setState({cardDatas, link});
+            }else {
+                this.setState({cardDatas});
+            }
         }
     }
 
@@ -816,8 +867,18 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                     node={cardData.node} 
                     nodeDiv={cardData.nodeDiv} 
                     die={cardData.die} 
+                    root={!!this._data.root.nodes.find(node => node.id == cardData.node.id)} 
+                    pin={!!this.state.pinLink.find(link => link.id == cardData.node.id)} 
+                    onChanging={this.handleNodeChanging}
+                    onPin={this.handlePin}
+                    onEdit={this.props.onEdit} 
                     onClose={this.handleCardClose}/>
         }
+    }
+
+    private handleNodeChanging(id: string): void {
+        this.dieAllCards();
+        this.setState({nodeChanging: id});
     }
 
     private getNode(id: string): IMRTNode | null {
@@ -898,6 +959,15 @@ export default class MRTViewer extends React.Component<IProps, IState> {
             this._data = JSON.parse(JSON.stringify(this.props.data));
             this.initData();
             this.handleResize();
+            // 数据更新时更新card里的node
+            if(preProps.data && this.state.cardDatas.length) {
+                let cardDatas: ICardData[] = [];
+                this.state.cardDatas.forEach(data => cardDatas.push({...data}));
+                cardDatas.forEach(data => {
+                    data.node = this.getNode(data.node.id)!;
+                })
+                this.setState({cardDatas});
+            }
         }else if(preProps.fontScale != this.props.fontScale || 
             preProps.hideSubBranch != this.props.hideSubBranch) {
             this.initData();
@@ -915,7 +985,6 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         }, 100);
 
         window.addEventListener("resize", this.handleResize);
-
         this.setState({inited: true});
     }
 
@@ -924,7 +993,11 @@ export default class MRTViewer extends React.Component<IProps, IState> {
     }
 
     public render() {
-        const { inited, highlightRow, cardDatas, link } = this.state;
+        const { inited, highlightRow, cardDatas, link, pinLink, nodeChanging } = this.state;
+        const links: ILink[] = [...pinLink];
+        if(link && !links.find(l => l.id == link.id)) {
+            links.push(link);
+        }
         return (
             <div className='_mrtviewer' ref={(e) => {this._viewer = e!;}} style={{backgroundColor: this._rootBgColor}}>
                 {
@@ -957,7 +1030,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                                     this._circleInfos.map(this.mapCircle)
                                 }
                                 {
-                                    link && this.drawLink(link)
+                                    links.map(this.drawLink)
                                 }
                             </svg>
                             <div>
@@ -969,6 +1042,9 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                                 }
                                 {
                                     cardDatas.map(this.handleMapCards)
+                                }
+                                {
+                                    !!nodeChanging && this._clusterInfos.map(this.mapClusterMask)
                                 }
                             </div>
                         </div>

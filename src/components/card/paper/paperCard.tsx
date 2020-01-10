@@ -2,6 +2,15 @@ import * as React from 'react';
 import ICardProps from '../cardProps';
 import './paperCard.less';
 import { IPaperNode } from '../../..';
+import { ReactComponent as Star } from './images/star.svg';
+import { ReactComponent as Move } from './images/move.svg';
+import { ReactComponent as Like } from './images/like.svg';
+import { ReactComponent as LikeFull } from './images/like_full.svg';
+import { ReactComponent as DislikeFull } from './images/dislike_full.svg';
+import { ReactComponent as Dislike } from './images/dislike.svg';
+import { ReactComponent as Pin } from './images/pushpin.svg';
+import _ from 'lodash';
+import chroma from 'chroma-js';
 
 interface IState {
     left: number;
@@ -9,10 +18,16 @@ interface IState {
     height: number;
     unfold: boolean;
     abstractAll: boolean;
+    node: IPaperNode;
+    pin: boolean;
 }
 
 interface IProps extends ICardProps {
-
+    pin: boolean;
+    root: boolean;
+    onChanging?: (id: string) => void;
+    onEdit?: (action: string, id: string) => void;
+    onPin?: (id: string) => void;
 }
 
 export default class PaperCard extends React.Component<IProps, IState> {
@@ -20,13 +35,20 @@ export default class PaperCard extends React.Component<IProps, IState> {
     private _oldParent: (Node & ParentNode) | null;
     private _oldStyle: CSSStyleDeclaration;
     private _bgDiv: HTMLDivElement;
-    private _node: IPaperNode;
 
     private _detailsDiv: HTMLDivElement | null;
 
     private _width: number;
     private _bgColor: string;
     private _abstractLimit: number;
+    private _iconWidth: number;
+
+    private _starColor: string;
+    private _moveColor: string;
+    private _likeColor: string;
+    private _dislikeColor: string;
+    private _pinColor: string;
+    private _pinedColor: string;
 
     private _unfoldTimer: NodeJS.Timeout | null;
 
@@ -37,23 +59,36 @@ export default class PaperCard extends React.Component<IProps, IState> {
             top: this.props.top,
             height: 140,
             unfold: false,
-            abstractAll: false
+            abstractAll: false,
+            node: this.props.node as IPaperNode, 
+            pin: this.props.pin
         }
 
         this._div = this.props.nodeDiv;
         this._oldStyle = {...this.props.nodeDiv.style};
         this._oldParent = this.props.nodeDiv.parentNode;
-        this._node = this.props.node as IPaperNode;
 
         this._div.style.zIndex = "1";
 
         this._width = 425;
         this._bgColor = "#fff";
         this._abstractLimit = 200;
+        this._iconWidth = 24;
+
+        this._starColor = chroma('purple').luminance(0.3).hex();
+        this._moveColor = chroma("blue").luminance(0.3).desaturate(1).hex();
+        this._likeColor = chroma("green").luminance(0.3).desaturate(1).hex();
+        this._dislikeColor = chroma("red").luminance(0.3).desaturate(2).hex();
+        this._pinColor = chroma("orange").luminance(0.3).hex();
+        this._pinedColor = chroma("grey").luminance(0.3).hex();
 
         this.handleClose = this.handleClose.bind(this);
         this.getAbstract = this.getAbstract.bind(this);
         this.handleMore = this.handleMore.bind(this);
+        this.handleDislike = this.handleDislike.bind(this);
+        this.handleLike = this.handleLike.bind(this);
+        this.handlePin = this.handlePin.bind(this);
+        this.handleChange = this.handleChange.bind(this);
     }
 
     private handleClose(): void {
@@ -73,18 +108,48 @@ export default class PaperCard extends React.Component<IProps, IState> {
     }
 
     private getAbstract(): JSX.Element {
-        if(this._node.abstract.length < this._abstractLimit + 6 || this.state.abstractAll) {
-            return <span>{this._node.abstract}</span>;
+        const {node} = this.state;
+        if(node.abstract.length < this._abstractLimit + 6 || this.state.abstractAll) {
+            return <span>{node.abstract}</span>;
         }else {
-            let index: number = this._node.abstract.indexOf(" ", this._abstractLimit);
-            let short: string = this._node.abstract.substr(0, index);
+            let index: number = node.abstract.indexOf(" ", this._abstractLimit);
+            let short: string = node.abstract.substr(0, index);
             return <span>{short}<a href='#' onClick={this.handleMore}>...more</a></span>;
         }
     }
 
-    private handleMore(): boolean {
+    private handleMore(e: React.MouseEvent) {
         this.setState({abstractAll: true});
-        return false;
+        e.preventDefault();
+    }
+
+    private getHeight(): number {
+        return this._div.offsetHeight + 40 + (this._detailsDiv ? this._detailsDiv.offsetHeight : 0);
+    }
+
+    private handleDislike(): void {
+        if(this.state.node.dislike) {
+            this.props.onEdit && this.props.onEdit("thumb-delete", this.state.node.id);
+        }else {
+            this.props.onEdit && this.props.onEdit("thumb-down", this.state.node.id);
+        }
+    }
+
+    private handleLike(): void {
+        if(this.state.node.like) {
+            this.props.onEdit && this.props.onEdit("thumb-delete", this.state.node.id);
+        }else {
+            this.props.onEdit && this.props.onEdit("thumb-up", this.state.node.id);
+        }
+    }
+
+    private handlePin(): void {
+        this.setState({pin: !this.state.pin});
+        this.props.onPin && this.props.onPin(this.state.node.id);
+    }
+
+    private handleChange(): void {
+        this.props.onChanging && this.props.onChanging(this.state.node.id);
     }
 
     public componentDidMount(): void {
@@ -103,7 +168,7 @@ export default class PaperCard extends React.Component<IProps, IState> {
         }
         this._bgDiv.appendChild(this._div);
 
-        let height: number = this._div.offsetHeight + 40;
+        let height: number = this.getHeight();
         let left: number = Math.min(this.props.globalWidth - this._width, this.state.left);
         this.setState({height, left});
 
@@ -116,12 +181,15 @@ export default class PaperCard extends React.Component<IProps, IState> {
     }
 
     public componentDidUpdate(preProps: IProps): void {
+        if(preProps.node != this.props.node) {
+            this.setState({node: this.props.node as IPaperNode});
+        }
         if(!preProps.die && this.props.die) {
             setTimeout(() => {
                 this.handleClose();
             }, 200);
         }
-        let height: number = this._div.offsetHeight + 40 + (this._detailsDiv ? this._detailsDiv.offsetHeight : 0);
+        let height: number = this.getHeight();
         if(height != this.state.height) {
             this.setState({height});
         }
@@ -133,7 +201,8 @@ export default class PaperCard extends React.Component<IProps, IState> {
     }
 
     public render() {
-        const {height, unfold, left, top} = this.state;
+        const {height, unfold, left, top, node, pin} = this.state;
+        const { root } = this.props;
         const abstractOffsetY: number = this._div.offsetHeight + this._div.offsetTop + 10;
         return (
             <div className='papercard' 
@@ -145,16 +214,75 @@ export default class PaperCard extends React.Component<IProps, IState> {
                     width: `${this._width}px`, 
                     height: `${height}px`,  
                     backgroundColor: this._bgColor}} >
-                {
-                    unfold ? (
-                        <div ref={d => this._detailsDiv = d} className='papercard_detail' style={{top: abstractOffsetY}}>
-                            { this._node.year && <div><b>Year: </b>{this._node.year}</div> }
-                            <div><b>Citations: </b>{this._node.citations || 0}</div>
-                            { this._node.venue && <div><b>Venue: </b>{this._node.venue}</div> }
-                            { this._node.abstract && <div style={{maxHeight: '160px', overflowY: "scroll"}}><b>Abstract: </b>{this.getAbstract()}</div> }
-                        </div>
-                    ) : null
-                }
+                <div ref={d => this._detailsDiv = d}  style={{position: 'absolute', top: abstractOffsetY, left: 0, width: '100%'}}>
+                    {
+                        unfold && (
+                            <div className='papercard_detail'>
+                                { node.year && <div><b>Year: </b>{node.year}</div> }
+                                <div><b>Citations: </b>{node.citations || 0}</div>
+                                { node.venue && <div><b>Venue: </b>{node.venue}</div> }
+                                { node.authors && node.authors.length && <div><b>Authors: </b>{node.authors.join(', ')}</div>}
+                                { node.abstract && <div style={{maxHeight: '160px', overflowY: "scroll"}}><b>Abstract: </b>{this.getAbstract()}</div> }
+                            </div>
+                        )
+                    }
+                    {
+                        node.editable && (
+                            <div className='papercard_edit'>
+                                { !!node.level && (
+                                    <div className='papercard_edit_stars' style={{width: `${node.level * this._iconWidth}px`}}>
+                                        <div className='papercard_stars' style={{pointerEvents: 'none'}}>
+                                            { _.range(0, node.level).map((index) => (
+                                                <Star key={index} style={{fill: this._starColor, fontSize: `${this._iconWidth}px`, pointerEvents: 'none'}} />
+                                            ))}
+                                        </div>
+                                        <div className='papercard_edit_text' style={{color: this._starColor, pointerEvents: 'none'}}>影响</div>
+                                    </div>
+                                )}
+                                <div className='papercard_edit_right'>
+                                    {
+                                        !root && (
+                                            <div className='papercard_edit_right_icon' style={{width: `${this._iconWidth}px`}} onClick={this.handlePin}>
+                                                <Pin style={{fill: pin ? this._pinedColor : this._pinColor, fontSize: `${this._iconWidth}px`, pointerEvents: 'none'}} />
+                                                <div className='papercard_edit_text' style={{color: pin ? this._pinedColor : this._pinColor, pointerEvents: 'none'}}>引用</div>
+                                            </div>
+                                        )
+                                    }
+                                    
+                                    <div className='papercard_edit_right_icon' style={{width: `${this._iconWidth}px`}} onClick={this.handleDislike}>
+                                        {
+                                            node.dislike ? (
+                                                <DislikeFull style={{fill: this._dislikeColor, fontSize: `${this._iconWidth}px`, pointerEvents: 'none'}} />
+                                            ) : (
+                                                <Dislike style={{fill: this._dislikeColor, fontSize: `${this._iconWidth}px`, pointerEvents: 'none'}} />
+                                            )
+                                        }
+                                        <div className='papercard_edit_text' style={{color: this._dislikeColor, pointerEvents: 'none'}}>踩</div>
+                                    </div>
+                                    <div className='papercard_edit_right_icon' style={{width: `${this._iconWidth}px`}} onClick={this.handleLike}>
+                                        {
+                                            node.like ? (
+                                                <LikeFull style={{fill: this._likeColor, fontSize: `${this._iconWidth}px`, pointerEvents: 'none'}} />
+                                            ) : (
+                                                <Like style={{fill: this._likeColor, fontSize: `${this._iconWidth}px`, pointerEvents: 'none'}} />
+                                            )
+                                        }
+                                        <div className='papercard_edit_text' style={{color: this._likeColor, pointerEvents: 'none'}}>赞</div>
+                                    </div>
+                                    {
+                                        !root && (
+                                            <div className='papercard_edit_right_icon' style={{width: `${this._iconWidth}px`}} onClick={this.handleChange}>
+                                                <Move style={{fill: this._moveColor, fontSize: `${this._iconWidth}px`, pointerEvents: 'none'}} />
+                                                <div className='papercard_edit_text' style={{color: this._moveColor, pointerEvents: 'none'}}>移动</div>
+                                            </div>
+                                        )
+                                    }
+                                    
+                                </div>
+                            </div>
+                        )
+                    }
+                </div>
             </div>
         )
     }

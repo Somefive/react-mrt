@@ -35,7 +35,7 @@ export default class Tool extends React.Component<IProps> {
         return (
             <div className={`tool tooltip ${this.props.primary ? "primary" : "secondary"} ${this.props.className}`}>
                 {icon}
-                <span className="tooltip-text" style={{color: textColor.hex()}}>{this.props.tooltipText}</span>
+                <span className="tooltip-text" style={{color: textColor.hex(), userSelect: 'none'}}>{this.props.tooltipText}</span>
                 {this.props.children}
             </div>
         )

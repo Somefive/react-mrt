@@ -42,10 +42,52 @@
     transition: height 0.2s, left 0.2s, top 0.2s;
 
     .papercard_detail {
-        position: absolute;
+        position: relative;
         text-align: left;
         white-space: pre-wrap;
         width: 94%;
-        left: 3%;
+        margin-left: 3%;
+    }
+
+    .papercard_edit_stars {
+        transition: transform 0.5s;
+    }
+
+    .papercard_edit_stars:hover {
+        transform: scale(1.4, 1.4);
+    }
+
+    .papercard_edit {
+        position: relative;
+        width: 94%;
+        margin-left: 3%;
+        margin-top: 6px;
+        height: 32px;
+    }
+
+    .papercard_edit_text {
+        width: 100%;
+        margin-top: -6px;
+        text-align: center;
+        font-size: 12px;
+        transform: scale(0.6, 0.6);
+    }
+
+    .papercard_edit_right {
+        position: absolute;
+        top: 0px;
+        right: 0px;
+    }
+
+    .papercard_edit_right_icon {
+        position: relative;
+        float: right;
+        margin-right: 6px;
+        background-color: #ffffff01;
+        transition: transform 0.5s;
+    }
+
+    .papercard_edit_right_icon:hover {
+        transform: scale(1.4, 1.4);
     }
 }

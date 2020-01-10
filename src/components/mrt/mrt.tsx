@@ -13,6 +13,11 @@ interface IState {
 
 interface IProps {
     data: IMRTData;
+    shareable?: boolean;
+    likeable?: boolean;
+    like?: boolean;
+    onLike?: () => void;
+    onEdit?: (action: string, id: string, value?:number) => void;
 }
 
 export default class MRT extends React.Component<IProps, IState> {
@@ -70,7 +75,7 @@ export default class MRT extends React.Component<IProps, IState> {
     }
 
     public render() {
-        const {data} = this.props;
+        const {data, onEdit, shareable, likeable, like, onLike} = this.props;
         const { fontScale, canvasScale, hideSubBranch, disableTextClusterSpan } = this.state;
 
         return (
@@ -79,10 +84,15 @@ export default class MRT extends React.Component<IProps, IState> {
                     fontScale={fontScale} 
                     scale={canvasScale} 
                     hideSubBranch={hideSubBranch} 
+                    onEdit={onEdit}
                     disableTextClusterSpan={disableTextClusterSpan}></MRTViewer>
                 <Toolbox lang={'en'} 
                     scaleFont={this.handleScaleFont} 
                     zoom={this.handleZoom} 
+                    shareable={shareable} 
+                    likeable={likeable} 
+                    like={like} 
+                    onLike={onLike} 
                     hideSubBranch={hideSubBranch} 
                     onHideSubBranch={this.handleHideSubBranch} 
                     disableTextClusterSpan={disableTextClusterSpan} 

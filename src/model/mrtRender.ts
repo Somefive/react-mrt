@@ -67,6 +67,7 @@ interface ITextInfo {
     x: number;
     y: number;
     width?: number;
+    fontWeight?: 'bold' | 'normal';
 }
 
 interface IGrid {
@@ -113,6 +114,7 @@ interface ILinkNode {
 }
 
 interface ILink {
+    id: string;
     color: string;
     source: ILinkNode;
     targets: ILinkNode[];

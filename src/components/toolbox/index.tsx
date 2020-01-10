@@ -8,7 +8,9 @@ import { Modal } from 'antd'
 
 interface IProps {
     lang?: "zh" | "en";
+    likeable?: boolean;
     like?: boolean;
+    shareable?: boolean;
     hideSubBranch: boolean;
     disableTextClusterSpan: boolean;
     scaleFont: (b: boolean) => void;
@@ -40,24 +42,33 @@ export class Toolbox extends React.Component<IProps, IState> {
                 setTimeout(renderQRCode, 500)
         }
         renderQRCode()
+        const { shareable, likeable, like, onLike } = this.props;
         const lang = this.props.lang || "en";
         const translation: {[index: string]: any} = TooltipTextTranslation['zh'] as any as {[index: string]: any};
         const t = (text: string) => (translation && translation[text.toLowerCase()]) ? translation[text.toLowerCase()] : text
         return (
             <div>
                 <div className="toolgroup horizontal">
-                    {/* <div className="toolgroup secondary vertical">
-                        <Tool type="heart" theme={this.props.like ? "filled" : "twoTone"} color="red" tooltipText={t(this.props.like ? "Dislike" : "Like")} primary onClick={() => this.props.onLike && this.props.onLike()}/>
-                    </div>
+                    {
+                        !!likeable && (
+                            <div className="toolgroup secondary vertical">
+                                <Tool type="heart" theme={like ? "filled" : "twoTone"} color="red" tooltipText={t(like ? "Dislike" : "Like")} primary onClick={() => onLike && onLike()}/>
+                            </div>
+                        )
+                    }
                     <div className="toolgroup secondary vertical">
                         <Tool className="toolgroup" type="question-circle" theme="outlined" color="yellow" tooltipText={t("Guide")} primary onClick={() => this.setState({helperVisible: true})}/>
                     </div>
-                    <div className="toolgroup secondary vertical">
-                        <Tool type="share-alt" theme="outlined" color="green" tooltipText={t("Share")} primary/>
-                        <Tool className="qrcode-icon" type="qrcode" theme="outlined" color="green" tooltipText={t("QR Code")}>
-                            <canvas className="qrcode" id="mrt-share-qrcode-canvas"/>
-                        </Tool>
-                    </div> */}
+                    {
+                        !!shareable && (
+                            <div className="toolgroup secondary vertical">
+                                <Tool type="share-alt" theme="outlined" color="green" tooltipText={t("Share")} primary/>
+                                <Tool className="qrcode-icon" type="qrcode" theme="outlined" color="green" tooltipText={t("QR Code")}>
+                                    <canvas className="qrcode" id="mrt-share-qrcode-canvas"/>
+                                </Tool>
+                            </div>
+                        )
+                    }
                     <div className="toolgroup secondary vertical">
                         <Tool type="font-size" theme="outlined" color="pink" tooltipText={t("Font Size")} primary/>
                         <Tool type="zoom-in" theme="outlined" color="pink" tooltipText={t("Larger Font")} onClick={() => this.props.scaleFont(true)}/>
@@ -84,7 +95,7 @@ export class Toolbox extends React.Component<IProps, IState> {
                         <Tool className="toolgroup" type="appstore" theme="outlined" color="purple" tooltipText={t("Toolbox")} primary/>
                     </div>
                 </div>
-                {/* <HelperModal lang={lang} onCancel={() => this.setState({helperVisible: false})} visible={this.state.helperVisible}/> */}
+                <HelperModal lang={lang} onCancel={() => this.setState({helperVisible: false})} visible={this.state.helperVisible}/>
             </div>
         )
     }

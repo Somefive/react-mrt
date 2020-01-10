@@ -25,6 +25,26 @@ interface IPaperNode extends IMRTNode {
      */
     citations: number;
     /**
+     * 作者
+     */
+    authors: string[];
+    /**
+     * 影响等级
+     */
+    level: number;
+    /**
+     * 是否可编辑
+     */
+    editable: boolean;
+    /**
+     * 点赞
+     */
+    like: boolean;
+    /**
+     * 点踩
+     */
+    dislike: boolean;
+    /**
      * 
      */
     score: number;
@@ -36,11 +56,16 @@ const defaultPaperNode: IPaperNode = {
     name: "",
     link_in: [],
     link_out: [],
+    authors: [],
     title: "",
     abstract: "",
     year: 2000,
     venue: "",
     citations: 0,
+    editable: false,
+    level: 0,
+    like: false,
+    dislike: false,
     score: 0
 }
 
