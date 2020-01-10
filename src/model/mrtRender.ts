@@ -19,6 +19,7 @@ interface IColumnInfo {
     startRow: number;
     startColumn: number;
     visible: boolean;
+    empty: boolean;
 }
 
 interface IRowInfo {

@@ -25,6 +25,7 @@ interface IState {
 interface IProps extends ICardProps {
     pin: boolean;
     root: boolean;
+    onHit?: (id: string, action: string) => void;
     onChanging?: (id: string) => void;
     onEdit?: (action: string, id: string) => void;
     onPin?: (id: string) => void;
@@ -51,6 +52,7 @@ export default class PaperCard extends React.Component<IProps, IState> {
     private _pinedColor: string;
 
     private _unfoldTimer: NodeJS.Timeout | null;
+    private _stayTimer: NodeJS.Timeout | null;
 
     constructor(props: IProps) {
         super(props);
@@ -144,7 +146,9 @@ export default class PaperCard extends React.Component<IProps, IState> {
     }
 
     private handlePin(): void {
-        this.setState({pin: !this.state.pin});
+        let pin: boolean = !this.state.pin;
+        if(pin) this.props.onHit && this.props.onHit(this.state.node.id, "link-pin");
+        this.setState({pin});
         this.props.onPin && this.props.onPin(this.state.node.id);
     }
 
@@ -162,8 +166,8 @@ export default class PaperCard extends React.Component<IProps, IState> {
         this._div.style.fontSize = "18px";
         this._div.style.userSelect = "none";
         this._div.style.cursor = "pointer";
-        this._div.style.textDecoration = "underline";
         this._div.onclick = () => {
+            this.props.onHit && this.props.onHit(this.state.node.id, "collapse");
             this.setState({unfold: !this.state.unfold, abstractAll: false});
         }
         this._bgDiv.appendChild(this._div);
@@ -178,6 +182,9 @@ export default class PaperCard extends React.Component<IProps, IState> {
                 this.setState({unfold: true});
             }
         }, 300);
+        this._stayTimer = setTimeout(() => {
+            this.props.onHit && this.props.onHit(this.state.node.id, "hover");
+        }, 3000);
     }
 
     public componentDidUpdate(preProps: IProps): void {
@@ -197,6 +204,7 @@ export default class PaperCard extends React.Component<IProps, IState> {
 
     public componentWillUnmount(): void {
         clearTimeout(this._unfoldTimer!);
+        clearTimeout(this._stayTimer!);
         this.giveBack();
     }
 
@@ -219,7 +227,7 @@ export default class PaperCard extends React.Component<IProps, IState> {
                         unfold && (
                             <div className='papercard_detail'>
                                 { node.year && <div><b>Year: </b>{node.year}</div> }
-                                <div><b>Citations: </b>{node.citations || 0}</div>
+                                { !!node.citations && <div><b>Citations: </b>{node.citations || 0}</div> }
                                 { node.venue && <div><b>Venue: </b>{node.venue}</div> }
                                 { node.authors && node.authors.length && <div><b>Authors: </b>{node.authors.join(', ')}</div>}
                                 { node.abstract && <div style={{maxHeight: '160px', overflowY: "scroll"}}><b>Abstract: </b>{this.getAbstract()}</div> }
@@ -248,7 +256,6 @@ export default class PaperCard extends React.Component<IProps, IState> {
                                             </div>
                                         )
                                     }
-                                    
                                     <div className='papercard_edit_right_icon' style={{width: `${this._iconWidth}px`}} onClick={this.handleDislike}>
                                         {
                                             node.dislike ? (

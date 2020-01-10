@@ -77,7 +77,6 @@ export default class PersonCard extends React.Component<IProps, IState> {
         this._div.style.fontSize = "18px";
         this._div.style.userSelect = "none";
         this._div.style.cursor = "pointer";
-        this._div.style.textDecoration = "underline";
         this._div.onclick = () => {
             this.setState({unfold: !this.state.unfold});
         }

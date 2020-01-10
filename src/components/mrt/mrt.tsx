@@ -3,6 +3,8 @@ import './mrt.css';
 import MRTViewer from '../viewer';
 import { IMRTData } from '../../model/mrtTree';
 import { Toolbox } from '../toolbox';
+import html2canvas from 'html2canvas';
+import FileSaver from 'file-saver';
 
 interface IState {
     canvasScale: number;
@@ -16,6 +18,7 @@ interface IProps {
     shareable?: boolean;
     likeable?: boolean;
     like?: boolean;
+    onHit?: (id: string, action: string) => void;
     onLike?: () => void;
     onEdit?: (action: string, id: string, value?:number) => void;
 }
@@ -26,6 +29,8 @@ export default class MRT extends React.Component<IProps, IState> {
 
     private CANVAS_SCALE_MAX: number = 1.6;
     private CANVAS_SCALE_MIN: number = 1;
+
+    private _mrtViewer: MRTViewer | null;
 
     constructor(props: IProps) {
         super(props);
@@ -41,6 +46,7 @@ export default class MRT extends React.Component<IProps, IState> {
         this.handleZoom = this.handleZoom.bind(this);
         this.handleHideSubBranch = this.handleHideSubBranch.bind(this);
         this.handleDisableTextClusterSpan = this.handleDisableTextClusterSpan.bind(this);
+        this.handleCapture = this.handleCapture.bind(this);
     }
 
     private handleScaleFont(larger: boolean): void {
@@ -54,6 +60,21 @@ export default class MRT extends React.Component<IProps, IState> {
         let scale = larger ? Math.min(this.CANVAS_SCALE_MAX, this.state.canvasScale * 1.08) : Math.max(this.CANVAS_SCALE_MIN, this.state.canvasScale * 0.94);
         if(scale != this.state.canvasScale) {
             this.setState({canvasScale: scale});
+        }
+    }
+
+    private handleCapture(): void {
+        if(this._mrtViewer) {
+            let mrtDom: HTMLDivElement = document.getElementById("_mrtview_canvas") as HTMLDivElement;
+            if(mrtDom) {
+                html2canvas(mrtDom).then((canvas: HTMLCanvasElement) => {
+                    canvas.toBlob(function(blob: Blob | null) {
+                        if(blob) {
+                            FileSaver.saveAs(blob, "master-reading-tree.png");
+                        }
+                    })
+                })
+            }
         }
     }
 
@@ -75,16 +96,18 @@ export default class MRT extends React.Component<IProps, IState> {
     }
 
     public render() {
-        const {data, onEdit, shareable, likeable, like, onLike} = this.props;
+        const {data, onEdit, shareable, likeable, like, onLike, onHit} = this.props;
         const { fontScale, canvasScale, hideSubBranch, disableTextClusterSpan } = this.state;
 
         return (
             <div className='_mrt'>
-                <MRTViewer data={data} 
+                <MRTViewer ref={d => this._mrtViewer = d} 
+                    data={data} 
                     fontScale={fontScale} 
                     scale={canvasScale} 
                     hideSubBranch={hideSubBranch} 
                     onEdit={onEdit}
+                    onHit={onHit} 
                     disableTextClusterSpan={disableTextClusterSpan}></MRTViewer>
                 <Toolbox lang={'en'} 
                     scaleFont={this.handleScaleFont} 
@@ -93,6 +116,7 @@ export default class MRT extends React.Component<IProps, IState> {
                     likeable={likeable} 
                     like={like} 
                     onLike={onLike} 
+                    capture={this.handleCapture} 
                     hideSubBranch={hideSubBranch} 
                     onHideSubBranch={this.handleHideSubBranch} 
                     disableTextClusterSpan={disableTextClusterSpan} 

@@ -23,6 +23,7 @@ interface IProps {
     scale: number;
     hideSubBranch: boolean;
     disableTextClusterSpan: boolean;
+    onHit?: (id: string, action: string) => void;
     onEdit?: (action: string, id: string, value?: number) => void;
 }
 
@@ -74,6 +75,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
     private _rowPaddingBottom: number;
 
     private _clusterNameFontSize: number;
+    private _clusterNameFontSizeMini: number;
 
     private _nodeGap: number;
     private _fontSize: number;
@@ -125,7 +127,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this._defaultLineWidth = 1;
         this._defaultCircleRadius = 9;
         this._circleMarginTop = 20;
-        this._columnPaddingTop = 30;
+        this._columnPaddingTop = 36;
         this._linkLineMarginTop = 6;
 
         this._columnTextWidthRatio = 0.8;
@@ -134,9 +136,10 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this._rowPaddingTop = 12;
         this._rowPaddingBottom = 10;
 
-        this._nodeGap = 2;
+        this._nodeGap = 4;
         this._nodeMarginLeft = 14;
         this._clusterNameFontSize = 18;
+        this._clusterNameFontSizeMini = 14;
 
         this._rootNodeGap = 6;
         this._rootTextHeight = 0;
@@ -288,7 +291,8 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                 this._grid.columnInfos.push({
                     clusterIndex: c,
                     indexInCluster: column,
-                    visible: !!mrtColumn, 
+                    visible: !!mrtColumn || !column, 
+                    empty: !mrtColumn, 
                     startRow: mrtColumn ? mrtColumn.rowStart : 0,
                     startColumn: this.getColumnIndexByIndexInCluster(c, mrtColumn ? mrtColumn.columnStart : 0)
                 })
@@ -402,14 +406,18 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         for(let c:number=0; c < clusterNum; ++c) {
             let index: number = this.getClusterStartColumn(c, this._grid.columnInfos);
             let y: number = this._rootHeightTotal + this.getRowOffsetY(this.getClusterFirstRowIndex(c)) - this._clusterNameFontSize - 8;
+            let text: string = data.clusters[c].name;
+            let w: number = this._columnNormalWidth * this._clusterInfos[c].level - this._columnLineMarginLeft - this._nodeMarginLeft;
+            let h: number = calcTextHeight(text, w, this._clusterNameFontSize, this._clusterNameFontSize*1.16, 'left');
+            let fontSize: number = h > this._columnPaddingTop ? this._clusterNameFontSizeMini : this._clusterNameFontSize;
             this._textInfos.push({
                 key: `${c}_cluster_name`,
-                text: data.clusters[c].name,
-                fontSize: this._clusterNameFontSize,
+                text, 
+                fontSize,
                 color: this._clusterColors[c],
                 x: index * this._columnNormalWidth + this._nodeMarginLeft + this._columnLineMarginLeft, 
                 y,
-                width: this._columnNormalWidth * this._clusterInfos[c].level - this._columnLineMarginLeft - this._nodeMarginLeft,
+                width: w, 
                 fontWeight: 'normal'
             })
             this._textInfos.push({
@@ -501,7 +509,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         let result: number = this._grid.rowNum;
         for(let i:number=0; i < this._grid.columnInfos.length; ++i) {
             let info: IColumnInfo = this._grid.columnInfos[i];
-            if(info.clusterIndex == cluster && info.visible) {
+            if(info.clusterIndex == cluster && !info.empty) {
                 if(info.startRow < result) {
                     result = info.startRow;
                 }
@@ -808,7 +816,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         }else {
             let node: IMRTNode = this.getNode(id)!;
             link = this.getLinkByNode(node)!;
-            links.push(link);
+            if(link) links.push(link);
         }
         this.setState({pinLink: links});
     }
@@ -872,6 +880,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                     onChanging={this.handleNodeChanging}
                     onPin={this.handlePin}
                     onEdit={this.props.onEdit} 
+                    onHit={this.props.onHit}
                     onClose={this.handleCardClose}/>
         }
     }
@@ -1003,6 +1012,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                 {
                     inited ? (
                         <div className='_mrtview_canvas' 
+                            id='_mrtview_canvas' 
                             style={{width: `${this._globalWidth}px`, height: `${this._globalHeight}px`}} >
                             <svg className='_mrtviewer_bg' 
                                 width={this._globalWidth} 
