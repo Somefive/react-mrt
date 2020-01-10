@@ -64,7 +64,7 @@ export default class MRT extends React.Component<IProps, IState> {
     }
 
     private handleCapture(): void {
-        if(this._mrtViewer) {
+        if(this._mrtViewer && window) {
             let mrtDom: HTMLDivElement = document.getElementById("_mrtview_canvas") as HTMLDivElement;
             if(mrtDom) {
                 html2canvas(mrtDom).then((canvas: HTMLCanvasElement) => {
