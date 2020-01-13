@@ -4,7 +4,6 @@ import MRTViewer from '../viewer';
 import { IMRTData } from '../../model/mrtTree';
 import { Toolbox } from '../toolbox';
 import FileSaver from 'file-saver';
-import html2canvas from 'html2canvas';
 
 interface IState {
     canvasScale: number;
@@ -68,7 +67,7 @@ export default class MRT extends React.Component<IProps, IState> {
         if(this._mrtViewer && window) {
             let mrtDom: HTMLDivElement = document.getElementById("_mrtview_canvas") as HTMLDivElement;
             if(mrtDom) {
-                (this.props.html2canvas || html2canvas)(mrtDom).then((canvas: HTMLCanvasElement) => {
+                this.props.html2canvas && this.props.html2canvas(mrtDom).then((canvas: HTMLCanvasElement) => {
                     canvas.toBlob(function(blob: Blob | null) {
                         if(blob) {
                             FileSaver.saveAs(blob, "master-reading-tree.png");
