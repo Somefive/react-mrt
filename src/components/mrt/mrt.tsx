@@ -96,7 +96,7 @@ export default class MRT extends React.Component<IProps, IState> {
     }
 
     public render() {
-        const {data, onEdit, shareable, likeable, like, onLike, onHit} = this.props;
+        const {data, onEdit, shareable, likeable, like, onLike, onHit, html2canvas} = this.props;
         const { fontScale, canvasScale, hideSubBranch, disableTextClusterSpan } = this.state;
 
         return (
@@ -114,6 +114,7 @@ export default class MRT extends React.Component<IProps, IState> {
                     zoom={this.handleZoom} 
                     shareable={shareable} 
                     likeable={likeable} 
+                    downloadable={!!html2canvas} 
                     like={like} 
                     onLike={onLike} 
                     capture={this.handleCapture} 
