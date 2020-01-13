@@ -185,10 +185,10 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this._minClusterLevel = this.props.hideSubBranch ? 1 : 2;
 
         this._rootNodeFontSize = 12 * this.props.fontScale;
-        this._rootNodeLineHeight = 4 + this._rootNodeFontSize;
+        this._rootNodeLineHeight = this._rootNodeFontSize * 1.2;
 
         this._fontSize = 10 * this.props.fontScale;
-        this._lineHeight = 4 + this._fontSize;
+        this._lineHeight = this._fontSize * 1.2;
 
         let data: IMRTData = this._data;
         this._clusterIndexes = [];
