@@ -41,6 +41,8 @@ export default {
       plugins: [ 'external-helpers' ]
     }),
     resolve(),
-    commonjs()
+    commonjs({
+      include: 'node_modules/**'
+    })
   ]
 }

@@ -11,13 +11,13 @@ import './node.css'
 import TooltipTextTranslation from './tooltip-text-translation.json'
 import _ from 'lodash'
 
-const ThumbUpColor = chroma("green").luminance(0.3).desaturate(1)
-const ThumbDownColor = chroma("red").luminance(0.3).desaturate(2)
-const ExchangeColor = chroma("blue").luminance(0.3).desaturate(1)
-const DisplayLinkColor = chroma("orange").luminance(0.3)
-const StarColor = chroma("purple").luminance(0.3)
-const HideLinkColor = chroma("grey").luminance(0.3)
-const AbstractColor = chroma("grey").luminance(0.1)
+// const ThumbUpColor = chroma("green").luminance(0.3).desaturate(1)
+// const ThumbDownColor = chroma("red").luminance(0.3).desaturate(2)
+// const ExchangeColor = chroma("blue").luminance(0.3).desaturate(1)
+// const DisplayLinkColor = chroma("orange").luminance(0.3)
+// const StarColor = chroma("purple").luminance(0.3)
+// const HideLinkColor = chroma("grey").luminance(0.3)
+// const AbstractColor = chroma("grey").luminance(0.1)
 
 export class NodeCircle extends React.Component {
 

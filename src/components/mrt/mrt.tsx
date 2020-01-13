@@ -3,8 +3,8 @@ import './mrt.css';
 import MRTViewer from '../viewer';
 import { IMRTData } from '../../model/mrtTree';
 import { Toolbox } from '../toolbox';
-// import html2canvas from 'html2canvas';
-// import FileSaver from 'file-saver';
+import FileSaver from 'file-saver';
+import html2canvas from 'html2canvas';
 
 interface IState {
     canvasScale: number;
@@ -15,6 +15,7 @@ interface IState {
 
 interface IProps {
     data: IMRTData;
+    html2canvas?: Function;
     shareable?: boolean;
     likeable?: boolean;
     like?: boolean;
@@ -41,7 +42,7 @@ export default class MRT extends React.Component<IProps, IState> {
             hideSubBranch: false,
             disableTextClusterSpan: false
         }
-
+        
         this.handleScaleFont = this.handleScaleFont.bind(this);
         this.handleZoom = this.handleZoom.bind(this);
         this.handleHideSubBranch = this.handleHideSubBranch.bind(this);
@@ -64,18 +65,18 @@ export default class MRT extends React.Component<IProps, IState> {
     }
 
     private handleCapture(): void {
-        // if(this._mrtViewer && window) {
-        //     let mrtDom: HTMLDivElement = document.getElementById("_mrtview_canvas") as HTMLDivElement;
-        //     if(mrtDom) {
-        //         html2canvas(mrtDom).then((canvas: HTMLCanvasElement) => {
-        //             canvas.toBlob(function(blob: Blob | null) {
-        //                 if(blob) {
-        //                     FileSaver.saveAs(blob, "master-reading-tree.png");
-        //                 }
-        //             })
-        //         })
-        //     }
-        // }
+        if(this._mrtViewer && window) {
+            let mrtDom: HTMLDivElement = document.getElementById("_mrtview_canvas") as HTMLDivElement;
+            if(mrtDom) {
+                (this.props.html2canvas || html2canvas)(mrtDom).then((canvas: HTMLCanvasElement) => {
+                    canvas.toBlob(function(blob: Blob | null) {
+                        if(blob) {
+                            FileSaver.saveAs(blob, "master-reading-tree.png");
+                        }
+                    })
+                })
+            }
+        }
     }
 
     private handleHideSubBranch(): void {
