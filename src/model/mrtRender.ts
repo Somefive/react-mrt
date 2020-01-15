@@ -118,7 +118,8 @@ interface ILink {
     id: string;
     color: string;
     source: ILinkNode;
-    targets: ILinkNode[];
+    outs: ILinkNode[];
+    ins: ILinkNode[];
 }
 
 export {

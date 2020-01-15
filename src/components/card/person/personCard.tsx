@@ -75,6 +75,7 @@ export default class PersonCard extends React.Component<IProps, IState> {
         this._div.style.animationName = "titleStart";
         this._div.style.animationDuration = "0.2s";
         this._div.style.fontSize = "18px";
+        this._div.style.lineHeight = "20px";
         this._div.style.userSelect = "none";
         this._div.style.cursor = "pointer";
         this._div.onclick = () => {

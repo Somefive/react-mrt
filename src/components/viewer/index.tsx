@@ -136,7 +136,6 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this._rowPaddingTop = 12;
         this._rowPaddingBottom = 10;
 
-        this._nodeGap = 4;
         this._nodeMarginLeft = 14;
         this._clusterNameFontSize = 18;
         this._clusterNameFontSizeMini = 14;
@@ -148,7 +147,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this._rootBlockMarginTop = -2;
         this._rootLineWidth = 2;
 
-        this._linkNodeRadius = 2;
+        this._linkNodeRadius = 8;
 
         this._clusterColors = [];
         this._lineInfos = [];
@@ -185,10 +184,12 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this._minClusterLevel = this.props.hideSubBranch ? 1 : 2;
 
         this._rootNodeFontSize = 12 * this.props.fontScale;
-        this._rootNodeLineHeight = this._rootNodeFontSize * 1.2;
+        this._rootNodeLineHeight = this._rootNodeFontSize * 1.1;
 
         this._fontSize = 10 * this.props.fontScale;
-        this._lineHeight = this._fontSize * 1.2;
+        this._lineHeight = this._fontSize * 1.1;
+
+        this._nodeGap = 6 * this.props.fontScale;
 
         let data: IMRTData = this._data;
         this._clusterIndexes = [];
@@ -201,7 +202,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this._rootTextHeight = this.calcNodesHeight(data.root, this._rootNodeTextWidth, this._rootNodeFontSize, this._rootNodeLineHeight, this._rootNodeGap) + this._rootNodeMarginBottom;
         this._rootHeightTotal = this._rootTextHeight + this._globalMarginTop;
 
-        this._clusterColors = chroma.cubehelix().start(200).rotations(3).gamma(0.9).lightness([0.2, 0.6]).scale().correctLightness().colors(clusterNum);
+        this._clusterColors = chroma.cubehelix().start(200).rotations(3).gamma(0.9).lightness([0.2, 0.5]).scale().correctLightness().colors(clusterNum);
         this._clusterInfos = [];
         for(let i:number=0; i < clusterNum; ++i) {
             let levelMax: number = data.blocks.reduce((pre, current) => {return (current.clusterIndex == i && current.column > pre) ? current.column : pre}, 0) + 1;
@@ -213,7 +214,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                 width: 0,
                 levelMax,
                 levelMin: level,
-                bgColor: chroma(this._clusterColors[i]).luminance(0.9).hex(),
+                bgColor: chroma(this._clusterColors[i]).luminance(0.94).hex(),
                 x: 0,
                 y: this._rootHeightTotal,
                 levelInfos: []
@@ -745,9 +746,11 @@ export default class MRTViewer extends React.Component<IProps, IState> {
     }
 
     private generateArrowPath(source: ILinkNode, target: ILinkNode, forward: boolean) {
-        const x = target.x, y = target.y
+        const x = target.x;
+        const y = target.y;
         const nx = (x >= source.x) ? (x - this._linkNodeRadius) : (x + this._linkNodeRadius)
-        const uy = y - this._linkNodeRadius / 2, by = y + this._linkNodeRadius / 2
+        const uy = y - this._linkNodeRadius / 2;
+        const by = y + this._linkNodeRadius / 2
         if (forward) {
             const nnx = (x >= source.x) ? (x - this._linkNodeRadius * 1.2) : (x + this._linkNodeRadius * 1.2)
             return `M ${x} ${y} L ${nnx} ${uy} L ${nx} ${y} L ${nnx} ${by} L ${x} ${y}`
@@ -766,9 +769,8 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         return (
         <g key={link.source.node.id}>
             <circle cx={link.source.x} cy={link.source.y} r={6} fill={textColor}/>
-            {link.targets.map((linkNode, idx) => (
+            {link.outs.map((linkNode, idx) => (
             <g key={idx}>
-                <circle cx={linkNode.x} cy={linkNode.y} r={4} fill={link.color}/>
                 <path className="mrt-link-path" d={this.generateLinkPath(link.source, linkNode, false)} strokeWidth={1.4} stroke={textColor} fill="transparent"
                     strokeDasharray={this.estimateLinkLength(link.source, linkNode)} strokeDashoffset={this.estimateLinkLength(link.source, linkNode)}/>
                 <path className="mrt-link-dot" d={this.generateLinkPath(link.source, linkNode, false)} strokeWidth={4} stroke={textColor} fill="transparent"
@@ -776,11 +778,20 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                 <path className="mrt-link-arrow" d={this.generateArrowPath(link.source, linkNode, true)} fill={textColor}/>
             </g>
             ))}
+            {link.ins.map((linkNode, idx) => (
+            <g key={idx}>
+                <circle cx={linkNode.x} cy={linkNode.y} r={4} fill={link.color}/>
+                <path className="mrt-link-path" d={this.generateLinkPath(link.source, linkNode, false)} strokeWidth={1.4} stroke={textColor} fill="transparent"
+                    strokeDasharray={this.estimateLinkLength(link.source, linkNode)} strokeDashoffset={this.estimateLinkLength(link.source, linkNode)}/>
+                <path className="mrt-link-dot" d={this.generateLinkPath(link.source, linkNode, true)} strokeWidth={4} stroke={textColor} fill="transparent"
+                    strokeDasharray={`6 ${this.estimateLinkLength(link.source, linkNode)}`} strokeDashoffset={this.estimateLinkLength(link.source, linkNode)}/>
+            </g>
+            ))}
         </g>)
     }
 
     private getLinkByNode(node: IMRTNode): ILink | null {
-        if(node && node.link_out && node.link_out.length) {
+        if(node) {
             let pPos: IPos = this.getBlockPosByNode(node);
             let link: ILink = {
                 id: node.id,
@@ -790,17 +801,33 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                     x: pPos.x - this._nodeMarginLeft,
                     y: pPos.y + node.offsetY! + this._lineHeight/2
                 }, 
-                targets: []
+                outs: [],
+                ins: []
             }
-            for(let out of node.link_out) {
-                let outNode: IMRTNode | null = this.getNode(out);
-                if(outNode) {
-                    let outPos: IPos = this.getBlockPosByNode(outNode);
-                    link.targets.push({
-                        node: outNode,
-                        x: outPos.x - this._nodeMarginLeft,
-                        y: outPos.y + outNode.offsetY! + this._lineHeight/2
-                    })
+            if(node.link_out && node.link_out.length) {
+                for(let out of node.link_out) {
+                    let outNode: IMRTNode | null = this.getNode(out);
+                    if(outNode) {
+                        let outPos: IPos = this.getBlockPosByNode(outNode);
+                        link.outs.push({
+                            node: outNode,
+                            x: outPos.x - this._nodeMarginLeft,
+                            y: outPos.y + outNode.offsetY! + this._lineHeight/2
+                        })
+                    }
+                }
+            }
+            if(node.link_in && node.link_in.length) {
+                for(let inN of node.link_in) {
+                    let inNode: IMRTNode | null = this.getNode(inN);
+                    if(inNode) {
+                        let inPos: IPos = this.getBlockPosByNode(inNode);
+                        link.ins.push({
+                            node: inNode,
+                            x: inPos.x - this._nodeMarginLeft,
+                            y: inPos.y + inNode.offsetY! + this._lineHeight/2
+                        })
+                    }
                 }
             }
             return link;
