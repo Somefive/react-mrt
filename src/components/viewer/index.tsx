@@ -313,10 +313,13 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         for(let row:number=0; row < this._grid.rowNum; ++row) {
             let rowHeight: number = 0;
             for(let column: number=0; column < this._grid.columnInfos.length; ++column) {
+                let columnInfo: IColumnInfo = this._grid.columnInfos[column];
                 let cell: IGridCell = this._grid.cells[column * this._grid.rowNum + row];
                 if(cell.block) {
                     let rightCell: IGridCell | null = column+1 < this._grid.columnInfos.length ? this._grid.cells[(column+1) * this._grid.rowNum + row] : null;
-                    if(this.props.disableTextClusterSpan || !rightCell || (rightCell && rightCell.block)) {
+                    let rightColumn: IColumnInfo | null = column+1 < this._grid.columnInfos.length ? this._grid.columnInfos[column+1] : null;
+                    let disableTextClusterSpan: boolean = this.props.disableTextClusterSpan && (!rightColumn || rightColumn.clusterIndex != columnInfo.clusterIndex); 
+                    if(disableTextClusterSpan || !rightCell || (rightCell && rightCell.block)) {
                         cell.textWidth = this._columnNormalWidth * this._columnTextWidthRatio;
                     }else {
                         cell.textWidth = this._columnNormalWidth * this._columnTextExtendRatio;
