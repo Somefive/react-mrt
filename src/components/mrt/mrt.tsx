@@ -21,6 +21,7 @@ interface IProps {
     onHit?: (id: string, action: string) => void;
     onLike?: () => void;
     onEdit?: (action: string, id: string, value?:number) => void;
+    lang: ILang;
 }
 
 export default class MRT extends React.Component<IProps, IState> {
@@ -108,8 +109,9 @@ export default class MRT extends React.Component<IProps, IState> {
                     hideSubBranch={hideSubBranch}
                     onEdit={onEdit}
                     onHit={onHit}
-                    disableTextClusterSpan={disableTextClusterSpan}></MRTViewer>
-                <Toolbox lang={'en'}
+                    disableTextClusterSpan={disableTextClusterSpan}
+                    lang={this.props.lang}></MRTViewer>
+                <Toolbox lang={this.props.lang}
                     scaleFont={this.handleScaleFont}
                     zoom={this.handleZoom}
                     shareable={shareable}
@@ -121,7 +123,7 @@ export default class MRT extends React.Component<IProps, IState> {
                     hideSubBranch={hideSubBranch}
                     onHideSubBranch={this.handleHideSubBranch}
                     disableTextClusterSpan={disableTextClusterSpan}
-                    onDisableTextClusterSpan={this.handleDisableTextClusterSpan} />
+                    onDisableTextClusterSpan={this.handleDisableTextClusterSpan}/>
             </div>
         )
     }

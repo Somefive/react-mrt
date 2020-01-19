@@ -1,9 +1,9 @@
 import React from 'react'
-import { MRT, OMRT } from 'react-mrt'
+import { MRT /*, OMRT*/ } from 'react-mrt'
 import './App.css'
 import sample_data from './sample.json'
 import 'antd/dist/antd.css'
-import PapersTransformer from './papersTransformer'
+import { transformMrtData } from './papersTransformer'
 
 class App extends React.Component {
 
@@ -25,15 +25,38 @@ class App extends React.Component {
     this.setState({data});
   }
 
+  onEdit(action, nodeId, value) {
+    let edit_data = {...this.state.userEdits};
+    let edit = edit_data[nodeId];
+    if(!edit) {
+      edit = edit_data[nodeId] = {}
+    }
+    switch(action) {
+      case "thumb-delete":
+        edit.rate = 0;
+        break;
+      case "thumb-up":
+        edit.rate = 1;
+        break;
+      case "thumb-down":
+        edit.rate = -1;
+        break;
+      case "exchange":
+        edit.clusterId = value;
+        break;
+      default:
+        return
+    }
+    this.setState({userEdits: edit_data})
+  }
+
   render() {
-    let data = this.state.data;
-    let transformedData = PapersTransformer.transform(this.state.data);
-    console.log(transformedData)
+    let transformedData = transformMrtData(this.state.data, this.state.userEdits);
     return (
       <div className="App">
         <MRT data={transformedData} authors={["Somefive", "Rainatum"]} onLoadJson={this.handleDataChange}
           onLike={() => this.setState({like: !this.state.like})} like={this.state.like}
-          onEditChange={(edits) => this.setState({userEdits: edits})} userEdits={this.state.userEdits}
+          onEdit={(action, nodeId, value) => this.onEdit(action, nodeId, value)} userEdits={this.state.userEdits}
           lang="en" shareable={true} likeable={true}/>
         {/* <OMRT data={data} authors={["Somefive", "Rainatum"]} onLoadJson={this.handleDataChange}
           onLike={() => this.setState({like: !this.state.like})} like={this.state.like}

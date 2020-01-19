@@ -7,7 +7,7 @@ import Helper from './helper'
 import { Modal } from 'antd'
 
 interface IProps {
-    lang?: "zh" | "en";
+    lang: ILang;
     likeable?: boolean;
     like?: boolean;
     shareable?: boolean;
@@ -29,8 +29,8 @@ interface IState {
 export class Toolbox extends React.Component<IProps, IState> {
     constructor(props: IProps) {
         super(props)
-        this.state = { 
-            helperVisible: false 
+        this.state = {
+            helperVisible: false
         }
     }
 
@@ -89,7 +89,7 @@ export class Toolbox extends React.Component<IProps, IState> {
                             </div>
                         )
                     }
-                    
+
                     <div className="toolgroup secondary vertical">
                         <Tool type="control" theme="outlined" color="teal" tooltipText={t("Control")} primary/>
                         <Tool type={`eye${this.props.hideSubBranch ? "" : "-invisible"}`} theme="twoTone" color="teal" onClick={() => this.props.onHideSubBranch()}

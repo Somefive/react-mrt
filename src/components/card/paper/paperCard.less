@@ -39,7 +39,7 @@
     box-shadow:0 0 60px rgba(255,255,255,1000);
     animation-name: startAnim;
     animation-duration: 0.2s;
-    transition: height 0.2s, left 0.2s, top 0.2s;
+    transition: height 0.2s, left 0.2s, top 0.2s, opacity 0.2s;
 
     .papercard_detail {
         position: relative;
@@ -90,5 +90,30 @@
 
     .papercard_edit_right_icon:hover {
         transform: scale(1.4, 1.4);
+        cursor: pointer;
+    }
+}
+
+.copy-btn {
+    &:hover {
+        cursor: pointer;
+        .tooltiptext {
+            visibility: visible;
+        }
+    }
+    margin-left: 8px;
+    display: inline-block;
+    position: relative;
+    .tooltiptext {
+        visibility: hidden;
+        text-align: center;
+        font-size: 12px;
+        position: absolute;
+        z-index: 1;
+        left: 100%;
+        top: 50%;
+        transform: translate(0%, -50%);
+        white-space: nowrap;
+        font-weight: normal;
     }
 }

@@ -8,6 +8,8 @@ import PaperCard from '../card/paper/paperCard';
 import TextCard from '../card/text/textCard';
 import PersonCard from '../card/person/personCard';
 import { generateColorThemes, IColorTheme } from '../../utils/color';
+import _ from 'lodash'
+import BlockNode from './block-node';
 
 interface IState {
     inited: boolean;
@@ -26,6 +28,7 @@ interface IProps {
     disableTextClusterSpan: boolean;
     onHit?: (id: string, action: string) => void;
     onEdit?: (action: string, id: string, value?: number) => void;
+    lang: ILang;
 }
 
 export default class MRTViewer extends React.Component<IProps, IState> {
@@ -95,6 +98,8 @@ export default class MRTViewer extends React.Component<IProps, IState> {
     private _textInfos: ITextInfo[];
 
     private _canvasMoving: boolean;
+
+    private _hightlightNodeIDs: Set<string>;
 
     constructor(props: IProps) {
         super(props);
@@ -185,7 +190,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
     private initData() {
         this._minClusterLevel = this.props.hideSubBranch ? 1 : 2;
 
-        this._rootNodeFontSize = 12 * this.props.fontScale;
+        this._rootNodeFontSize = 14 * this.props.fontScale;
         this._rootNodeLineHeight = this._rootNodeFontSize * 1.1;
 
         this._fontSize = 10 * this.props.fontScale;
@@ -203,31 +208,9 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                 this._clusterIndexes.push(block.clusterIndex);
             }
         }
-        let clusterNum: number = this._clusterIndexes.length;
-        this._rootTextHeight = this.calcNodesHeight(data.root, this._rootNodeTextWidth, this._rootNodeFontSize, this._rootNodeLineHeight, this._rootNodeGap) + this._rootNodeMarginBottom;
-        this._rootHeightTotal = this._rootTextHeight + this._globalMarginTop;
 
-        // this._clusterColors = chroma.cubehelix().start(200).rotations(3).gamma(0.9).lightness([0.2, 0.5]).scale().correctLightness().colors(clusterNum);
+        let clusterNum: number = this._clusterIndexes.length;
         this._clusterColors = generateColorThemes(clusterNum);
-        // generateColorThemes
-        this._clusterInfos = [];
-        for(let i:number=0; i < clusterNum; ++i) {
-            let levelMax: number = data.blocks.reduce((pre, current) => {return (current.clusterIndex == i && current.column > pre) ? current.column : pre}, 0) + 1;
-            let level: number = this._minClusterLevel;
-            let cluster: IClusterInfo = {
-                name: data.clusters[i].name,
-                value: data.clusters[i].value || 0,
-                level,
-                width: 0,
-                levelMax,
-                levelMin: level,
-                bgColor: this._clusterColors[i].bg,
-                x: 0,
-                y: this._rootHeightTotal,
-                levelInfos: []
-            }
-            this._clusterInfos.push(cluster);
-        }
     }
 
     private handleResize() {
@@ -270,6 +253,28 @@ export default class MRTViewer extends React.Component<IProps, IState> {
             cells: []
         }
         let clusterNum: number = this._clusterIndexes.length;
+
+        this._rootNodeTextWidth = Math.max(this._parentWidth / clusterNum * 1.5, this._minColumnWidth);
+        this._rootTextHeight = this.calcNodesHeight(data.root, this._rootNodeTextWidth, this._rootNodeFontSize, this._rootNodeLineHeight, this._rootNodeGap) + this._rootNodeMarginBottom;
+        this._rootHeightTotal = this._rootTextHeight + this._globalMarginTop;
+        this._clusterInfos = [];
+        for(let i:number=0; i < clusterNum; ++i) {
+            let levelMax: number = data.blocks.reduce((pre, current) => {return (current.clusterIndex == i && current.column > pre) ? current.column : pre}, 0) + 1;
+            let level: number = this._minClusterLevel;
+            let cluster: IClusterInfo = {
+                name: data.clusters[i].name,
+                value: data.clusters[i].value || 0,
+                level,
+                width: 0,
+                levelMax,
+                levelMin: level,
+                bgColor: this._clusterColors[i].bg,
+                x: 0,
+                y: this._rootHeightTotal,
+                levelInfos: []
+            }
+            this._clusterInfos.push(cluster);
+        }
 
         this._columnNormalWidth = Math.max(this._parentWidth / clusterNum / this._minClusterLevel, this._minColumnWidth);
         this._globalWidth = 0;
@@ -381,7 +386,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                         x2: i * this._columnNormalWidth + this._columnLineMarginLeft,
                         y2: startY,
                         stroke: this._clusterColors[column.clusterIndex].main,
-                        strokeWidth: this._defaultLineWidth + (cluster.value || 0),
+                        strokeWidth: this._defaultLineWidth + (cluster.value || 0) * 3,
                         opacity: 1
                     })
                 }
@@ -406,7 +411,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                     x2: startX,
                     y2: endY,
                     stroke: this._clusterColors[column.clusterIndex].main,
-                    strokeWidth: this._defaultLineWidth + (cluster.value || 0),
+                    strokeWidth: this._defaultLineWidth + (cluster.value || 0) * 3,
                     opacity: 1
                 })
             }
@@ -647,7 +652,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                         lineHeight: `${info.fontSize*1.2}px`,
                         color: `${info.color}`,
                         width: `${info.width}px`,
-                        userSelect: 'none'
+                        // userSelect: 'none'
                     }}>
             {info.text}
         </div>
@@ -669,26 +674,17 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                 {
                     block.nodes.map((node: IMRTNode) => {
                         node.blockKey = block.key;
-                        return (
-                            <div key={node.id}
-                                style={{
-                                    position: "absolute",
-                                    left: '0px',
-                                    top: `${node.offsetY}px`,
-                                    fontSize: `${fontSize}px`,
-                                    lineHeight: `${lineHeight}px`,
-                                    textAlign: "left",
-                                    wordWrap: "break-word",
-                                    wordBreak: "break-word",
-                                    transform: `scale(${scale})`,
-                                    transformOrigin: "0 0 0",
-                                    color: block.color,
-                                    fontWeight: block.fontWeight,
-                                    display: "inline-block"}}
-                                    onMouseOver={(e) => this.handleNodeMouseOver(e, node)} >
-                                {node.name}
-                            </div>
-                        )
+                        return <BlockNode
+                            key={node.id}
+                            fontSize={fontSize}
+                            lineHeight={lineHeight}
+                            scale={scale}
+                            block={block}
+                            node={node}
+                            mouseOver={(e) => this.handleNodeMouseOver(e, node)}
+                            highlighted={this._hightlightNodeIDs.has(node.id)}
+                            focused={(this.state.link && this.state.link.id === node.id)!!}
+                        />
                     })
                 }
             </div>
@@ -919,7 +915,8 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                     onPin={this.handlePin}
                     onEdit={this.props.onEdit}
                     onHit={this.props.onHit}
-                    onClose={this.handleCardClose}/>
+                    onClose={this.handleCardClose}
+                    lang={this.props.lang}/>
         }
     }
 
@@ -1045,6 +1042,9 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         if(link && !links.find(l => l.id == link.id)) {
             links.push(link);
         }
+        this._hightlightNodeIDs = new Set(_.flatten(links.map(link => [link.id, ...link.ins.map(inode => inode.node.id), ...link.outs.map(inode => inode.node.id)])));
+        if (this._hightlightNodeIDs.size == 0) this._hightlightNodeIDs = new Set(_.flatten(this._blockInfos.map(bi => bi.nodes.map(node => node.id))))
+        this._hightlightNodeIDs.add(this._data.root.nodes[0].id)
         return (
             <div className='_mrtviewer' ref={(e) => {this._viewer = e!;}} style={{backgroundColor: this._rootBgColor}}>
                 {
