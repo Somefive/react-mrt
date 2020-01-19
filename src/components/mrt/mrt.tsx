@@ -41,7 +41,7 @@ export default class MRT extends React.Component<IProps, IState> {
             hideSubBranch: false,
             disableTextClusterSpan: false
         }
-        
+
         this.handleScaleFont = this.handleScaleFont.bind(this);
         this.handleZoom = this.handleZoom.bind(this);
         this.handleHideSubBranch = this.handleHideSubBranch.bind(this);
@@ -101,26 +101,26 @@ export default class MRT extends React.Component<IProps, IState> {
 
         return (
             <div className='_mrt'>
-                <MRTViewer ref={d => this._mrtViewer = d} 
-                    data={data} 
-                    fontScale={fontScale} 
-                    scale={canvasScale} 
-                    hideSubBranch={hideSubBranch} 
+                <MRTViewer ref={d => this._mrtViewer = d}
+                    data={data}
+                    fontScale={fontScale}
+                    scale={canvasScale}
+                    hideSubBranch={hideSubBranch}
                     onEdit={onEdit}
-                    onHit={onHit} 
+                    onHit={onHit}
                     disableTextClusterSpan={disableTextClusterSpan}></MRTViewer>
-                <Toolbox lang={'en'} 
-                    scaleFont={this.handleScaleFont} 
-                    zoom={this.handleZoom} 
-                    shareable={shareable} 
-                    likeable={likeable} 
-                    downloadable={!!html2canvas} 
-                    like={like} 
-                    onLike={onLike} 
-                    capture={this.handleCapture} 
-                    hideSubBranch={hideSubBranch} 
-                    onHideSubBranch={this.handleHideSubBranch} 
-                    disableTextClusterSpan={disableTextClusterSpan} 
+                <Toolbox lang={'en'}
+                    scaleFont={this.handleScaleFont}
+                    zoom={this.handleZoom}
+                    shareable={shareable}
+                    likeable={likeable}
+                    downloadable={!!html2canvas}
+                    like={like}
+                    onLike={onLike}
+                    capture={this.handleCapture}
+                    hideSubBranch={hideSubBranch}
+                    onHideSubBranch={this.handleHideSubBranch}
+                    disableTextClusterSpan={disableTextClusterSpan}
                     onDisableTextClusterSpan={this.handleDisableTextClusterSpan} />
             </div>
         )

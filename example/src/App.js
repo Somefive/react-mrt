@@ -6,7 +6,7 @@ import 'antd/dist/antd.css'
 import PapersTransformer from './papersTransformer'
 
 class App extends React.Component {
-  
+
   constructor(props) {
     super(props)
     console.log("Sample_data: ", sample_data);
@@ -15,8 +15,8 @@ class App extends React.Component {
     this.lastEraRatio = 0.2;
 
     this.state = {
-      data: sample_data, 
-      like: false, 
+      data: sample_data,
+      like: false,
       userEdits: {}
     };
   }
@@ -28,12 +28,13 @@ class App extends React.Component {
   render() {
     let data = this.state.data;
     let transformedData = PapersTransformer.transform(this.state.data);
+    console.log(transformedData)
     return (
       <div className="App">
         <MRT data={transformedData} authors={["Somefive", "Rainatum"]} onLoadJson={this.handleDataChange}
           onLike={() => this.setState({like: !this.state.like})} like={this.state.like}
           onEditChange={(edits) => this.setState({userEdits: edits})} userEdits={this.state.userEdits}
-          lang="en"/>
+          lang="en" shareable={true} likeable={true}/>
         {/* <OMRT data={data} authors={["Somefive", "Rainatum"]} onLoadJson={this.handleDataChange}
           onLike={() => this.setState({like: !this.state.like})} like={this.state.like}
           onEditChange={(edits) => this.setState({userEdits: edits})} userEdits={this.state.userEdits}

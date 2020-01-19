@@ -62,7 +62,7 @@ export default class PaperCard extends React.Component<IProps, IState> {
             height: 140,
             unfold: false,
             abstractAll: false,
-            node: this.props.node as IPaperNode, 
+            node: this.props.node as IPaperNode,
             pin: this.props.pin
         }
 
@@ -214,14 +214,14 @@ export default class PaperCard extends React.Component<IProps, IState> {
         const { root } = this.props;
         const abstractOffsetY: number = this._div.offsetHeight + this._div.offsetTop + 10;
         return (
-            <div className='papercard' 
-                ref={d => this._bgDiv = d!} 
+            <div className='papercard'
+                ref={d => this._bgDiv = d!}
                 style={{
-                    position: "absolute", 
+                    position: "absolute",
                     left: `${left}px`,
-                    top: `${top}px`, 
-                    width: `${this._width}px`, 
-                    height: `${height}px`,  
+                    top: `${top}px`,
+                    width: `${this._width}px`,
+                    height: `${height}px`,
                     backgroundColor: this._bgColor}} >
                 <div ref={d => this._detailsDiv = d}  style={{position: 'absolute', top: abstractOffsetY, left: 0, width: '100%'}}>
                     {
@@ -229,9 +229,9 @@ export default class PaperCard extends React.Component<IProps, IState> {
                             <div className='papercard_detail'>
                                 { node.year && <div><b>Year: </b>{node.year}</div> }
                                 { !!node.citations && <div><b>Citations: </b>{node.citations || 0}</div> }
-                                { node.venue && <div><b>Venue: </b>{node.venue}</div> }
-                                { node.authors && node.authors.length && <div><b>Authors: </b>{node.authors.join(', ')}</div>}
-                                { node.abstract && <div style={{maxHeight: '160px', overflowY: "scroll"}}><b>Abstract: </b>{this.getAbstract()}</div> }
+                                { !!node.venue && <div><b>Venue: </b>{node.venue}</div> }
+                                { !!node.authors && !!node.authors.length && <div><b>Authors: </b>{node.authors.join(', ')}</div>}
+                                { !!node.abstract && <div style={{maxHeight: '160px', overflowY: "scroll"}}><b>Abstract: </b>{this.getAbstract()}</div> }
                             </div>
                         )
                     }
@@ -242,7 +242,7 @@ export default class PaperCard extends React.Component<IProps, IState> {
                                     <div className='papercard_edit_stars' style={{width: `${node.level * this._iconWidth}px`}}>
                                         <div className='papercard_stars' style={{pointerEvents: 'none'}}>
                                             { _.range(0, node.level).map((index) => (
-                                                <Star key={index} style={{fill: this._starColor, fontSize: `${this._iconWidth}px`, pointerEvents: 'none'}} />
+                                                <Star height={this._iconWidth} width={this._iconWidth} key={index} style={{fill: this._starColor, fontSize: `${this._iconWidth}px`, pointerEvents: 'none'}} />
                                             ))}
                                         </div>
                                         <div className='papercard_edit_text' style={{color: this._starColor, pointerEvents: 'none'}}>影响</div>
@@ -252,7 +252,7 @@ export default class PaperCard extends React.Component<IProps, IState> {
                                     {
                                         !root && (
                                             <div className='papercard_edit_right_icon' style={{width: `${this._iconWidth}px`}} onClick={this.handlePin}>
-                                                <Pin style={{fill: pin ? this._pinedColor : this._pinColor, fontSize: `${this._iconWidth}px`, pointerEvents: 'none'}} />
+                                                <Pin height={this._iconWidth} width={this._iconWidth}  style={{fill: pin ? this._pinedColor : this._pinColor, fontSize: `${this._iconWidth}px`, pointerEvents: 'none'}} />
                                                 <div className='papercard_edit_text' style={{color: pin ? this._pinedColor : this._pinColor, pointerEvents: 'none'}}>引用</div>
                                             </div>
                                         )
@@ -260,9 +260,9 @@ export default class PaperCard extends React.Component<IProps, IState> {
                                     <div className='papercard_edit_right_icon' style={{width: `${this._iconWidth}px`}} onClick={this.handleDislike}>
                                         {
                                             node.dislike ? (
-                                                <DislikeFull style={{fill: this._dislikeColor, fontSize: `${this._iconWidth}px`, pointerEvents: 'none'}} />
+                                                <DislikeFull height={this._iconWidth} width={this._iconWidth}  style={{fill: this._dislikeColor, fontSize: `${this._iconWidth}px`, pointerEvents: 'none'}} />
                                             ) : (
-                                                <Dislike style={{fill: this._dislikeColor, fontSize: `${this._iconWidth}px`, pointerEvents: 'none'}} />
+                                                <Dislike height={this._iconWidth} width={this._iconWidth}  style={{fill: this._dislikeColor, fontSize: `${this._iconWidth}px`, pointerEvents: 'none'}} />
                                             )
                                         }
                                         <div className='papercard_edit_text' style={{color: this._dislikeColor, pointerEvents: 'none'}}>踩</div>
@@ -270,9 +270,9 @@ export default class PaperCard extends React.Component<IProps, IState> {
                                     <div className='papercard_edit_right_icon' style={{width: `${this._iconWidth}px`}} onClick={this.handleLike}>
                                         {
                                             node.like ? (
-                                                <LikeFull style={{fill: this._likeColor, fontSize: `${this._iconWidth}px`, pointerEvents: 'none'}} />
+                                                <LikeFull height={this._iconWidth} width={this._iconWidth}  style={{fill: this._likeColor, fontSize: `${this._iconWidth}px`, pointerEvents: 'none'}} />
                                             ) : (
-                                                <Like style={{fill: this._likeColor, fontSize: `${this._iconWidth}px`, pointerEvents: 'none'}} />
+                                                <Like height={this._iconWidth} width={this._iconWidth}  style={{fill: this._likeColor, fontSize: `${this._iconWidth}px`, pointerEvents: 'none'}} />
                                             )
                                         }
                                         <div className='papercard_edit_text' style={{color: this._likeColor, pointerEvents: 'none'}}>赞</div>
@@ -280,12 +280,12 @@ export default class PaperCard extends React.Component<IProps, IState> {
                                     {
                                         !root && (
                                             <div className='papercard_edit_right_icon' style={{width: `${this._iconWidth}px`}} onClick={this.handleChange}>
-                                                <Move style={{fill: this._moveColor, fontSize: `${this._iconWidth}px`, pointerEvents: 'none'}} />
+                                                <Move height={this._iconWidth} width={this._iconWidth}  style={{fill: this._moveColor, fontSize: `${this._iconWidth}px`, pointerEvents: 'none'}} />
                                                 <div className='papercard_edit_text' style={{color: this._moveColor, pointerEvents: 'none'}}>移动</div>
                                             </div>
                                         )
                                     }
-                                    
+
                                 </div>
                             </div>
                         )

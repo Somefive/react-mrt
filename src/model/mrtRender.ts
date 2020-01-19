@@ -1,7 +1,7 @@
 import { IMRTBlock, IMRTNode } from "./mrtTree";
 
 interface IClusterInfo {
-    name: string, 
+    name: string,
     value?: number,
     level: number;
     x: number;
@@ -68,7 +68,7 @@ interface ITextInfo {
     x: number;
     y: number;
     width?: number;
-    fontWeight?: 'bold' | 'normal';
+    fontWeight?: 'bold' | 'normal' | number;
 }
 
 interface IGrid {

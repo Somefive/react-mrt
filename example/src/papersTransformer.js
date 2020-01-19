@@ -11,7 +11,7 @@ export default class PapersTransformer {
         mrtData.root = {
             nodes: [this.toPaperNode(data.root)],
         };
-        
+
         let eras = this.calcEars(data);
         let clusterLen = data.branches.length;
         for(let cIndex=0; cIndex < clusterLen; ++cIndex) {
@@ -33,6 +33,7 @@ export default class PapersTransformer {
                             let row = e;
                             if(prev && prev.row === row) {
                                 prev.nodes.push(node);
+                                prev.weight = Math.max(node.score, prev.weight);
                                 return prev;
                             }else {
                                 let block = {
@@ -40,7 +41,7 @@ export default class PapersTransformer {
                                     column: columnIndex,
                                     row,
                                     nodes: [node],
-                                    weight: Math.random()
+                                    weight: node.score
                                 }
                                 blocks.push(block);
                                 return block;
@@ -59,10 +60,21 @@ export default class PapersTransformer {
                 mrtData.columns.push(column);
             }
         }
-    
+        const blockScores = mrtData.blocks.map((block) => block.weight).sort();
+        const nodeScores = _.flatten(mrtData.blocks.map((block) => block.nodes.map(node => node.score)));
+        mrtData.blocks.forEach((block) => {
+            block.weight = blockScores.indexOf(block.weight) / blockScores.length;
+            block.nodes.forEach(node => {
+                const rscore = nodeScores.indexOf(node.score) / nodeScores.length;
+                node.level = rscore > 0.7 ? 3 : (rscore > 0.4 ? 2 : 1);
+                node.link_in = node.link_in.filter(id => id !== mrtData.root.nodes[0].id)
+                node.link_out = node.link_out.filter(id => id !== mrtData.root.nodes[0].id)
+            })
+        });
+
         return mrtData;
     }
-    
+
     static calcEars(data) {
         let eras = [];
         let years = _.flattenDeep(data.branches).map(paper => paper.paper_year).sort().reverse();
@@ -82,10 +94,11 @@ export default class PapersTransformer {
         eras.push({from: years[years.length-1], to: _to, cnt: _cnt});
         return eras;
     }
-    
+
     static toPaperNode(input) {
         let node = {...defaultPaperNode};
         node.id = input.paper_id;
+        node.link_in = input.citations;
         node.link_out = input.references;
         node.year = input.paper_year;
         node.abstract = input.paper_abstract;
@@ -101,6 +114,7 @@ export default class PapersTransformer {
             prefix = `${node.year} ${node.venue}`;
         }
         node.name = `[${prefix}] ${node.title}`.replace('\t', " ").replace('\n', " ");
+        node.editable = true;
         return node;
     }
 }
