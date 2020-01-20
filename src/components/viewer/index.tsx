@@ -351,6 +351,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                 }
             }
             this._grid.rowInfos.push({
+                ...((this._data.rows && this._data.rows.length > row) ? this._data.rows[row] : undefined),
                 height: rowHeight
             })
             this._middleHeight += rowHeight;
@@ -455,30 +456,6 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                 fontWeight: 'normal'
             })
         }
-        // this._textInfos.push({
-        //     key: 'aminer-logo-text',
-        //     text: 'AMiner',
-        //     fontSize: this._authorNameFontSize - 2,
-        //     color: '#00000020',
-        //     x: 0,
-        //     y: this._globalHeight - this._authorNameLineHeight - this._authorNameLineHeight * 1.25,
-        //     width: this._globalWidth - this._authorNameFontSize * 0.5,
-        //     fontWeight: 'normal',
-        //     textAlign: 'right'
-        // })
-        // if (this.props.authors.length > 0) {
-        //     this._textInfos.push({
-        //         key: 'authors_name',
-        //         text: this.props.authors.join(', '),
-        //         fontSize: this._authorNameFontSize,
-        //         color: '#00000020',
-        //         x: 0,
-        //         y: this._globalHeight - this._authorNameLineHeight - this._authorNameLineHeight * 0.25,
-        //         width: this._globalWidth - this._authorNameFontSize * 0.5,
-        //         fontWeight: 'normal',
-        //         textAlign: 'right'
-        //     })
-        // }
 
         //circle / blocks
         this._circleInfos = [];
@@ -683,8 +660,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                         fontWeight: info.fontWeight || 'normal',
                         lineHeight: `${info.fontSize*1.2}px`,
                         color: `${info.color}`,
-                        width: `${info.width}px`,
-                        textAlign: info.textAlign
+                        width: `${info.width}px`
                         // userSelect: 'none'
                     }}>
             {info.text}
@@ -1099,12 +1075,17 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                                 }
                                 {
                                     highlightRow && (
-                                        <rect x={highlightRow.x}
-                                            y={highlightRow.y}
-                                            width={highlightRow.width}
-                                            height={highlightRow.height}
-                                            fill={highlightRow.fill}
-                                            opacity={highlightRow.opacity}></rect>
+                                        <g className="highlight-row">
+                                            <rect x={highlightRow.x}
+                                                y={highlightRow.y}
+                                                width={highlightRow.width}
+                                                height={highlightRow.height}
+                                                fill={highlightRow.fill}
+                                                opacity={highlightRow.opacity}/>
+                                            <text x={highlightRow.x+10} y={highlightRow.y+highlightRow.height-10} fill='white' fontSize={this._bottomNameFontSize}>
+                                                {this._grid.rowInfos[highlightRow.row].name || ''}
+                                            </text>
+                                        </g>
                                     )
                                 }
                                 {

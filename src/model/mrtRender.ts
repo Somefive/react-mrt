@@ -1,4 +1,4 @@
-import { IMRTBlock, IMRTNode } from "./mrtTree";
+import { IMRTBlock, IMRTNode, IMRTRow } from "./mrtTree";
 import { TextAlignProperty } from 'csstype'
 
 interface IClusterInfo {
@@ -23,7 +23,7 @@ interface IColumnInfo {
     empty: boolean;
 }
 
-interface IRowInfo {
+interface IRowInfo extends IMRTRow {
     height: number;
 }
 
@@ -70,7 +70,6 @@ interface ITextInfo {
     y: number;
     width?: number;
     fontWeight?: 'bold' | 'normal' | number;
-    textAlign?: TextAlignProperty;
 }
 
 interface IGrid {

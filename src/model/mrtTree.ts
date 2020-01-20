@@ -31,10 +31,15 @@ interface IMRTCluster {
     value?: number;
 }
 
+interface IMRTRow {
+    name?: string;
+}
+
 interface IMRTData {
     root: IMRTBlock;
     blocks: IMRTBlock[];
     columns: IMRTColumn[];
+    rows?: IMRTRow[];
     clusters: IMRTCluster[];
 }
 
@@ -43,5 +48,6 @@ export {
     IMRTBlock,
     IMRTData,
     IMRTColumn,
+    IMRTRow,
     IMRTCluster
 }

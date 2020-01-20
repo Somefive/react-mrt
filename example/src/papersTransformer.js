@@ -33,7 +33,10 @@ const transformMrtData = (data, userEdits) => {
       }
     }
   }
-  let eras = calcEars(data);
+  let eras = calcEras(data);
+  mrtData.rows = eras.map(era => {
+    return {name: era.from !== era.to ? `${era.from} - ${era.to}` : `${era.from}`}
+  })
   let clusterLen = data.branches.length;
   let sortedClusterImportance = [...data.importance].sort()
   for (let cIndex = 0; cIndex < clusterLen; ++cIndex) {
@@ -129,7 +132,7 @@ const getPositionByBranches = (branches, nodeId) => {
   }
 }
 
-const calcEars = (data) => {
+const calcEras = (data) => {
   let eras = [];
   let years = _.flattenDeep(data.branches)
     .map(paper => paper.paper_year)
