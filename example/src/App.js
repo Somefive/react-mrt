@@ -47,8 +47,13 @@ class App extends React.Component {
     const adapterInput = {data: this.state.data, userEdits: this.state.userEdits}
     const transformedData = adapter.transform(adapterInput)
     const embeddings = adapter.transformEmbeddings(adapterInput)
+    const rlgruModel = adapter.transformRLGRUModel(adapterInput)
     const rootID = this.state.data.root.paper_id
-    const recommender = embeddings ? new recommenders.SimilarityRecommender(embeddings, rootID, new Set([rootID]), 5) : undefined
+    let recommender = undefined
+    if (embeddings) {
+      if (rlgruModel) recommender = new recommenders.RLGRURecommender(embeddings, rlgruModel, rootID, new Set([rootID]), 5)
+      else recommender = new recommenders.SimilarityRecommender(embeddings, rootID, new Set([rootID]), 5)
+    }
     return (
       <div className="App">
         <MRT data={transformedData} authors={["Somefive", "Rainatum", "Zelda", "Yiping", "Jizhong"]}

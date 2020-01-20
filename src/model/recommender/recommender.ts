@@ -3,6 +3,9 @@ interface IRecommender {
     hit(id: string, action: string): void;
 }
 
+type Candidate = {id: string, score: number}
+
 export {
-    IRecommender
+    IRecommender,
+    Candidate
 }

@@ -1,7 +1,5 @@
-import { IRecommender } from './recommender'
+import { IRecommender, Candidate } from './recommender'
 import { Vector } from '../math'
-
-type Candidate = {id: string, score: number}
 
 class SimilarityRecommender implements IRecommender {
 

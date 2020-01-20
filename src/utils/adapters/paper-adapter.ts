@@ -2,7 +2,8 @@ import _ from 'lodash'
 import { defaultPaperNode } from '../../model/nodes/paperNode'
 import { IMRTData } from '../../model/mrtTree'
 import { IAdapter } from './adapter'
-import { Vector } from '../../model/math'
+import { Vector, Matrix } from '../../model/math'
+import { RLGRUModel } from '../../model/recommender/rl-gru-recommender'
 
 class PaperAdapter implements IAdapter {
     transform(raw: {data: any, userEdits: any}): IMRTData {
@@ -131,6 +132,24 @@ class PaperAdapter implements IAdapter {
             }
         }
         return embeddings
+    }
+
+    transformRLGRUModel(raw: {data: any, userEdits: any}): RLGRUModel | undefined {
+        const data = raw.data
+        if (!data['rec-model']) return undefined
+        const recModel = data['rec-model']
+        try {
+            return {
+                'rnn.weight_ih': new Matrix(recModel['rnn.weight_ih']),
+                'rnn.weight_hh': new Matrix(recModel['rnn.weight_hh']),
+                'rnn.bias_ih': new Vector(recModel['rnn.bias_ih']),
+                'rnn.bias_hh': new Vector(recModel['rnn.bias_hh']),
+                'fc.weight': new Matrix(recModel['fc.weight']),
+                'fc.bias': new Vector(recModel['fc.bias']),
+            }
+        } catch (e) {
+            return undefined
+        }
     }
 }
 
