@@ -4,6 +4,7 @@ import './App.css'
 import sample_data from './sample.json'
 import 'antd/dist/antd.css'
 import { transformMrtData } from './papersTransformer'
+import html2canvas from 'html2canvas'
 
 class App extends React.Component {
 
@@ -58,7 +59,8 @@ class App extends React.Component {
         <MRT data={transformedData} authors={["Somefive", "Rainatum", "Zelda", "Yiping", "Jizhong"]} onLoadJson={this.handleDataChange}
           onLike={() => this.setState({like: !this.state.like})} like={this.state.like}
           onEdit={(action, nodeId, value) => this.onEdit(action, nodeId, value)} userEdits={this.state.userEdits}
-          lang="en" shareable={true} likeable={true} loadable={true} onLoadJson={(json) => this.setState({data: json})}/>
+          lang="en" shareable={true} likeable={true} loadable={true} onLoadJson={(json) => this.setState({data: json})}
+          html2canvas={html2canvas}/>
         {/* <OMRT data={data} authors={["Somefive", "Rainatum"]} onLoadJson={this.handleDataChange}
           onLike={() => this.setState({like: !this.state.like})} like={this.state.like}
           onEditChange={(edits) => this.setState({userEdits: edits})} userEdits={this.state.userEdits}

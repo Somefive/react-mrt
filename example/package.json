@@ -6,6 +6,7 @@
   "private": true,
   "dependencies": {
     "antd": "^3.25.2",
+    "html2canvas": "^1.0.0-rc.5",
     "lodash": "^4.17.15",
     "prop-types": "^15.6.2",
     "react": "^16.4.1",
