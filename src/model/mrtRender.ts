@@ -1,4 +1,5 @@
 import { IMRTBlock, IMRTNode } from "./mrtTree";
+import { TextAlignProperty } from 'csstype'
 
 interface IClusterInfo {
     name: string,
@@ -69,6 +70,7 @@ interface ITextInfo {
     y: number;
     width?: number;
     fontWeight?: 'bold' | 'normal' | number;
+    textAlign?: TextAlignProperty;
 }
 
 interface IGrid {

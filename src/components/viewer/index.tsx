@@ -10,6 +10,7 @@ import PersonCard from '../card/person/personCard';
 import { generateColorThemes, IColorTheme } from '../../utils/color';
 import _ from 'lodash'
 import BlockNode from './block-node';
+import { ReactComponent as Logo } from './images/logo.svg';
 
 interface IState {
     inited: boolean;
@@ -29,6 +30,7 @@ interface IProps {
     onHit?: (id: string, action: string) => void;
     onEdit?: (action: string, id: string, value?: number) => void;
     lang: ILang;
+    authors: string[]
 }
 
 export default class MRTViewer extends React.Component<IProps, IState> {
@@ -49,6 +51,9 @@ export default class MRTViewer extends React.Component<IProps, IState> {
     private _bottomHeight: number;
     private _bottomNameFontSize: number;
     private _bottomNameMarginTop: number;
+
+    private _authorNameFontSize: number;
+    private _authorNameLineHeight: number;
 
     private _defaultLineWidth: number;
     private _defaultCircleRadius: number;
@@ -129,6 +134,9 @@ export default class MRTViewer extends React.Component<IProps, IState> {
 
         this._bottomNameFontSize = 26;
         this._bottomNameMarginTop = 20;
+
+        this._authorNameFontSize = 20;
+        this._authorNameLineHeight = 24;
 
         this._columnLineMarginLeft = 14;
         this._defaultLineWidth = 1;
@@ -447,6 +455,30 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                 fontWeight: 'normal'
             })
         }
+        // this._textInfos.push({
+        //     key: 'aminer-logo-text',
+        //     text: 'AMiner',
+        //     fontSize: this._authorNameFontSize - 2,
+        //     color: '#00000020',
+        //     x: 0,
+        //     y: this._globalHeight - this._authorNameLineHeight - this._authorNameLineHeight * 1.25,
+        //     width: this._globalWidth - this._authorNameFontSize * 0.5,
+        //     fontWeight: 'normal',
+        //     textAlign: 'right'
+        // })
+        // if (this.props.authors.length > 0) {
+        //     this._textInfos.push({
+        //         key: 'authors_name',
+        //         text: this.props.authors.join(', '),
+        //         fontSize: this._authorNameFontSize,
+        //         color: '#00000020',
+        //         x: 0,
+        //         y: this._globalHeight - this._authorNameLineHeight - this._authorNameLineHeight * 0.25,
+        //         width: this._globalWidth - this._authorNameFontSize * 0.5,
+        //         fontWeight: 'normal',
+        //         textAlign: 'right'
+        //     })
+        // }
 
         //circle / blocks
         this._circleInfos = [];
@@ -652,6 +684,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                         lineHeight: `${info.fontSize*1.2}px`,
                         color: `${info.color}`,
                         width: `${info.width}px`,
+                        textAlign: info.textAlign
                         // userSelect: 'none'
                     }}>
             {info.text}
@@ -1093,6 +1126,17 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                                 }
                                 {
                                     !!nodeChanging && this._clusterInfos.map(this.mapClusterMask)
+                                }
+                                {
+                                    <div className="bottom-authors">
+                                        <div className="aminer-logo">
+                                            <Logo width={this._authorNameLineHeight} height={this._authorNameLineHeight}/>
+                                            <span style={{fontSize: this._authorNameFontSize-2}}>AMiner 2020</span>
+                                        </div>
+                                        { this.props.authors.length > 0 && <div className="authors" style={{fontSize: this._authorNameFontSize}}>
+                                            {this.props.authors.join(', ')}
+                                        </div>}
+                                    </div>
                                 }
                             </div>
                         </div>

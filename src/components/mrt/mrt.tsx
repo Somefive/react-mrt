@@ -24,6 +24,7 @@ interface IProps {
     onEdit?: (action: string, id: string, value?:number) => void;
     lang: ILang;
     onLoadJson?: (json: any) => void;
+    authors?: string[];
 }
 
 export default class MRT extends React.Component<IProps, IState> {
@@ -112,7 +113,8 @@ export default class MRT extends React.Component<IProps, IState> {
                     onEdit={onEdit}
                     onHit={onHit}
                     disableTextClusterSpan={disableTextClusterSpan}
-                    lang={this.props.lang}></MRTViewer>
+                    lang={this.props.lang}
+                    authors={this.props.authors || []}/>
                 <Toolbox lang={this.props.lang}
                     scaleFont={this.handleScaleFont}
                     zoom={this.handleZoom}
