@@ -11,6 +11,7 @@ import { generateColorThemes, IColorTheme } from '../../utils/color';
 import _ from 'lodash'
 import BlockNode from './block-node';
 import { ReactComponent as Logo } from './images/logo.svg';
+import { ILang } from '../../utils/translation';
 
 interface IState {
     inited: boolean;

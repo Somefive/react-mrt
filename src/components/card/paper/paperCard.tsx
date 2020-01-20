@@ -14,6 +14,7 @@ import { ReactComponent as Check } from './images/check.svg';
 import _ from 'lodash';
 import chroma from 'chroma-js';
 import translation from './tooltip-text-translation.json';
+import { ILang, Translator } from '../../../utils/translation'
 
 interface IState {
     left: number;
@@ -59,6 +60,8 @@ export default class PaperCard extends React.Component<IProps, IState> {
 
     private _unfoldTimer: NodeJS.Timeout | null;
     private _stayTimer: NodeJS.Timeout | null;
+
+    private translator: Translator = new Translator(translation)
 
     constructor(props: IProps) {
         super(props);
@@ -227,14 +230,7 @@ export default class PaperCard extends React.Component<IProps, IState> {
     }
 
     private t(key: string): string {
-        key = key.toLowerCase()
-        const lang = this.props.lang
-        if (lang in translation) {
-            if (key in (translation as ITranslationDicts)[lang]) {
-                return (translation as ITranslationDicts)[lang][key]
-            }
-        }
-        return key[0].toUpperCase() + key.slice(1)
+        return this.translator.T(key, this.props.lang)
     }
 
     public render() {
