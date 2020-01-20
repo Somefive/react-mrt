@@ -50,14 +50,15 @@ class App extends React.Component {
     this.setState({userEdits: edit_data})
   }
 
+
   render() {
     let transformedData = transformMrtData(this.state.data, this.state.userEdits);
     return (
       <div className="App">
-        <MRT data={transformedData} authors={["Somefive", "Rainatum"]} onLoadJson={this.handleDataChange}
+        <MRT data={transformedData} authors={["AMiner"]} onLoadJson={this.handleDataChange}
           onLike={() => this.setState({like: !this.state.like})} like={this.state.like}
           onEdit={(action, nodeId, value) => this.onEdit(action, nodeId, value)} userEdits={this.state.userEdits}
-          lang="en" shareable={true} likeable={true}/>
+          lang="en" shareable={true} likeable={true} loadable={true} onLoadJson={(json) => this.setState({data: json})}/>
         {/* <OMRT data={data} authors={["Somefive", "Rainatum"]} onLoadJson={this.handleDataChange}
           onLike={() => this.setState({like: !this.state.like})} like={this.state.like}
           onEditChange={(edits) => this.setState({userEdits: edits})} userEdits={this.state.userEdits}

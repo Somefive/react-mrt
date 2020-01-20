@@ -273,25 +273,25 @@ export default class PaperCard extends React.Component<IProps, IState> {
                         node.editable && (
                             <div className='papercard_edit'>
                                 { !!node.level && (
-                                    <div className='papercard_edit_stars' style={{width: `${node.level * this._iconWidth}px`}}>
+                                    <div className='papercard_edit_stars papercard_edit_btn' style={{width: `${node.level * this._iconWidth}px`}}>
                                         <div className='papercard_stars' style={{pointerEvents: 'none'}}>
                                             { _.range(0, node.level).map((index) => (
                                                 <Star height={this._iconWidth} width={this._iconWidth} key={index} style={{fill: this._starColor, fontSize: `${this._iconWidth}px`, pointerEvents: 'none'}} />
                                             ))}
                                         </div>
-                                            <div className='papercard_edit_text' style={{color: this._starColor, pointerEvents: 'none'}}>{this.t('influence')}</div>
+                                        <div className='papercard_edit_text' style={{color: this._starColor, pointerEvents: 'none'}}>{this.t('influence')}</div>
                                     </div>
                                 )}
                                 <div className='papercard_edit_right'>
                                     {
                                         !root && (
-                                            <div className='papercard_edit_right_icon' style={{width: `${this._iconWidth}px`}} onClick={this.handlePin}>
+                                            <div className='papercard_edit_right_icon papercard_edit_btn' style={{width: `${this._iconWidth}px`}} onClick={this.handlePin}>
                                                 <Pin height={this._iconWidth} width={this._iconWidth}  style={{fill: pin ? this._pinedColor : this._pinColor, fontSize: `${this._iconWidth}px`, pointerEvents: 'none'}} />
                                                 <div className='papercard_edit_text' style={{color: pin ? this._pinedColor : this._pinColor, pointerEvents: 'none'}}>{this.t('citation')}</div>
                                             </div>
                                         )
                                     }
-                                    <div className='papercard_edit_right_icon' style={{width: `${this._iconWidth}px`}} onClick={this.handleDislike}>
+                                    <div className='papercard_edit_right_icon papercard_edit_btn' style={{width: `${this._iconWidth}px`}} onClick={this.handleDislike}>
                                         {
                                             node.dislike ? (
                                                 <DislikeFull height={this._iconWidth} width={this._iconWidth}  style={{fill: this._dislikeColor, fontSize: `${this._iconWidth}px`, pointerEvents: 'none'}} />
@@ -301,7 +301,7 @@ export default class PaperCard extends React.Component<IProps, IState> {
                                         }
                                         <div className='papercard_edit_text' style={{color: this._dislikeColor, pointerEvents: 'none'}}>{this.t('dislike')}</div>
                                     </div>
-                                    <div className='papercard_edit_right_icon' style={{width: `${this._iconWidth}px`}} onClick={this.handleLike}>
+                                    <div className='papercard_edit_right_icon papercard_edit_btn' style={{width: `${this._iconWidth}px`}} onClick={this.handleLike}>
                                         {
                                             node.like ? (
                                                 <LikeFull height={this._iconWidth} width={this._iconWidth}  style={{fill: this._likeColor, fontSize: `${this._iconWidth}px`, pointerEvents: 'none'}} />
@@ -313,7 +313,7 @@ export default class PaperCard extends React.Component<IProps, IState> {
                                     </div>
                                     {
                                         !root && (
-                                            <div className='papercard_edit_right_icon' style={{width: `${this._iconWidth}px`}} onClick={this.handleChange}>
+                                            <div className='papercard_edit_right_icon papercard_edit_btn' style={{width: `${this._iconWidth}px`}} onClick={this.handleChange}>
                                                 <Move height={this._iconWidth} width={this._iconWidth}  style={{fill: this._moveColor, fontSize: `${this._iconWidth}px`, pointerEvents: 'none'}} />
                                                 <div className='papercard_edit_text' style={{color: this._moveColor, pointerEvents: 'none'}}>{this.t('move')}</div>
                                             </div>

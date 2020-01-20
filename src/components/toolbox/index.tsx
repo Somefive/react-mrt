@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { ChangeEventHandler, ChangeEvent } from 'react'
 import QRCode from 'qrcode'
 import './index.css'
 import Tool from './tool'
@@ -12,6 +12,7 @@ interface IProps {
     like?: boolean;
     shareable?: boolean;
     downloadable?: boolean;
+    loadable?: boolean;
     hideSubBranch: boolean;
     disableTextClusterSpan: boolean;
     scaleFont: (b: boolean) => void;
@@ -20,6 +21,7 @@ interface IProps {
     onLike?: () => void;
     onHideSubBranch: () => void;
     onDisableTextClusterSpan: () => void;
+    onLoadJson?: (json: any) => void;
 }
 
 interface IState {
@@ -27,12 +29,26 @@ interface IState {
 }
 
 export class Toolbox extends React.Component<IProps, IState> {
+
+    private _fileLoadInput: HTMLInputElement | undefined
+
     constructor(props: IProps) {
         super(props)
         this.state = {
             helperVisible: false
         }
+        this._fileLoadInput = undefined
     }
+
+    loadJson(e: ChangeEvent<HTMLInputElement>) {
+        if (!e.target.files || e.target.files.length === 0) return
+        const reader = new FileReader()
+        reader.onload = (e) => {
+            if (this.props.onLoadJson && e.target) this.props.onLoadJson(JSON.parse(e.target.result as string))
+            if (this._fileLoadInput) this._fileLoadInput.value = ''
+        }
+        reader.readAsText(e.target.files[0])
+      }
 
     public render() {
         const renderQRCode = () => {
@@ -43,7 +59,7 @@ export class Toolbox extends React.Component<IProps, IState> {
                 setTimeout(renderQRCode, 500)
         }
         renderQRCode()
-        const { shareable, likeable, like, onLike, downloadable } = this.props;
+        const { shareable, likeable, like, onLike, downloadable, loadable } = this.props;
         const lang = this.props.lang || "en";
         const translation: {[index: string]: any} = TooltipTextTranslation['zh'] as any as {[index: string]: any};
         const t = (text: string) => (translation && translation[text.toLowerCase()]) ? translation[text.toLowerCase()] : text
@@ -96,6 +112,10 @@ export class Toolbox extends React.Component<IProps, IState> {
                             tooltipText={t(this.props.hideSubBranch ? "Display Sub Branch" : "Hide Sub Branch")}/>
                         <Tool type="column-width" theme="outlined" color="teal" onClick={() => this.props.onDisableTextClusterSpan()}
                             tooltipText={t(this.props.disableTextClusterSpan ? "Enable Text Span" : "Disable Text Span")}/>
+                        { !!loadable && <Tool type="folder-open" theme="outlined" color="teal" onClick={() => {
+                            if (this._fileLoadInput) this._fileLoadInput.click()
+                        }} tooltipText={t("Load JSON")}/>}
+                        { !!loadable && <input ref={d => this._fileLoadInput = d!} id="mrt-file-load-input" type="file" hidden onChange={(e) => this.loadJson(e)}/>}
                     </div>
                     <div className="toolgroup vertical">
                         <Tool className="toolgroup" type="appstore" theme="outlined" color="purple" tooltipText={t("Toolbox")} primary/>

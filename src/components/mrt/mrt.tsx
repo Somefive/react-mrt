@@ -17,11 +17,13 @@ interface IProps {
     html2canvas?: Function;
     shareable?: boolean;
     likeable?: boolean;
+    loadable?: boolean;
     like?: boolean;
     onHit?: (id: string, action: string) => void;
     onLike?: () => void;
     onEdit?: (action: string, id: string, value?:number) => void;
     lang: ILang;
+    onLoadJson?: (json: any) => void;
 }
 
 export default class MRT extends React.Component<IProps, IState> {
@@ -97,7 +99,7 @@ export default class MRT extends React.Component<IProps, IState> {
     }
 
     public render() {
-        const {data, onEdit, shareable, likeable, like, onLike, onHit, html2canvas} = this.props;
+        const {data, onEdit, shareable, likeable, like, onLike, onHit, html2canvas, loadable} = this.props;
         const { fontScale, canvasScale, hideSubBranch, disableTextClusterSpan } = this.state;
 
         return (
@@ -117,13 +119,15 @@ export default class MRT extends React.Component<IProps, IState> {
                     shareable={shareable}
                     likeable={likeable}
                     downloadable={!!html2canvas}
+                    loadable={loadable}
                     like={like}
                     onLike={onLike}
                     capture={this.handleCapture}
                     hideSubBranch={hideSubBranch}
                     onHideSubBranch={this.handleHideSubBranch}
                     disableTextClusterSpan={disableTextClusterSpan}
-                    onDisableTextClusterSpan={this.handleDisableTextClusterSpan}/>
+                    onDisableTextClusterSpan={this.handleDisableTextClusterSpan}
+                    onLoadJson={this.props.onLoadJson}/>
             </div>
         )
     }

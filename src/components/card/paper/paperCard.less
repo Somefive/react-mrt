@@ -65,14 +65,14 @@
         height: 32px;
     }
 
-    .papercard_edit_text {
-        width: 120%;
-        margin-left: -10%;
-        margin-top: -6px;
-        text-align: center;
-        font-size: 12px;
-        transform: scale(0.6, 0.6);
-    }
+    // .papercard_edit_text {
+    //     width: 120%;
+    //     margin-left: -10%;
+    //     margin-top: -6px;
+    //     text-align: center;
+    //     font-size: 12px;
+    //     transform: scale(0.6, 0.6);
+    // }
 
     .papercard_edit_right {
         position: absolute;
@@ -91,6 +91,17 @@
     .papercard_edit_right_icon:hover {
         transform: scale(1.4, 1.4);
         cursor: pointer;
+    }
+
+    .papercard_edit_btn {
+        position: relative;
+        .papercard_edit_text {
+            position: absolute;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 7px;
+            text-align: center;
+        }
     }
 }
 
