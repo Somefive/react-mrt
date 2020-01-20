@@ -4,9 +4,10 @@ import { IMRTData, IMRTColumn, IMRTBlock, IMRTNode } from './model/mrtTree';
 import { IPersonNode, defaultPersonNode } from './model/nodes/personNode';
 import { IPaperNode, defaultPaperNode } from './model/nodes/paperNode';
 import { ITextNode, defaultTextNode } from './model/nodes/textNode';
+import * as adapters from './utils/adapters';
 import OMRT from './mrt';
 
-export { 
+export {
     OMRT,
     MRT,
     IMRTBlock,
@@ -18,5 +19,6 @@ export {
     IPaperNode,
     defaultPaperNode,
     ITextNode,
-    defaultTextNode
+    defaultTextNode,
+    adapters
 }

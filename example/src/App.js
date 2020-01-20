@@ -1,9 +1,8 @@
 import React from 'react'
-import { MRT /*, OMRT*/ } from 'react-mrt'
+import { MRT, adapters /*, OMRT*/ } from 'react-mrt'
 import './App.css'
 import sample_data from './sample.json'
 import 'antd/dist/antd.css'
-import { transformMrtData } from './papersTransformer'
 import html2canvas from 'html2canvas'
 
 class App extends React.Component {
@@ -11,19 +10,11 @@ class App extends React.Component {
   constructor(props) {
     super(props)
     console.log("Sample_data: ", sample_data);
-
-    this.EraMinRatio = 0.05;
-    this.lastEraRatio = 0.2;
-
     this.state = {
       data: sample_data,
       like: false,
       userEdits: {}
     };
-  }
-
-  handleDataChange(data) {
-    this.setState({data});
   }
 
   onEdit(action, nodeId, value) {
@@ -51,12 +42,11 @@ class App extends React.Component {
     this.setState({userEdits: edit_data})
   }
 
-
   render() {
-    let transformedData = transformMrtData(this.state.data, this.state.userEdits);
+    const transformedData = (new adapters.PaperAdapter()).transform({data: this.state.data, userEdits: this.state.userEdits})
     return (
       <div className="App">
-        <MRT data={transformedData} authors={["Somefive", "Rainatum", "Zelda", "Yiping", "Jizhong"]} onLoadJson={this.handleDataChange}
+        <MRT data={transformedData} authors={["Somefive", "Rainatum", "Zelda", "Yiping", "Jizhong"]}
           onLike={() => this.setState({like: !this.state.like})} like={this.state.like}
           onEdit={(action, nodeId, value) => this.onEdit(action, nodeId, value)} userEdits={this.state.userEdits}
           lang="en" shareable={true} likeable={true} loadable={true} onLoadJson={(json) => this.setState({data: json})}
