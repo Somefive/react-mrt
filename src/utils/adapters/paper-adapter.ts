@@ -2,6 +2,7 @@ import _ from 'lodash'
 import { defaultPaperNode } from '../../model/nodes/paperNode'
 import { IMRTData } from '../../model/mrtTree'
 import { IAdapter } from './adapter'
+import { Vector } from '../../model/math'
 
 class PaperAdapter implements IAdapter {
     transform(raw: {data: any, userEdits: any}): IMRTData {
@@ -112,6 +113,24 @@ class PaperAdapter implements IAdapter {
             })
         }
         return mrtData;
+    }
+
+    transformEmbeddings(raw: {data: any, userEdits: any}): {[id: string]: Vector} | undefined {
+        const data = raw.data
+        if (!data.root.embeddings) return undefined
+        const embeddings: {[id: string]: Vector} = {}
+        embeddings[data.root.paper_id] = new Vector(data.root.embeddings)
+        for (const cluster of data.branches) {
+            for (const branch of (cluster as any)) {
+                for (const paper of (branch as any)) {
+                    const p = paper as any
+                    if (!!p.embeddings) {
+                        embeddings[p.paper_id] = new Vector(p.embeddings)
+                    }
+                }
+            }
+        }
+        return embeddings
     }
 }
 

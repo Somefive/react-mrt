@@ -1,5 +1,5 @@
 import React from 'react'
-import { MRT, adapters /*, OMRT*/ } from 'react-mrt'
+import { MRT, adapters, recommenders /*, OMRT*/ } from 'react-mrt'
 import './App.css'
 import sample_data from './sample.json'
 import 'antd/dist/antd.css'
@@ -43,14 +43,20 @@ class App extends React.Component {
   }
 
   render() {
-    const transformedData = (new adapters.PaperAdapter()).transform({data: this.state.data, userEdits: this.state.userEdits})
+    const adapter = new adapters.PaperAdapter()
+    const adapterInput = {data: this.state.data, userEdits: this.state.userEdits}
+    const transformedData = adapter.transform(adapterInput)
+    const embeddings = adapter.transformEmbeddings(adapterInput)
+    const rootID = this.state.data.root.paper_id
+    const recommender = embeddings ? new recommenders.SimilarityRecommender(embeddings, rootID, new Set([rootID]), 5) : undefined
     return (
       <div className="App">
         <MRT data={transformedData} authors={["Somefive", "Rainatum", "Zelda", "Yiping", "Jizhong"]}
           onLike={() => this.setState({like: !this.state.like})} like={this.state.like}
           onEdit={(action, nodeId, value) => this.onEdit(action, nodeId, value)} userEdits={this.state.userEdits}
           lang="en" shareable={true} likeable={true} loadable={true} onLoadJson={(json) => this.setState({data: json})}
-          html2canvas={html2canvas}/>
+          html2canvas={html2canvas}
+          recommender={recommender}/>
         {/* <OMRT data={data} authors={["Somefive", "Rainatum"]} onLoadJson={this.handleDataChange}
           onLike={() => this.setState({like: !this.state.like})} like={this.state.like}
           onEditChange={(edits) => this.setState({userEdits: edits})} userEdits={this.state.userEdits}

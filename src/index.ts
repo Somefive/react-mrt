@@ -5,6 +5,8 @@ import { IPersonNode, defaultPersonNode } from './model/nodes/personNode';
 import { IPaperNode, defaultPaperNode } from './model/nodes/paperNode';
 import { ITextNode, defaultTextNode } from './model/nodes/textNode';
 import * as adapters from './utils/adapters';
+import * as recommenders from './model/recommender'
+import * as mathlib from './model/math'
 import OMRT from './mrt';
 
 export {
@@ -20,5 +22,7 @@ export {
     defaultPaperNode,
     ITextNode,
     defaultTextNode,
-    adapters
+    adapters,
+    recommenders,
+    mathlib
 }

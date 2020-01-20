@@ -12,7 +12,8 @@ interface IProps {
     scale: number
     block: IBlockInfo
     node: IMRTNode
-    highlighted: boolean
+    highlighted?: boolean
+    recommended?: boolean
     focused: boolean
     mouseOver: (e: React.MouseEvent, node: IMRTNode) => void
 }
@@ -21,7 +22,7 @@ export default class BlockNode extends React.Component<IProps, IState> {
 
     public render() {
         return (
-            <div className={`_mrtviewer_blocknode ${this.props.highlighted ? 'highlighted' : ''}`}
+            <div className={`_mrtviewer_blocknode ${!!this.props.highlighted ? 'highlighted' : ''} ${!!this.props.recommended ? 'recommended' : ''}`}
                 style={{
                     top: `${this.props.node.offsetY}px`,
                     fontSize: `${this.props.fontSize}px`,

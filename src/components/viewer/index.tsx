@@ -12,6 +12,7 @@ import _ from 'lodash'
 import BlockNode from './block-node';
 import { ReactComponent as Logo } from './images/logo.svg';
 import { ILang } from '../../utils/translation';
+import { IRecommender } from '../../model/recommender'
 
 interface IState {
     inited: boolean;
@@ -32,6 +33,7 @@ interface IProps {
     onEdit?: (action: string, id: string, value?: number) => void;
     lang: ILang;
     authors: string[]
+    recommender?: IRecommender
 }
 
 export default class MRTViewer extends React.Component<IProps, IState> {
@@ -105,7 +107,8 @@ export default class MRTViewer extends React.Component<IProps, IState> {
 
     private _canvasMoving: boolean;
 
-    private _hightlightNodeIDs: Set<string>;
+    private _hightlightNodeIDs: Set<string> = new Set();
+    private _recommendedNodeIDs: Set<string> = new Set();
 
     constructor(props: IProps) {
         super(props);
@@ -192,6 +195,8 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this.handlePin = this.handlePin.bind(this);
         this.drawLink = this.drawLink.bind(this);
         this.handleNodeChanging = this.handleNodeChanging.bind(this);
+
+        if (this.props.recommender) this._recommendedNodeIDs = this.props.recommender.recommend()
 
         this.initData();
     }
@@ -693,6 +698,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                             node={node}
                             mouseOver={(e) => this.handleNodeMouseOver(e, node)}
                             highlighted={this._hightlightNodeIDs.has(node.id)}
+                            recommended={this._recommendedNodeIDs.has(node.id)}
                             focused={(this.state.link && this.state.link.id === node.id)!!}
                         />
                     })
@@ -924,7 +930,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                     onChanging={this.handleNodeChanging}
                     onPin={this.handlePin}
                     onEdit={this.props.onEdit}
-                    onHit={this.props.onHit}
+                    onHit={(id, action) => this.onHit(id, action)}
                     onClose={this.handleCardClose}
                     lang={this.props.lang}/>
         }
@@ -979,6 +985,15 @@ export default class MRTViewer extends React.Component<IProps, IState> {
             let cardDatas: ICardData[] = [...this.state.cardDatas];
             cardDatas.forEach(value => value.die = true);
             this.setState({cardDatas, link: null});
+        }
+    }
+
+    private onHit(id: string, action: string): void {
+        if (this.props.onHit) this.props.onHit(id, action)
+        if (this.props.recommender) {
+            this.props.recommender.hit(id, action)
+            this._recommendedNodeIDs = this.props.recommender.recommend()
+            this.forceUpdate()
         }
     }
 

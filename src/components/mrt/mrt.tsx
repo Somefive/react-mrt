@@ -4,6 +4,8 @@ import MRTViewer from '../viewer';
 import { IMRTData } from '../../model/mrtTree';
 import { Toolbox } from '../toolbox';
 import FileSaver from 'file-saver';
+import { ILang } from '../../utils/translation'
+import { IRecommender } from '../../model/recommender'
 
 interface IState {
     canvasScale: number;
@@ -25,6 +27,7 @@ interface IProps {
     lang: ILang;
     onLoadJson?: (json: any) => void;
     authors?: string[];
+    recommender?: IRecommender;
 }
 
 export default class MRT extends React.Component<IProps, IState> {
@@ -114,7 +117,8 @@ export default class MRT extends React.Component<IProps, IState> {
                     onHit={onHit}
                     disableTextClusterSpan={disableTextClusterSpan}
                     lang={this.props.lang}
-                    authors={this.props.authors || []}/>
+                    authors={this.props.authors || []}
+                    recommender={this.props.recommender}/>
                 <Toolbox lang={this.props.lang}
                     scaleFont={this.handleScaleFont}
                     zoom={this.handleZoom}
