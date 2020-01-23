@@ -76,13 +76,20 @@ export default class MRT extends React.Component<IProps, IState> {
         if(this._mrtViewer && window) {
             let mrtDom: HTMLDivElement = document.getElementById("_mrtview_canvas") as HTMLDivElement;
             if(mrtDom) {
-                this.props.html2canvas && this.props.html2canvas(mrtDom).then((canvas: HTMLCanvasElement) => {
-                    canvas.toBlob(function(blob: Blob | null) {
-                        if(blob) {
-                            FileSaver.saveAs(blob, "master-reading-tree.png");
-                        }
+                const recommendable = this.state.recommendable
+                this.setState({recommendable: undefined})
+                setTimeout(() => {
+                    this.props.html2canvas && this.props.html2canvas(mrtDom).then((canvas: HTMLCanvasElement) => {
+                        canvas.toBlob((blob: Blob | null) => {
+                            if(blob) {
+                                FileSaver.saveAs(blob, "master-reading-tree.png");
+                                this.setState({recommendable})
+                            }
+                        })
+                    }).catch(() => {
+                        this.setState({recommendable})
                     })
-                })
+                }, 100)
             }
         }
     }
