@@ -7,6 +7,7 @@ import { IClusterInfo, ILineInfo, IColumnInfo, IGrid, IGridCell, ICircleInfo, IB
 import PaperCard from '../card/paper/paperCard';
 import TextCard from '../card/text/textCard';
 import PersonCard from '../card/person/personCard';
+import ClusterCard from '../card/cluster/clusterCard';
 import { generateColorThemes, IColorTheme } from '../../utils/color';
 import _ from 'lodash'
 import BlockNode from './block-node';
@@ -286,7 +287,8 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                 bgColor: this._clusterColors[i].bg,
                 x: 0,
                 y: this._rootHeightTotal,
-                levelInfos: []
+                levelInfos: [],
+                tags: data.clusters[i].tags
             }
             this._clusterInfos.push(cluster);
         }
@@ -450,7 +452,8 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                 x: index * this._columnNormalWidth + this._nodeMarginLeft + this._columnLineMarginLeft,
                 y,
                 width: w,
-                fontWeight: 'normal'
+                fontWeight: 'normal',
+                mouseOver: !!this._clusterInfos[c].tags ? (e: React.MouseEvent, tinfo: ITextInfo) => this.handleClusterTagMouseOver(e, this._clusterInfos[c], tinfo) : undefined
             })
             this._textInfos.push({
                 key: `${c}_bottom_cluster_name`,
@@ -658,19 +661,17 @@ export default class MRTViewer extends React.Component<IProps, IState> {
     }
 
     private mapText(info: ITextInfo): JSX.Element {
-        return <div key={info.key}
-                    style={{
-                        position: 'absolute',
-                        left: `${info.x}px`,
-                        top: `${info.y}px`,
-                        fontSize: `${info.fontSize}px`,
-                        fontWeight: info.fontWeight || 'normal',
-                        lineHeight: `${info.fontSize*1.2}px`,
-                        color: `${info.color}`,
-                        width: `${info.width}px`
-                        // userSelect: 'none'
-                    }}>
-            {info.text}
+        return <div key={info.key} style={{ position: 'absolute', left: `${info.x}px`, top: `${info.y}px` }}>
+            <div style={{
+                fontSize: `${info.fontSize}px`,
+                fontWeight: info.fontWeight || 'normal',
+                lineHeight: `${info.fontSize*1.2}px`,
+                color: `${info.color}`,
+                width: `${info.width}px`
+                // userSelect: 'none'
+            }} onMouseOver={(e: React.MouseEvent) => { if (!!info.mouseOver) info.mouseOver(e, info) }}>
+                {info.text}
+            </div>
         </div>
     }
 
@@ -897,6 +898,26 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         }
     }
 
+    private handleClusterTagMouseOver(e: React.MouseEvent, cinfo: IClusterInfo, tinfo: ITextInfo):void {
+        let div: HTMLDivElement = e.target as HTMLDivElement;
+        const cid = `cluster-tag-${cinfo.name}`
+        let cardDatas: ICardData[] = [...this.state.cardDatas];
+        if(!cardDatas.find(value => value.node.id === cid)) {
+            cardDatas.forEach(value => value.die = true);
+            let pos: IPos = {x: tinfo.x, y: tinfo.y};
+            let left: number = pos.x;
+            let top: number = pos.y;
+            cardDatas.push({
+                left,
+                top,
+                node: { type: 'cluster-tag', id: cid, name: cinfo.name, cinfo, tinfo } as IMRTNode,
+                nodeDiv: div,
+                die: false
+            });
+            this.setState({cardDatas})
+        }
+    }
+
     private handleMapCards(cardData: ICardData): JSX.Element {
         switch(cardData.node.type) {
             case "text":
@@ -910,6 +931,15 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                     onClose={this.handleCardClose}/>
             case "person":
                 return  <PersonCard key={`${cardData.node.id}_card`}
+                    globalWidth={this._globalWidth}
+                    left={cardData.left}
+                    top={cardData.top}
+                    node={cardData.node}
+                    nodeDiv={cardData.nodeDiv}
+                    die={cardData.die}
+                    onClose={this.handleCardClose}/>
+            case "cluster-tag":
+                return  <ClusterCard key={`${cardData.node.id}_card`}
                     globalWidth={this._globalWidth}
                     left={cardData.left}
                     top={cardData.top}

@@ -1,5 +1,4 @@
 import { IMRTBlock, IMRTNode, IMRTRow } from "./mrtTree";
-import { TextAlignProperty } from 'csstype'
 
 interface IClusterInfo {
     name: string,
@@ -12,6 +11,7 @@ interface IClusterInfo {
     levelMin: number;
     bgColor: string;
     levelInfos: IColumnInfo[];
+    tags?: string[];
 }
 
 interface IColumnInfo {
@@ -70,6 +70,7 @@ interface ITextInfo {
     y: number;
     width?: number;
     fontWeight?: 'bold' | 'normal' | number;
+    mouseOver?: (e: React.MouseEvent, tinfo: ITextInfo) => void;
 }
 
 interface IGrid {

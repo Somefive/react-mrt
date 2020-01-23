@@ -43,16 +43,19 @@ class PaperAdapter implements IAdapter {
             return {name: era.from !== era.to ? `${era.from} - ${era.to}` : `${era.from}`}
         })
         let clusterLen = data.branches.length;
-        let sortedClusterImportance = [...data.importance].sort()
+        let sortedClusterImportance = [...data.importance].sort((a, b) => (a-b))
         for (let cIndex = 0; cIndex < clusterLen; ++cIndex) {
-        let clusterName = data.clusterNames[cIndex];
-        clusterName = clusterName.replace(/\b(\w)(\w*)/g, (_: any, $1: any, $2: any) => {
-            return $1.toUpperCase() + $2.toLowerCase();
+            let clusterName = data.clusterNames[cIndex];
+            clusterName = clusterName.replace(/\b(\w)(\w*)/g, (_: any, $1: any, $2: any) => {
+                return $1.toUpperCase() + $2.toLowerCase();
         });
         mrtData.clusters.push({
             name: clusterName,
-            value: sortedClusterImportance.indexOf(data.importance[cIndex]) / data.importance.length
+            value: (sortedClusterImportance.indexOf(data.importance[cIndex])+1) / data.importance.length,
         })
+        if (!!data.tagGroups && data.tagGroups.length === mrtData.clusters.length) {
+            data.tagGroups.map((tags: string[], idx: number) => {mrtData.clusters[idx].tags = tags.map((tag: string) => tag.split(' ').map((word: string) => _.capitalize(word)).join(' '))})
+        }
         let cluster = data.branches[cIndex];
         let columnLen = cluster.length;
         for (let columnIndex = 0; columnIndex < columnLen; ++columnIndex) {

@@ -29,6 +29,7 @@ interface IMRTColumn {
 interface IMRTCluster {
     name: string;
     value?: number;
+    tags?: string[];
 }
 
 interface IMRTRow {
