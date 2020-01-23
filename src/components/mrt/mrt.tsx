@@ -12,6 +12,7 @@ interface IState {
     fontScale: number;
     hideSubBranch: boolean;
     disableTextClusterSpan: boolean;
+    recommendable?: boolean;
 }
 
 interface IProps {
@@ -46,7 +47,8 @@ export default class MRT extends React.Component<IProps, IState> {
             canvasScale: 1,
             fontScale: props.data.columns.length <= 6 ? 1.2 : 1,
             hideSubBranch: false,
-            disableTextClusterSpan: false
+            disableTextClusterSpan: false,
+            recommendable: !!this.props.recommender ? true : undefined
         }
 
         this.handleScaleFont = this.handleScaleFont.bind(this);
@@ -102,6 +104,12 @@ export default class MRT extends React.Component<IProps, IState> {
         }
     }
 
+    private onRecommendableChange(): void {
+        if (!!this.props.recommender) {
+            this.setState({recommendable: !this.state.recommendable})
+        }
+    }
+
     public render() {
         const {data, onEdit, shareable, likeable, like, onLike, onHit, html2canvas, loadable} = this.props;
         const { fontScale, canvasScale, hideSubBranch, disableTextClusterSpan } = this.state;
@@ -118,7 +126,8 @@ export default class MRT extends React.Component<IProps, IState> {
                     disableTextClusterSpan={disableTextClusterSpan}
                     lang={this.props.lang}
                     authors={this.props.authors || []}
-                    recommender={this.props.recommender}/>
+                    recommender={this.props.recommender}
+                    recommendable={this.state.recommendable}/>
                 <Toolbox lang={this.props.lang}
                     scaleFont={this.handleScaleFont}
                     zoom={this.handleZoom}
@@ -133,7 +142,9 @@ export default class MRT extends React.Component<IProps, IState> {
                     onHideSubBranch={this.handleHideSubBranch}
                     disableTextClusterSpan={disableTextClusterSpan}
                     onDisableTextClusterSpan={this.handleDisableTextClusterSpan}
-                    onLoadJson={this.props.onLoadJson}/>
+                    onLoadJson={this.props.onLoadJson}
+                    recommendable={this.state.recommendable}
+                    onRecommendableChange={() => this.onRecommendableChange()}/>
             </div>
         )
     }

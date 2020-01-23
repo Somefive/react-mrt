@@ -14,6 +14,7 @@ interface IProps {
     shareable?: boolean;
     downloadable?: boolean;
     loadable?: boolean;
+    recommendable?: boolean;
     hideSubBranch: boolean;
     disableTextClusterSpan: boolean;
     scaleFont: (b: boolean) => void;
@@ -23,6 +24,7 @@ interface IProps {
     onHideSubBranch: () => void;
     onDisableTextClusterSpan: () => void;
     onLoadJson?: (json: any) => void;
+    onRecommendableChange: () => void;
 }
 
 interface IState {
@@ -119,6 +121,8 @@ export class Toolbox extends React.Component<IProps, IState> {
                             if (this._fileLoadInput) this._fileLoadInput.click()
                         }} tooltipText={this.t("Load JSON")}/>}
                         { !!loadable && <input ref={d => this._fileLoadInput = d!} id="mrt-file-load-input" type="file" hidden onChange={(e) => this.loadJson(e)}/>}
+                        { this.props.recommendable !== undefined && <Tool type="highlight" theme="outlined" color="teal" onClick={() => this.props.onRecommendableChange()}
+                            tooltipText={this.t(!!this.props.recommendable ? "Enable Recommendation" : "Disable Recommendation")}/>}
                     </div>
                     <div className="toolgroup vertical">
                         <Tool className="toolgroup" type="appstore" theme="outlined" color="purple" tooltipText={this.t("Toolbox")} primary/>

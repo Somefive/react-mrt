@@ -34,6 +34,7 @@ interface IProps {
     lang: ILang;
     authors: string[]
     recommender?: IRecommender
+    recommendable?: boolean
 }
 
 export default class MRTViewer extends React.Component<IProps, IState> {
@@ -698,7 +699,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                             node={node}
                             mouseOver={(e) => this.handleNodeMouseOver(e, node)}
                             highlighted={this._hightlightNodeIDs.has(node.id)}
-                            recommended={this._recommendedNodeIDs.has(node.id)}
+                            recommended={!!this.props.recommendable && this._recommendedNodeIDs.has(node.id)}
                             focused={(this.state.link && this.state.link.id === node.id)!!}
                         />
                     })

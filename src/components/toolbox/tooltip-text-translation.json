@@ -18,11 +18,13 @@
         "hide sub branch": "隐藏次级分支",
         "enable text span": "启用文本跨越",
         "disable text span": "禁用文本跨越",
-        "load JSON": "加载JSON",
+        "load json": "加载JSON",
         "toolbox": "工具箱",
-        "guide": "使用指南"
+        "guide": "使用指南",
+        "enable recommendation": "启用推荐",
+        "disable recommendation": "禁用推荐"
     },
     "en": {
-        
+
     }
 }
