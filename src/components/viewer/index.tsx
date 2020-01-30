@@ -198,8 +198,6 @@ export default class MRTViewer extends React.Component<IProps, IState> {
         this.drawLink = this.drawLink.bind(this);
         this.handleNodeChanging = this.handleNodeChanging.bind(this);
 
-        if (this.props.recommender) this._recommendedNodeIDs = this.props.recommender.recommend()
-
         this.initData();
     }
 
@@ -535,6 +533,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                 }
             }
         }
+        if (this.props.recommender) this._recommendedNodeIDs = this.props.recommender.recommend()
         this.forceUpdate();
         // console.log("Calc time: ", (new Date().getTime() - startTime));
     }
