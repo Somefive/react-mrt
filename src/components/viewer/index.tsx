@@ -278,6 +278,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
             let cluster: IClusterInfo = {
                 name: data.clusters[i].name,
                 value: data.clusters[i].value || 0,
+                rank: data.clusters[i].rank || 0,
                 level,
                 width: 0,
                 levelMax,
@@ -402,7 +403,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                         x2: i * this._columnNormalWidth + this._columnLineMarginLeft,
                         y2: startY,
                         stroke: this._clusterColors[column.clusterIndex].main,
-                        strokeWidth: this._defaultLineWidth + (cluster.value || 0) * 3,
+                        strokeWidth: this._defaultLineWidth + (cluster.rank || 0) / data.clusters.length * 3,
                         opacity: 1
                     })
                 }
@@ -427,7 +428,7 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                     x2: startX,
                     y2: endY,
                     stroke: this._clusterColors[column.clusterIndex].main,
-                    strokeWidth: this._defaultLineWidth + (cluster.value || 0) * 3,
+                    strokeWidth: this._defaultLineWidth + (cluster.rank || 0) / data.clusters.length * 3,
                     opacity: 1
                 })
             }
@@ -945,7 +946,8 @@ export default class MRTViewer extends React.Component<IProps, IState> {
                     node={cardData.node}
                     nodeDiv={cardData.nodeDiv}
                     die={cardData.die}
-                    onClose={this.handleCardClose}/>
+                    onClose={this.handleCardClose}
+                    lang={this.props.lang}/>
             case "paper":
             default:
                 return  <PaperCard key={`${cardData.node.id}_card`}

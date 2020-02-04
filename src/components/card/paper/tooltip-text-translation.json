@@ -11,6 +11,7 @@
         "year": "发表年份",
         "abstract": "摘要",
         "citations": "引用量",
-        "authors": "作者"
+        "authors": "作者",
+        "importance score": "重要程度"
     }
 }

@@ -3,6 +3,7 @@ import { IMRTBlock, IMRTNode, IMRTRow } from "./mrtTree";
 interface IClusterInfo {
     name: string,
     value?: number,
+    rank?: number,
     level: number;
     x: number;
     y: number;

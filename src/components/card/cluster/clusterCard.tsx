@@ -2,6 +2,8 @@ import * as React from 'react';
 import ICardProps from '../cardProps';
 import './clusterCard.less';
 import { IClusterTagNode } from '../../../model/nodes/clusterNode';
+import translation from './tooltip-text-translation.json';
+import { ILang, Translator } from '../../../utils/translation'
 
 interface IState {
     left: number;
@@ -10,7 +12,7 @@ interface IState {
 }
 
 interface IProps extends ICardProps {
-
+    lang: ILang;
 }
 
 export default class ClusterCard extends React.Component<IProps, IState> {
@@ -25,6 +27,8 @@ export default class ClusterCard extends React.Component<IProps, IState> {
     private _width: number;
     private _padding: number = 12;
     private _bgColor: string;
+
+    private translator: Translator = new Translator(translation)
 
     constructor(props: IProps) {
         super(props);
@@ -99,6 +103,10 @@ export default class ClusterCard extends React.Component<IProps, IState> {
         this.giveBack();
     }
 
+    private t(key: string): string {
+        return this.translator.T(key, this.props.lang)
+    }
+
     public render() {
         const {height, left, top} = this.state;
         return (
@@ -114,10 +122,10 @@ export default class ClusterCard extends React.Component<IProps, IState> {
                     padding: this._padding}}>
                 <div ref={d => this._detailsDiv = d} className='clustercard-detail'>
                     <div>
-                        { !!this._node.cinfo.tags && <div><b>Cluster Words: </b>{this._node.cinfo.tags.join(', ')}</div>}
+                    { !!this._node.cinfo.tags && <div><b>{this.t('tags')+': '}</b>{this._node.cinfo.tags.join(', ')}</div>}
                     </div>
                     <div>
-                        { !!this._node.cinfo.value && <div><b>Score: </b>{this._node.cinfo.value.toPrecision(3)}</div>}
+                    { !!this._node.cinfo.value && <div><b>{this.t('importance score')+': '}</b>{this._node.cinfo.value.toFixed(2)}</div>}
                     </div>
                 </div>
             </div>

@@ -45,7 +45,7 @@ interface IPaperNode extends IMRTNode {
      */
     dislike: boolean;
     /**
-     * 
+     *
      */
     score: number;
 }

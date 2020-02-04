@@ -3,7 +3,8 @@ import { defaultPaperNode } from '../../model/nodes/paperNode'
 import { IMRTData } from '../../model/mrtTree'
 import { IAdapter } from './adapter'
 import { Vector, Matrix } from '../../model/math'
-import { RLGRUModel } from '../../model/recommender/rl-gru-recommender'
+import { RLGRUModel, RLGRURecommender } from '../../model/recommender/rl-gru-recommender'
+import { IRecommender, SimilarityRecommender } from '../../model/recommender'
 
 class PaperAdapter implements IAdapter {
     transform(raw: {data: any, userEdits: any}): IMRTData {
@@ -51,7 +52,8 @@ class PaperAdapter implements IAdapter {
         });
         mrtData.clusters.push({
             name: clusterName,
-            value: (sortedClusterImportance.indexOf(data.importance[cIndex])+1) / data.importance.length,
+            value: data.importance[cIndex],
+            rank: (sortedClusterImportance.indexOf(data.importance[cIndex])+1),
         })
         if (!!data.tagGroups && data.tagGroups.length === mrtData.clusters.length) {
             data.tagGroups.map((tags: string[], idx: number) => {mrtData.clusters[idx].tags = tags.map((tag: string) => tag.split(' ').map((word: string) => _.capitalize(word)).join(' '))})
@@ -153,6 +155,18 @@ class PaperAdapter implements IAdapter {
         } catch (e) {
             return undefined
         }
+    }
+
+    transformRecommender(raw: {data: any, userEdits: any}, topK: number): IRecommender | undefined {
+        const embeddings = this.transformEmbeddings(raw)
+        const rlgruModel = this.transformRLGRUModel(raw)
+        const rootID = raw.data.root.paper_id
+        let recommender = undefined
+        if (embeddings) {
+            if (rlgruModel) recommender = new RLGRURecommender(embeddings, rlgruModel, rootID, new Set([rootID]), topK)
+            else recommender = new SimilarityRecommender(embeddings, rootID, new Set([rootID]), topK)
+        }
+        return recommender
     }
 }
 

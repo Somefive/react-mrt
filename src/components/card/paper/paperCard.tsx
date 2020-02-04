@@ -257,6 +257,7 @@ export default class PaperCard extends React.Component<IProps, IState> {
                     {
                         unfold && (
                             <div className='papercard_detail'>
+                                { !!node.score && <div><b>{this.t('importance score')}: </b>{node.score.toFixed(2) || 0}</div> }
                                 { node.year && <div><b>{this.t('year')}: </b>{node.year}</div> }
                                 { !!node.citations && <div><b>{this.t('citations')}: </b>{node.citations || 0}</div> }
                                 { !!node.venue && <div><b>{this.t('venue')}: </b>{node.venue}</div> }

@@ -28,7 +28,7 @@ class Translator {
                 return this.dicts[lang][key]
             }
         }
-        return key[0].toUpperCase() + key.slice(1)
+        return key.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' ')
     }
 
     public T(key: string, lang?: ILang): string {
