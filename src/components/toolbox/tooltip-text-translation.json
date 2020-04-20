@@ -22,7 +22,9 @@
         "toolbox": "工具箱",
         "guide": "使用指南",
         "enable recommendation": "启用推荐",
-        "disable recommendation": "禁用推荐"
+        "disable recommendation": "禁用推荐",
+        "mobile": "移动端",
+        "desktop": "PC端"
     },
     "en": {
 

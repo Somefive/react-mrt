@@ -6,6 +6,8 @@ import { Toolbox } from '../toolbox';
 import FileSaver from 'file-saver';
 import { ILang } from '../../utils/translation'
 import { IRecommender } from '../../model/recommender'
+import { isMobile } from '../../utils';
+import MRTMobileViewer from '../viewer/mobile';
 
 interface IState {
     canvasScale: number;
@@ -13,6 +15,7 @@ interface IState {
     hideSubBranch: boolean;
     disableTextClusterSpan: boolean;
     recommendable?: boolean;
+    forcePC: boolean;
 }
 
 interface IProps {
@@ -48,7 +51,8 @@ export default class MRT extends React.Component<IProps, IState> {
             fontScale: props.data.columns.length <= 6 ? 1.2 : 1,
             hideSubBranch: false,
             disableTextClusterSpan: false,
-            recommendable: !!this.props.recommender ? true : undefined
+            recommendable: !!this.props.recommender ? true : undefined,
+            forcePC: false,
         }
 
         this.handleScaleFont = this.handleScaleFont.bind(this);
@@ -120,10 +124,14 @@ export default class MRT extends React.Component<IProps, IState> {
     public render() {
         const {data, onEdit, shareable, likeable, like, onLike, onHit, html2canvas, loadable} = this.props;
         const { fontScale, canvasScale, hideSubBranch, disableTextClusterSpan } = this.state;
-
+        const useMobile = isMobile() && !this.state.forcePC
         return (
             <div className='_mrt'>
-                <MRTViewer ref={d => this._mrtViewer = d}
+                {useMobile
+                ? <MRTMobileViewer data={data} onHit={onHit}
+                    lang={this.props.lang}
+                    authors={this.props.authors || []}/>
+                : <MRTViewer ref={d => this._mrtViewer = d}
                     data={data}
                     fontScale={fontScale}
                     scale={canvasScale}
@@ -134,7 +142,7 @@ export default class MRT extends React.Component<IProps, IState> {
                     lang={this.props.lang}
                     authors={this.props.authors || []}
                     recommender={this.props.recommender}
-                    recommendable={this.state.recommendable}/>
+                    recommendable={this.state.recommendable}/>}
                 <Toolbox lang={this.props.lang}
                     scaleFont={this.handleScaleFont}
                     zoom={this.handleZoom}
@@ -151,7 +159,9 @@ export default class MRT extends React.Component<IProps, IState> {
                     onDisableTextClusterSpan={this.handleDisableTextClusterSpan}
                     onLoadJson={this.props.onLoadJson}
                     recommendable={this.state.recommendable}
-                    onRecommendableChange={() => this.onRecommendableChange()}/>
+                    onRecommendableChange={() => this.onRecommendableChange()}
+                    forcePC={this.state.forcePC}
+                    onSetForcePC={(forcePC) => this.setState({forcePC})}/>
             </div>
         )
     }

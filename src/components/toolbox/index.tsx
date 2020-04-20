@@ -6,6 +6,7 @@ import TooltipTextTranslation from './tooltip-text-translation.json'
 import Helper from './helper'
 import { Modal } from 'antd'
 import { ILang, Translator } from '../../utils/translation'
+import { isMobile } from '../../utils'
 
 interface IProps {
     lang: ILang;
@@ -17,6 +18,7 @@ interface IProps {
     recommendable?: boolean;
     hideSubBranch: boolean;
     disableTextClusterSpan: boolean;
+    forcePC?: boolean;
     scaleFont: (b: boolean) => void;
     zoom: (b: boolean) => void;
     capture?: () => void;
@@ -25,6 +27,7 @@ interface IProps {
     onDisableTextClusterSpan: () => void;
     onLoadJson?: (json: any) => void;
     onRecommendableChange: () => void;
+    onSetForcePC: (force: boolean) => void;
 }
 
 interface IState {
@@ -68,22 +71,32 @@ export class Toolbox extends React.Component<IProps, IState> {
         }
         renderQRCode()
         const { shareable, likeable, like, onLike, downloadable, loadable } = this.props;
-        return (
+        // const topClassName = isMobile() ? "toolgroup secondary vertical" : "toolgroup vertical"
+        const topClassName = "toolgroup vertical"
+        return (isMobile() && !this.props.forcePC) ? (
+            <div>
+                <div className="toolgroup horizontal">
+                    <div className="toolgroup vertical">
+                        <Tool className="toolgroup" type="desktop" theme="outlined" color="purple" tooltipText={this.t("desktop")} primary onClick={() => this.props.onSetForcePC(true)}/>
+                    </div>
+                </div>
+            </div>
+        ) : (
             <div>
                 <div className="toolgroup horizontal">
                     {
                         !!likeable && (
-                            <div className="toolgroup secondary vertical">
+                            <div className={topClassName}>
                                 <Tool type="heart" theme={like ? "filled" : "twoTone"} color="red" tooltipText={this.t(like ? "Dislike" : "Like")} primary onClick={() => onLike && onLike()}/>
                             </div>
                         )
                     }
-                    <div className="toolgroup secondary vertical">
+                    { !isMobile() && <div className={topClassName}>
                         <Tool className="toolgroup" type="question-circle" theme="outlined" color="yellow" tooltipText={this.t("Guide")} primary onClick={() => this.setState({helperVisible: true})}/>
-                    </div>
+                    </div> }
                     {
                         !!shareable && (
-                            <div className="toolgroup secondary vertical">
+                            <div className={topClassName}>
                                 <Tool type="share-alt" theme="outlined" color="green" tooltipText={this.t("Share")} primary/>
                                 <Tool className="qrcode-icon" type="qrcode" theme="outlined" color="green" tooltipText={this.t("QR Code")}>
                                     <canvas className="qrcode" id="mrt-share-qrcode-canvas"/>
@@ -91,19 +104,19 @@ export class Toolbox extends React.Component<IProps, IState> {
                             </div>
                         )
                     }
-                    <div className="toolgroup secondary vertical">
+                    <div className={topClassName}>
                         <Tool type="font-size" theme="outlined" color="pink" tooltipText={this.t("Font Size")} primary/>
                         <Tool type="zoom-in" theme="outlined" color="pink" tooltipText={this.t("Larger Font")} onClick={() => this.props.scaleFont(true)}/>
                         <Tool type="zoom-out" theme="outlined" color="pink" tooltipText={this.t("Smaller Font")} onClick={() => this.props.scaleFont(false)}/>
                     </div>
-                    <div className="toolgroup secondary vertical">
+                    <div className={topClassName}>
                         <Tool type="search" theme="outlined" color="aquamarine" tooltipText={this.t("Zoom")} primary/>
                         <Tool type="zoom-in" theme="outlined" color="aquamarine" tooltipText={this.t("Zoom In")} onClick={() => this.props.zoom(true)}/>
                         <Tool type="zoom-out" theme="outlined" color="aquamarine" tooltipText={this.t("Zoom Out")} onClick={() => this.props.zoom(false)}/>
                     </div>
                     {
                         !!downloadable && (
-                            <div className="toolgroup secondary vertical">
+                            <div className={topClassName}>
                                 <Tool type="download" theme="outlined" color="blue" tooltipText={this.t("Download")} primary/>
                                 <Tool type="file-image" theme="twoTone" color="blue" tooltipText={this.t("Full Picture")} onClick={() => this.props.capture && this.props.capture()}/>
                                 {/* <Tool type="camera" theme="twoTone" color="blue" tooltipText={this.t("Snapshot")} onClick={() => this.props.capture && this.props.capture()}/> */}
@@ -111,7 +124,7 @@ export class Toolbox extends React.Component<IProps, IState> {
                         )
                     }
 
-                    <div className="toolgroup secondary vertical">
+                    <div className={topClassName}>
                         <Tool type="control" theme="outlined" color="teal" tooltipText={this.t("Control")} primary/>
                         <Tool type={`eye${this.props.hideSubBranch ? "" : "-invisible"}`} theme="twoTone" color="teal" onClick={() => this.props.onHideSubBranch()}
                             tooltipText={this.t(this.props.hideSubBranch ? "Display Sub Branch" : "Hide Sub Branch")}/>
@@ -125,7 +138,10 @@ export class Toolbox extends React.Component<IProps, IState> {
                             tooltipText={this.t(!!this.props.recommendable ? "Enable Recommendation" : "Disable Recommendation")}/>}
                     </div>
                     <div className="toolgroup vertical">
-                        <Tool className="toolgroup" type="appstore" theme="outlined" color="purple" tooltipText={this.t("Toolbox")} primary/>
+                        {isMobile()
+                            && <Tool className="toolgroup" type="mobile" theme="outlined" color="purple" tooltipText={this.t("Mobile")} primary onClick={() => this.props.onSetForcePC(false)}/>
+                            // : <Tool className="toolgroup" type="appstore" theme="outlined" color="purple" tooltipText={this.t("Toolbox")} primary/>
+                        }
                     </div>
                 </div>
                 <HelperModal lang={this.props.lang} onCancel={() => this.setState({helperVisible: false})} visible={this.state.helperVisible}/>

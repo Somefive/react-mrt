@@ -1,5 +1,5 @@
 import React from 'react'
-import { MRT, adapters, recommenders /*, OMRT*/ } from 'react-mrt'
+import { MRT, adapters } from 'react-mrt'
 import './App.css'
 import sample_data from './sample.json'
 import 'antd/dist/antd.css'
@@ -55,10 +55,6 @@ class App extends React.Component {
           lang="en" shareable={true} likeable={true} loadable={true} onLoadJson={(json) => this.setState({data: json})}
           html2canvas={html2canvas}
           recommender={recommender}/>
-        {/* <OMRT data={data} authors={["Somefive", "Rainatum"]} onLoadJson={this.handleDataChange}
-          onLike={() => this.setState({like: !this.state.like})} like={this.state.like}
-          onEditChange={(edits) => this.setState({userEdits: edits})} userEdits={this.state.userEdits}
-          lang="en"/> */}
       </div>
     );
   }

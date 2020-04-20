@@ -49,3 +49,14 @@
 .mrt-modal .slick-slide {
     height: auto !important;
 }
+
+@media screen and (max-width: 560px) {
+    .qrcode {
+        position: absolute;
+        left: auto;
+        right: 100%;
+        top: 0;
+        display: none;
+        margin: 0 0.5rem;
+    }
+}

@@ -3,7 +3,7 @@
     padding: 0.25rem;
     opacity: 0.6;
     transition-property: opacity, transform;
-    transition-duration: .25s; 
+    transition-duration: .25s;
 }
 
 .tool:hover {
@@ -38,4 +38,15 @@
 
 .tooltip:hover .tooltip-text {
     visibility: visible;
+}
+
+@media screen and (max-width: 560px) {
+    .tool:hover {
+        cursor: pointer;
+        opacity: 1;
+        transform: scale(1);
+    }
+    .toolgroup.vertical > .secondary > .tooltip-text {
+        visibility: visible;
+    }
 }
