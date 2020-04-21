@@ -59,4 +59,9 @@
         display: none;
         margin: 0 0.5rem;
     }
+    .mobile.toolgroup.horizontal {
+        left: 7.5vw;
+        top: 10px;
+        transform: translate(-50%, 0%);
+    }
 }

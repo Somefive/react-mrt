@@ -75,7 +75,7 @@ export class Toolbox extends React.Component<IProps, IState> {
         const topClassName = "toolgroup vertical"
         return (isMobile() && !this.props.forcePC) ? (
             <div>
-                <div className="toolgroup horizontal">
+                <div className="toolgroup horizontal mobile">
                     <div className="toolgroup vertical">
                         <Tool className="toolgroup" type="desktop" theme="outlined" color="purple" tooltipText={this.t("desktop")} primary onClick={() => this.props.onSetForcePC(true)}/>
                     </div>

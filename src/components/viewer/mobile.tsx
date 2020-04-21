@@ -34,22 +34,25 @@ function PowerBall(props: {weight: number, stroke: string}): JSX.Element {
 
 interface IBlockCardProps {
     block: IMRTBlock
+    extBlock?: IMRTBlock
     timelineWidth: number
     timeline?: boolean
     ct?: IColorTheme
     isStart?: boolean
     isEnd?: boolean
     lang: ILang
+    title?: string
 }
 
 interface IBlockCardState {
     detail: number
+    ext: boolean
 }
 
 export class BlockCard extends React.Component<IBlockCardProps, IBlockCardState> {
     constructor(props: IBlockCardProps) {
         super(props)
-        this.state = { detail: -1 }
+        this.state = { detail: -1, ext: false }
     }
 
     private t(key: string): string {
@@ -57,6 +60,8 @@ export class BlockCard extends React.Component<IBlockCardProps, IBlockCardState>
     }
 
     render() {
+        const ext = !!this.props.extBlock && this.state.ext
+        const nodes = ext ? [...this.props.block.nodes, ...(this.props.extBlock as IMRTBlock).nodes] : this.props.block.nodes
         return <div className="mrt-mobile-card">
             {this.props.timeline && <div className="card-timeline">
                 <div className={`card-timeline-line ${this.props.isStart ? "start" : ""} ${this.props.isEnd ? "end" : ""}`}
@@ -64,13 +69,14 @@ export class BlockCard extends React.Component<IBlockCardProps, IBlockCardState>
                 />
                 <PowerBall weight={this.props.block.weight || 0} stroke={this.props.ct ? this.props.ct.main : "black"}/>
             </div>}
+            {!this.props.timeline && <div className="card-timeline"></div>}
 
             <div className="card-container">
-            {this.props.block.nodes.map((node, idx) => {
-                console.log(node)
+            {this.props.title && <div className="card-node-title" style={{color: this.props.ct ? this.props.ct.text : "black"}}>{this.props.title}</div>}
+            {nodes.map((node, idx) => {
                 return <div key={idx} className="node" style={{color: this.props.ct ? this.props.ct.text : "black"}}>
                     <div className="title" onClick={() => this.setState({detail: this.state.detail === idx ? -1 : idx})}>
-                        <span style={{textDecoration: "underline"}}>{node.name}</span>
+                        <span>{node.name}</span>
                         {node.type === 'paper' && <span style={{marginLeft: "5px"}} dangerouslySetInnerHTML={{__html: (this.state.detail === idx ? "&#9652;" : "&#9662;")}}/>}
                     </div>
                     {this.state.detail === idx && node.type === 'paper' && <div className="detail">
@@ -83,6 +89,11 @@ export class BlockCard extends React.Component<IBlockCardProps, IBlockCardState>
                     </div>}
                 </div>
             })}
+            {!!this.props.extBlock && <div className="more" style={{
+                color: this.props.ct ? this.props.ct.src : "black",
+                textDecoration: ext ? "none" : "underline",
+                opacity: 0.8}} dangerouslySetInnerHTML={{__html: ext ? "..." : "more..."}}
+                onClick={() => this.setState({ext: !this.state.ext})}/>}
             </div>
         </div>
     }
@@ -140,7 +151,9 @@ export default class MRTMobileViewer extends React.Component<IProps, IState> {
             //     }
             // }}}
             >
-            <BlockCard block={this.props.data.root} timelineWidth={0} lang={this.props.lang}/>
+            <div className="header-card">
+                <BlockCard block={this.props.data.root} timelineWidth={0} lang={this.props.lang}/>
+            </div>
             <div className="clusters-container" style={{
                 position: 'relative', left: `-${this.state.currentClustetIndex * 100}vw`,
                 width: `${clusterSize * 100}vw`
@@ -160,9 +173,10 @@ export default class MRTMobileViewer extends React.Component<IProps, IState> {
                     </div>
                     <div className="cluster-blocks">
                         {clusterBlocks.map((cbs,idx) => {
-                            return <BlockCard key={cbs[0].row} block={cbs[0]} ct={colors} lang={this.props.lang}
+                            return <BlockCard key={cbs[0].row} block={cbs[0]} extBlock={cbs.length > 0 ? cbs[1] : undefined} ct={colors} lang={this.props.lang}
                                 timeline isStart={idx === 0} isEnd={idx === clusterBlocks.length-1}
-                                timelineWidth={1 + 3 * (this.props.data.clusters[clusterID].rank || 0) / this.props.data.clusters.length}/>
+                                timelineWidth={1 + 3 * (this.props.data.clusters[clusterID].rank || 0) / this.props.data.clusters.length}
+                                title={this.props.data.rows ? this.props.data.rows[cbs[0].row].name : undefined}/>
                         })}
                     </div>
                 </div>
