@@ -126,7 +126,6 @@ export default class MRTMobileViewer extends React.Component<IProps, IState> {
     private clusterColors: IColorTheme[] = []
 
     render() {
-        console.log('mrtdata', this.props.data)
         const clusterSize = this.props.data.clusters.length
         if (this.clusterColors.length != clusterSize) {
             this.clusterColors = generateColorThemes(clusterSize)
@@ -163,7 +162,6 @@ export default class MRTMobileViewer extends React.Component<IProps, IState> {
                 const keys = Object.keys(clusterBlocksMap)
                 keys.sort()
                 const clusterBlocks = keys.map(key => _.sortBy(clusterBlocksMap[key], b => b.column))
-                console.log(clusterBlocks)
                 const colors = this.clusterColors[clusterID]
                 return <div key={clusterID} className="mrt-cluster" style={{ background: colors.bg }}>
                     <div className="cluster-header">
