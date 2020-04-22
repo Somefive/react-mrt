@@ -15,7 +15,7 @@ export default class Helper extends React.Component<IProps> {
 
     public render() {
         const lang: "zh" | "en" = this.props.lang == 'en' ? "en" : "zh";
-        const images = _.range(1, 9).map(index => `https://raw.githubusercontent.com/Somefive/react-mrt/master/src/components/toolbox/images/guide${index}.jpg`) 
+        const images = _.range(1, 9).map(index => `http://webplus-cn-zhangjiakou-s-5d3021e74130ed2505537ee6.oss-cn-zhangjiakou.aliyuncs.com/aminer/mrt/guide/guide${index}.jpg`)
         return (
             <Carousel className="helper" autoplay>{ images.map((img, idx) => {
                 return <div className="helper-tab" key={idx}>
