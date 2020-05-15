@@ -1,5 +1,4 @@
 import React from 'react'
-import { Icon } from 'antd'
 import chroma from 'chroma-js'
 import './tool.css'
 
@@ -9,7 +8,7 @@ interface IProps {
     primary?: boolean;
     color: string;
     theme?: "filled" | "outlined" | "twoTone";
-    type?: string;
+    type: any;
     className?: string;
     tooltipText?: string;
 }
@@ -29,9 +28,10 @@ export default class Tool extends React.Component<IProps> {
         const luminance = this.props.luminance || (this.props.primary ? 0.4 : 0.2)
         const color = chroma(this.props.color).luminance(luminance)
         const textColor = color.luminance(luminance / 2)
+        const TypedIcon = this.props.type
         const icon = (this.props.theme !== "twoTone")
-            ? <Icon className="toolicon" type={this.props.type} theme={this.props.theme} onClick={() => this.onClick()} style={{color: color.hex()}}/>
-            : <Icon className="toolicon" type={this.props.type} theme={this.props.theme} onClick={() => this.onClick()} twoToneColor={color.hex()}/>
+            ? <TypedIcon className="toolicon" theme={this.props.theme} onClick={() => this.onClick()} style={{color: color.hex()}}/>
+            : <TypedIcon className="toolicon" onClick={() => this.onClick()} twoToneColor={color.hex()}/>
         return (
             <div className={`tool tooltip ${this.props.primary ? "primary" : "secondary"} ${this.props.className || ''}`}>
                 {icon}

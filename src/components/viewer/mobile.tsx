@@ -1,9 +1,9 @@
 import React from 'react'
 import './mobile.less'
-import { IMRTData, IMRTBlock, IMRTCluster } from '../../model/mrtTree'
+import { IMRTData, IMRTBlock } from '../../model/mrtTree'
 import { ILang, Translator } from '../../utils/translation'
 import _ from 'lodash'
-import { Icon } from 'antd'
+import { CaretLeftOutlined, CaretRightOutlined } from '@ant-design/icons'
 import { generateColorThemes, IColorTheme } from '../../utils/color'
 import { IPaperNode } from '../../model/nodes/paperNode'
 import translation from '../card/paper/tooltip-text-translation.json'
@@ -165,9 +165,9 @@ export default class MRTMobileViewer extends React.Component<IProps, IState> {
                 const colors = this.clusterColors[clusterID]
                 return <div key={clusterID} className="mrt-cluster" style={{ background: colors.bg }}>
                     <div className="cluster-header">
-                        <div className="btn"><Icon type="caret-left" theme="outlined" onClick={() => { if (this.state.currentClustetIndex > 0) this.setState({currentClustetIndex: this.state.currentClustetIndex-1}) }} style={{color: this.state.currentClustetIndex > 0 ? "darkgrey" : "lightgrey"}}/></div>
+                        <div className="btn"><CaretLeftOutlined onClick={() => { if (this.state.currentClustetIndex > 0) this.setState({currentClustetIndex: this.state.currentClustetIndex-1}) }} style={{color: this.state.currentClustetIndex > 0 ? "darkgrey" : "lightgrey"}}/></div>
                         <div className="content" style={{ color: colors.main }}>{this.props.data.clusters[clusterID].name}</div>
-                        <div className="btn"><Icon type="caret-right" theme="outlined" onClick={() => { if (this.state.currentClustetIndex < this.props.data.clusters.length-1) this.setState({currentClustetIndex: this.state.currentClustetIndex+1})}} style={{color: this.state.currentClustetIndex < this.props.data.clusters.length-1 ? "darkgrey" : "lightgrey"}}/></div>
+                        <div className="btn"><CaretRightOutlined onClick={() => { if (this.state.currentClustetIndex < this.props.data.clusters.length-1) this.setState({currentClustetIndex: this.state.currentClustetIndex+1})}} style={{color: this.state.currentClustetIndex < this.props.data.clusters.length-1 ? "darkgrey" : "lightgrey"}}/></div>
                     </div>
                     <div className="cluster-blocks">
                         {clusterBlocks.map((cbs,idx) => {

@@ -7,6 +7,7 @@ import Helper from './helper'
 import { Modal } from 'antd'
 import { ILang, Translator } from '../../utils/translation'
 import { isMobile } from '../../utils'
+import { DesktopOutlined, HeartFilled, HeartTwoTone, QuestionCircleOutlined, ShareAltOutlined, QrcodeOutlined, FontSizeOutlined, ZoomInOutlined, ZoomOutOutlined, SearchOutlined, DownloadOutlined, FileImageTwoTone, ControlOutlined, EyeTwoTone, EyeInvisibleTwoTone, ColumnWidthOutlined, FolderOpenOutlined, HighlightOutlined, MobileOutlined } from '@ant-design/icons'
 
 interface IProps {
     lang: ILang;
@@ -77,7 +78,7 @@ export class Toolbox extends React.Component<IProps, IState> {
             <div>
                 <div className="toolgroup horizontal mobile">
                     <div className="toolgroup vertical">
-                        <Tool className="toolgroup" type="desktop" theme="outlined" color="purple" tooltipText={this.t("desktop")} primary onClick={() => this.props.onSetForcePC(true)}/>
+                        <Tool className="toolgroup" type={DesktopOutlined} theme="outlined" color="purple" tooltipText={this.t("desktop")} primary onClick={() => this.props.onSetForcePC(true)}/>
                     </div>
                 </div>
             </div>
@@ -87,60 +88,58 @@ export class Toolbox extends React.Component<IProps, IState> {
                     {
                         !!likeable && (
                             <div className={topClassName}>
-                                <Tool type="heart" theme={like ? "filled" : "twoTone"} color="red" tooltipText={this.t(like ? "Dislike" : "Like")} primary onClick={() => onLike && onLike()}/>
+                                <Tool type={like ? HeartFilled : HeartTwoTone} theme={like ? "filled" : "twoTone"} color="red" tooltipText={this.t(like ? "Dislike" : "Like")} primary onClick={() => onLike && onLike()}/>
                             </div>
                         )
                     }
                     { !isMobile() && <div className={topClassName}>
-                        <Tool className="toolgroup" type="question-circle" theme="outlined" color="yellow" tooltipText={this.t("Guide")} primary onClick={() => this.setState({helperVisible: true})}/>
+                        <Tool className="toolgroup" type={QuestionCircleOutlined} theme="outlined" color="yellow" tooltipText={this.t("Guide")} primary onClick={() => this.setState({helperVisible: true})}/>
                     </div> }
                     {
                         !!shareable && (
                             <div className={topClassName}>
-                                <Tool type="share-alt" theme="outlined" color="green" tooltipText={this.t("Share")} primary/>
-                                <Tool className="qrcode-icon" type="qrcode" theme="outlined" color="green" tooltipText={this.t("QR Code")}>
+                                <Tool type={ShareAltOutlined} theme="outlined" color="green" tooltipText={this.t("Share")} primary/>
+                                <Tool className="qrcode-icon" type={QrcodeOutlined} theme="outlined" color="green" tooltipText={this.t("QR Code")}>
                                     <canvas className="qrcode" id="mrt-share-qrcode-canvas"/>
                                 </Tool>
                             </div>
                         )
                     }
                     <div className={topClassName}>
-                        <Tool type="font-size" theme="outlined" color="pink" tooltipText={this.t("Font Size")} primary/>
-                        <Tool type="zoom-in" theme="outlined" color="pink" tooltipText={this.t("Larger Font")} onClick={() => this.props.scaleFont(true)}/>
-                        <Tool type="zoom-out" theme="outlined" color="pink" tooltipText={this.t("Smaller Font")} onClick={() => this.props.scaleFont(false)}/>
+                        <Tool type={FontSizeOutlined} theme="outlined" color="pink" tooltipText={this.t("Font Size")} primary/>
+                        <Tool type={ZoomInOutlined} theme="outlined" color="pink" tooltipText={this.t("Larger Font")} onClick={() => this.props.scaleFont(true)}/>
+                        <Tool type={ZoomOutOutlined} theme="outlined" color="pink" tooltipText={this.t("Smaller Font")} onClick={() => this.props.scaleFont(false)}/>
                     </div>
                     <div className={topClassName}>
-                        <Tool type="search" theme="outlined" color="aquamarine" tooltipText={this.t("Zoom")} primary/>
-                        <Tool type="zoom-in" theme="outlined" color="aquamarine" tooltipText={this.t("Zoom In")} onClick={() => this.props.zoom(true)}/>
-                        <Tool type="zoom-out" theme="outlined" color="aquamarine" tooltipText={this.t("Zoom Out")} onClick={() => this.props.zoom(false)}/>
+                        <Tool type={SearchOutlined} theme="outlined" color="aquamarine" tooltipText={this.t("Zoom")} primary/>
+                        <Tool type={ZoomInOutlined} theme="outlined" color="aquamarine" tooltipText={this.t("Zoom In")} onClick={() => this.props.zoom(true)}/>
+                        <Tool type={ZoomOutOutlined} theme="outlined" color="aquamarine" tooltipText={this.t("Zoom Out")} onClick={() => this.props.zoom(false)}/>
                     </div>
                     {
                         !!downloadable && (
                             <div className={topClassName}>
-                                <Tool type="download" theme="outlined" color="blue" tooltipText={this.t("Download")} primary/>
-                                <Tool type="file-image" theme="twoTone" color="blue" tooltipText={this.t("Full Picture")} onClick={() => this.props.capture && this.props.capture()}/>
-                                {/* <Tool type="camera" theme="twoTone" color="blue" tooltipText={this.t("Snapshot")} onClick={() => this.props.capture && this.props.capture()}/> */}
+                                <Tool type={DownloadOutlined} theme="outlined" color="blue" tooltipText={this.t("Download")} primary/>
+                                <Tool type={FileImageTwoTone} theme="twoTone" color="blue" tooltipText={this.t("Full Picture")} onClick={() => this.props.capture && this.props.capture()}/>
                             </div>
                         )
                     }
 
                     <div className={topClassName}>
-                        <Tool type="control" theme="outlined" color="teal" tooltipText={this.t("Control")} primary/>
-                        <Tool type={`eye${this.props.hideSubBranch ? "" : "-invisible"}`} theme="twoTone" color="teal" onClick={() => this.props.onHideSubBranch()}
+                        <Tool type={ControlOutlined} theme="outlined" color="teal" tooltipText={this.t("Control")} primary/>
+                        <Tool type={this.props.hideSubBranch ? EyeTwoTone : EyeInvisibleTwoTone} theme="twoTone" color="teal" onClick={() => this.props.onHideSubBranch()}
                             tooltipText={this.t(this.props.hideSubBranch ? "Display Sub Branch" : "Hide Sub Branch")}/>
-                        <Tool type="column-width" theme="outlined" color="teal" onClick={() => this.props.onDisableTextClusterSpan()}
+                        <Tool type={ColumnWidthOutlined} theme="outlined" color="teal" onClick={() => this.props.onDisableTextClusterSpan()}
                             tooltipText={this.t(this.props.disableTextClusterSpan ? "Enable Text Span" : "Disable Text Span")}/>
-                        { !!loadable && <Tool type="folder-open" theme="outlined" color="teal" onClick={() => {
+                        { !!loadable && <Tool type={FolderOpenOutlined} theme="outlined" color="teal" onClick={() => {
                             if (this._fileLoadInput) this._fileLoadInput.click()
                         }} tooltipText={this.t("Load JSON")}/>}
                         { !!loadable && <input ref={d => this._fileLoadInput = d!} id="mrt-file-load-input" type="file" hidden onChange={(e) => this.loadJson(e)}/>}
-                        { this.props.recommendable !== undefined && <Tool type="highlight" theme="outlined" color="teal" onClick={() => this.props.onRecommendableChange()}
+                        { this.props.recommendable !== undefined && <Tool type={HighlightOutlined} theme="outlined" color="teal" onClick={() => this.props.onRecommendableChange()}
                             tooltipText={this.t(!!this.props.recommendable ? "Enable Recommendation" : "Disable Recommendation")}/>}
                     </div>
                     <div className="toolgroup vertical">
                         {isMobile()
-                            && <Tool className="toolgroup" type="mobile" theme="outlined" color="purple" tooltipText={this.t("Mobile")} primary onClick={() => this.props.onSetForcePC(false)}/>
-                            // : <Tool className="toolgroup" type="appstore" theme="outlined" color="purple" tooltipText={this.t("Toolbox")} primary/>
+                            && <Tool className="toolgroup" type={MobileOutlined} theme="outlined" color="purple" tooltipText={this.t("Mobile")} primary onClick={() => this.props.onSetForcePC(false)}/>
                         }
                     </div>
                 </div>
